@@ -1,0 +1,22 @@
+# vendored interpreter - fetched by install.ps1 / install.sh, not tracked
+/python/
+
+# researcher content - personal, migrated from Drive's _ARTi, never in git history
+/researcher-profile.md
+/voice-profiles/
+/workflow-sessions/
+/journal-library/
+/idea-bank.md
+/arti-workflow-profile.md
+/arti-workflow-profile-archive.md
+/arti-skill-upgrade-plan.md
+/ebook-notes.md
+/landing-page-feature-inventory.md
+/progress-index.md
+/skill-improvement-ideas.md
+/working-preferences.md
+/MOVED.md
+
+# misc
+*.pyc
+__pycache__/
