@@ -143,14 +143,35 @@ if ($needPython) {
 }
 
 # --- 4. wire skills into ~/.claude/skills --------------------------------------
+# Junctions, not copies: ~/.arti/skills/<name> is the only place a skill is ever edited.
+# A junction makes ~/.claude/skills/<name> the same directory on disk, so there is no
+# separate copy to fall out of sync and no re-run-the-installer step after an edit.
+# Junctions need no admin rights on Windows (unlike symlinks) but do require the link
+# and target to be on the same volume - true for the default ~/.arti and ~/.claude paths.
+# If that ever isn't true (or junction creation fails for any other reason), fall back
+# to a plain copy so the skill still gets installed, just without the live-edit property.
 
 $skillsSrc = Join-Path $ArtiHome 'skills'
 $skillsDst = Join-Path $HOME '.claude\skills'
 if (Test-Path $skillsSrc) {
   if (-not (Test-Path $skillsDst)) { New-Item -ItemType Directory -Path $skillsDst -Force | Out-Null }
   Get-ChildItem $skillsSrc -Directory | ForEach-Object {
-    Copy-Item $_.FullName -Destination $skillsDst -Recurse -Force
-    Write-Host "  [ok] skill installed: $($_.Name)"
+    $target = $_.FullName
+    $link = Join-Path $skillsDst $_.Name
+    $existing = Get-Item $link -Force -ErrorAction SilentlyContinue
+    if ($existing -and $existing.LinkType -eq 'Junction' -and $existing.Target -eq $target) {
+      Write-Host "  [ok] skill already linked: $($_.Name)"
+      return
+    }
+    if (Test-Path $link) { Remove-Item $link -Recurse -Force }
+    try {
+      New-Item -ItemType Junction -Path $link -Target $target -ErrorAction Stop | Out-Null
+      Write-Host "  [ok] skill linked: $($_.Name)"
+    } catch {
+      Write-Warning "Junction failed for $($_.Name) ($($_.Exception.Message)) - falling back to a copy."
+      Copy-Item $target -Destination $skillsDst -Recurse -Force
+      Write-Host "  [ok] skill copied (no live-edit link): $($_.Name)"
+    }
   }
 }
 

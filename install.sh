@@ -127,6 +127,9 @@ else
 fi
 
 # --- 4. wire skills into ~/.claude/skills --------------------------------------
+# Symlinks, not copies: ~/.arti/skills/<name> is the only place a skill is ever edited.
+# A symlink makes ~/.claude/skills/<name> resolve to the same directory, so there is no
+# separate copy to fall out of sync and no re-run-the-installer step after an edit.
 
 SKILLS_SRC="$ARTI_HOME/skills"
 SKILLS_DST="$HOME/.claude/skills"
@@ -135,8 +138,19 @@ if [ -d "$SKILLS_SRC" ]; then
   for d in "$SKILLS_SRC"/*/; do
     [ -d "$d" ] || continue
     name="$(basename "$d")"
-    cp -R "$d" "$SKILLS_DST/"
-    echo "  [ok] skill installed: $name"
+    link="$SKILLS_DST/$name"
+    if [ -L "$link" ] && [ "$(readlink "$link")" = "$d" ]; then
+      echo "  [ok] skill already linked: $name"
+      continue
+    fi
+    rm -rf "$link"
+    if ln -s "${d%/}" "$link" 2>/dev/null; then
+      echo "  [ok] skill linked: $name"
+    else
+      echo "  WARNING: symlink failed for $name - falling back to a copy." >&2
+      cp -R "$d" "$SKILLS_DST/"
+      echo "  [ok] skill copied (no live-edit link): $name"
+    fi
   done
 fi
 
