@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- ARTi logo v6 - one continuous ascending step-path (Amati / Replikasi / Tambah inovasi), capped by the innovation dot -->
+<svg
+   width="600"
+   height="600"
+   viewBox="0 0 160 160"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="144" height="144" rx="32" fill="#f7f8fa" />
+  <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+        fill="none" stroke="#475569" stroke-width="19"
+        stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="103" cy="34" r="16" fill="#2563eb" />
+</svg>

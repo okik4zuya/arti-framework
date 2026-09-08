@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- ARTi icon, flat full-bleed square background (no corner radius) - for OS-level icon
+     containers (favicon.ico, apple-touch-icon, Android/PWA) that apply their own masking/rounding -->
+<svg
+   width="600"
+   height="600"
+   viewBox="0 0 160 160"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="160" height="160" fill="#f7f8fa" />
+  <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+        fill="none" stroke="#475569" stroke-width="19"
+        stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="103" cy="34" r="16" fill="#2563eb" />
+</svg>

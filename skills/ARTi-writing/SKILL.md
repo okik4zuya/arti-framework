@@ -359,12 +359,13 @@ document in this skill written after the paper is done, not before or during.
   asks the researcher once acceptance is confirmed, reviewing the Manuscript's own Limitations
   paragraph (and any Reviewer Simulation or real-reviewer Strategic-category comments that were
   deferred rather than resolved) for concrete follow-up directions
-- The answer is not just recorded here — it seeds a new **Idea Bank** entry in `~/.arti/idea-bank.md`
-  (ARTi-idea's persistent cross-project store), so the leftover thread surfaces automatically the
-  next time a Gap Map is started rather than being re-discovered from memory
+- The answer is not just recorded here — it seeds a new **Research Idea Bank** entry in
+  `~/.arti/memory/research-idea-bank.md` (ARTi-idea's persistent cross-project store), so the
+  leftover thread surfaces automatically the next time a Gap Map is started rather than being
+  re-discovered from memory
 
 **When to create/update:** Once, triggered by the researcher confirming acceptance — never
-speculatively before that. The Idea Bank write is a single entry, done at the same time.
+speculatively before that. The Research Idea Bank write is a single entry, done at the same time.
 
 **File:** `submission\growth-log.md`
 
@@ -411,6 +412,14 @@ Publication Growth Log → Idea Bank → next Gap Map (ARTi-idea)
 Run this stage only if the researcher has no Voice Profile yet in `~/.arti/voice-profiles/`, or if
 they explicitly say their writing style has shifted. Otherwise skip straight to Stage 1 — read the
 existing Voice Profile file, don't re-derive it.
+
+**Selection step — run before choosing a path or reusing a profile.** Read (or create, if missing)
+`~/.arti/voice-profiles/00-INDEX.md`, the flat catalog of every existing profile. If it lists more
+than one profile, ask the researcher which one is in effect for this project before proceeding —
+do not guess or default to the most recent. Record the choice in this project's Journal Profile
+Block B pointer line, alongside the existing "which Voice Profile file is in effect" note. If the
+catalog lists none yet, proceed to build one (Path A, B, or C below) and add its row to the catalog
+once written.
 
 **Path A — extracted from the researcher's own papers:**
 
@@ -461,7 +470,34 @@ Record a thin pointer file at the same location instead of re-extracting: which 
 skill or profile this points to, and the date the researcher last confirmed it still matches their
 writing. Do not run Path A's extraction over papers that skill was already built from.
 
-**File:** `~/.arti/voice-profiles/<voice-slug>.md`
+**Path C — generalized multi-file corpus, built from a single example article:**
+Use this path when the researcher wants a rich, `gtmk-voice`-style reference corpus — not a single
+flat template file, and not a pointer to somebody else's style skill — built from their own writing
+in whatever field they're in, from just one example article (rather than Path A's 3–5). Modeled
+directly on the `gtmk-voice` skill's own decomposition, generalized so it transfers to any field:
+
+1. Ask the researcher for one example article (their own, or one they want to emulate) and a
+   **descriptive slug** for the resulting profile — prompt for this explicitly; never default to a
+   placeholder like "writing-style-1". The slug becomes the folder name.
+2. From that single article, extract the same registers `gtmk-voice` documents, generalized rather
+   than left field-specific: verb/noun/adjective/adverb registers with a preferred-vs-avoided list
+   (no domain-noun lexicon section, since one article can't establish a stable domain vocabulary —
+   flag this gap explicitly rather than inventing one); verbatim phrase banks by rhetorical
+   function; the commitment/hedging ladder; paragraph-flow move-sequences per section; title/
+   abstract formulas; the non-native-English or other signature fingerprint, if present; and a
+   condensed copy-paste prompt block distilling all of the above.
+3. Write the result to `~/.arti/voice-profiles/<slug>/`, as a folder (not a flat file — the folder
+   structure is the point of "same structure but generalized"), containing:
+   `00-INDEX.md`, `01-lexicon.md`, `02-phrases.md`, `03-hedging.md`, `04-paragraph-flow.md`,
+   `05-abstract-title.md`, `06-signature-notes.md`, `07-PROMPT-BLOCK.md`.
+4. Because this is built from one source article rather than 3–5, `00-INDEX.md` must state the
+   single-source provenance explicitly and flag the whole extraction as **provisional** until
+   reconfirmed against a second sample — do not present it with the same confidence as a Path A or
+   an established Path C profile built from more than one source.
+5. Add a row for the new profile to `~/.arti/voice-profiles/00-INDEX.md` (the catalog read by the
+   selection step above).
+
+**File:** `~/.arti/voice-profiles/<voice-slug>.md` (Path A/B) or `~/.arti/voice-profiles/<slug>/` (Path C)
 
 ---
 
@@ -674,6 +710,12 @@ Entries missing full bibliographic details get `export-only` or `abstract` read-
 ---
 
 ### Stage 4: Manuscript Drafting
+
+**Progress index cadence:** the first time this stage produces "Draft 1" content (not on later
+revisions of the same draft), upsert this project's row in `~/.arti/memory/progress-index.md` —
+stage "Drafting", status "writing started". This is the phase boundary ARTi-idea's handoff row
+left open; skipping it is why the dashboard can show a project stuck at "Handed off" indefinitely.
+
 - Skim the `**Argumen saat ini:**` lines first for a quick orientation on each section's current
   argument, then go to the full dumps beneath them for the supporting material
 - Transform Scratchbook content into formal academic prose, following the Manuscript Blueprint's
@@ -686,6 +728,36 @@ Entries missing full bibliographic details get `export-only` or `abstract` read-
 - Label each output clearly as "Draft N"
 - Before drafting, scan all `[⚠️ CONTRADICTION]` tags in the relevant section — note them for the Discussion
 - Before drafting, check Block C — flag any characterization technique or analysis type that typical journal papers include but the Scratchbook does not yet address
+
+**Concision is the default register, not a special pass.** Draft every section, and revise every
+existing one, as dense and literature/evidence-rich as it can be while remaining correct: trim
+elaboration, meta-commentary, and content already restated by an adjacent table or figure; never
+touch citations or evidence. Concretely, on both a first draft and any later revision:
+- Cut signposting sentences that only announce what a paragraph is about to do or just did
+  ("Note that…", "It is worth noting…", "Firstly / secondly / thirdly" scaffolding, "This
+  demonstrates that…" restated after the demonstration already reads that way).
+- Cut parenthetical glosses and restrictive clauses that repeat a claim already made in the
+  sentence, or that a cited source's name alone already implies.
+- When a table or figure states something in full (a mapping, a list of properties, a set of
+  values), do not also restate it prose-form nearby — point to the display item instead.
+- **Don't elaborate without strong support (literature or evidence).** A claim, interpretation, or
+  aside earns extra sentences only if it is carrying a citation, a statistic, or data from the
+  Scratchbook — not because it sounds plausible or adds color. If a sentence would need to be
+  written from general reasoning rather than a sourced claim, it is a candidate to cut, not expand;
+  when the point genuinely needs saying and has no source, flag it (`[SOURCE NEEDED]` or
+  `[CITATION NEEDED]`) rather than writing it up unsupported at length.
+- Never cut a citation, a statistic, a `[DATA NEEDED]`/`[CITATION NEEDED]`/`[SOURCE NEEDED]` flag,
+  or a substantive claim (a distinct piece of evidence, reasoning, or a stated limitation/trade-off)
+  purely to shorten. If a sentence carries a citation or a number, treat everything in it as load-
+  bearing by default and cut around it, not through it.
+- After any concision pass, verify nothing evidentiary was lost: diff the citation set (author-year
+  keys) between the before and after text and confirm it is unchanged, the way
+  `references/review-checklist.md` Section J already requires for citation integrity generally.
+- This is the default weighting for every draft and revision, independent of whether the user asks
+  for a "compression pass" by name — write tight the first time rather than padding now and cutting
+  later. **The one override:** if the user explicitly asks for elaboration, more detail, or a longer
+  treatment of something, honor that request for the scope asked — it does not reopen the default
+  elsewhere in the same draft.
 
 **Plagiarism Prevention at this stage:**
 - Write exclusively from the Scratchbook — never draft by rephrasing the original source text directly
@@ -708,17 +780,25 @@ Entries missing full bibliographic details get `export-only` or `abstract` read-
 Fired when the researcher confirms study design is frozen — typically once Introduction and
 Methods are drafted and everything downstream is execution rather than re-planning.
 
-- Read `references/completion-plan-template.md` for the required structure and CSS.
-- Compile once from `idea\experiment-blueprint.md`, the Manuscript Blueprint, Journal Profile
+- **Precondition — confirm the Blueprint is complete, not just frozen.** Read the Manuscript
+  Blueprint end-to-end. Every top-level section (Introduction, Materials & Methods, Results &
+  Discussion, Conclusion) must carry an explicit figure/table decision — a specific display item
+  or an explicit "no display items needed" call, never silence. If any section's decision is
+  missing, **stop** and ask the researcher to decide it in the Blueprint's Revision Notes first; do
+  not compile a Figures & Tables Inventory around a silent gap.
+- Read `references/completion-plan-template.md` for the required Markdown structure.
+- Compile once from `idea\research-design.md`, the Manuscript Blueprint, Journal Profile
   Blocks A/B, and the open `- [ ]` items in `memory\todo-list.md`.
 - Content: data-collection schedule · analysis plan per hypothesis · full figure/table inventory
   (create / redraw / verify) · remaining manuscript sections · pre-submission checks (journal
   allowances, reference verification, IRB) · submission-package items.
-- Write to `writing\completion-plan.html` — self-contained, standalone, no external assets,
-  print-first (A4, one side of one sheet target).
+- Write to `writing\completion-plan.md`, then render to `writing\completion-plan.pdf` via the
+  shared Markdown→A4-PDF pipeline in `~/.arti/tools/arti-pdf/README.md` (no self-contained-HTML step —
+  that pipeline already handles the print CSS).
 - **Hand-maintained after creation, not regenerated.** It states the frozen full scope to
-  submission-ready; `memory\todo-list.md` remains the living session-to-session state. Update the
-  plan only when scope genuinely changes — not every session.
+  submission-ready; `memory\todo-list.md` + `memory\status.md` remain the living session-to-session
+  state (checklist and narrative respectively). Update the `.md` and re-render the `.pdf` only when
+  scope genuinely changes — not every session.
 
 ---
 
@@ -816,6 +896,11 @@ items outstanding.
   manuscript to something this journal specifically publishes or has stated it wants
 - Write to `submission\cover-letter_[journal-abbreviation].md`
 
+**Progress index cadence:** once the researcher confirms the package was actually submitted to the
+journal (not merely that the cover letter draft is done), upsert this project's row in
+`~/.arti/memory/progress-index.md` — stage "Submitted", status "Under review" (or the journal name
+if not already set), last updated to today.
+
 ---
 
 ### Stage 7: Rebuttal / Response to Reviewers
@@ -844,7 +929,7 @@ only stage that runs after the paper is done, and the one that closes the loop b
   Simulation or real reviewers that were deliberately deferred rather than resolved, for concrete
   follow-up directions
 - Record the answer in `submission\growth-log.md`, and in the same turn write it as a new
-  entry to `~/.arti/idea-bank.md` so it surfaces automatically the next time a Gap Map is started
+  entry to `~/.arti/memory/research-idea-bank.md` so it surfaces automatically the next time a Gap Map is started
 
 ---
 
@@ -857,7 +942,8 @@ cross-project and lives in `~/.arti/`.
 | Document | Suggested Filename |
 |---|---|
 | Journal Profile | `writing\journal-profile_[journal-abbreviation].md` |
-| Voice Profile | `~/.arti/voice-profiles/<voice-slug>.md` |
+| Voice Profile | `~/.arti/voice-profiles/<voice-slug>.md` (Path A/B) or `~/.arti/voice-profiles/<slug>/` (Path C) |
+| Voice Profile Catalog | `~/.arti/voice-profiles/00-INDEX.md` |
 | Manuscript Blueprint | `writing\manuscript-blueprint.md` |
 | Scratchbook | `writing\scratchbook.md` |
 | Manuscript | `writing\manuscript_draft[N]_[date].md` |
@@ -887,7 +973,8 @@ cross-project and lives in `~/.arti/`.
 15. **Voice is the researcher's, style delta is the journal's** — a Voice Profile is built once per researcher and reused; only the journal-specific delta gets re-derived per project. Do not re-run full style extraction on a researcher who already has a Voice Profile.
 16. **Blueprint before dumping** — the Manuscript Blueprint's paragraph-level shape exists so Scratchbook population has a target to fill, not so drafting invents structure from a blank page.
 17. **A cover letter argues fit, not summary** — if it would be equally valid sent to any journal in the field, it has failed its one job.
-18. **The loop doesn't end at acceptance** — the Publication Growth Log's job is to make sure what a paper's Limitations section left on the table doesn't just get forgotten; it becomes the next Idea Bank entry.
+18. **The loop doesn't end at acceptance** — the Publication Growth Log's job is to make sure what a paper's Limitations section left on the table doesn't just get forgotten; it becomes the next Research Idea Bank entry.
+19. **Concise and evidence-dense is the default register, not an on-request pass** — trim elaboration, meta-commentary, and content already restated by an adjacent table or figure; never touch citations or evidence to shorten a section. Don't elaborate without strong support (literature or evidence) — extra sentences are earned by a citation, statistic, or Scratchbook data, not by sounding plausible. Apply this to every draft and every revision by default; elaborate only when the user explicitly asks, and only for the scope asked.
 
 ---
 
@@ -902,8 +989,8 @@ cross-project and lives in `~/.arti/`.
 - `journal-profile-template.md` — Ready-to-use blank Journal Profile template (Blocks A, C, D)
 - `iteration-log-template.md` — Iteration Log entry template with scoring and resolution guidance,
   including the optional Reviewer Simulation subsection
-- `completion-plan-template.md` — Stage 4b's `writing\completion-plan.html` structure and required
-  print CSS
+- `completion-plan-template.md` — Stage 4b's `writing\completion-plan.md` Markdown structure and
+  Blueprint-completeness precondition
 - `cover-letter-template.md` — Ready-to-use blank Cover Letter template
 - `rebuttal-template.md` — Ready-to-use blank Rebuttal / Response to Reviewers template
 - `publication-growth-log-template.md` — Ready-to-use blank Publication Growth Log template
@@ -925,7 +1012,8 @@ which stage:
   threshold is the starting point Block D **extends** (not re-derives), and the 2–3 papers already
   read there count toward the 5–8
 - `gap-map.md` → seeds the Scratchbook Introduction section
-- `experiment-blueprint.md` → seeds the Scratchbook Methods and Results sections
-- `~/.arti/researcher-profile.md` → context for writing support and technical gap flags
-- `~/.arti/voice-profiles/<voice-slug>.md` → Stage 0 Voice Profile, if the researcher already has one
-- `~/.arti/idea-bank.md` → destination for the Publication Growth Log's closing entry, at Stage 8
+- `research-design.md` → seeds the Scratchbook Methods and Results sections
+- `~/.arti/memory/researcher-profile.md` → context for writing support and technical gap flags
+- `~/.arti/voice-profiles/<voice-slug>.md` (or `<slug>/` for a Path C multi-file corpus) → Stage 0 Voice Profile, if the researcher already has one
+- `~/.arti/voice-profiles/00-INDEX.md` → catalog of every existing Voice Profile, read by Stage 0's selection step when more than one exists
+- `~/.arti/memory/research-idea-bank.md` → destination for the Publication Growth Log's closing entry, at Stage 8

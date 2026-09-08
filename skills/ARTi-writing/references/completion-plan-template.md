@@ -1,12 +1,12 @@
 # Submission Completion Plan — template
 
-Output file: `writing\completion-plan.html`. This is the skill family's first non-Markdown output.
-**Self-contained rule, stated here because it has nowhere else to live:** the file must not
-reference any external asset (no CDN scripts, no external stylesheets, no external images) — copy
-this template's CSS inline and it will still render correctly if the file is opened alone, offline,
-years from now.
+Output: `writing\completion-plan.md` (source of truth, hand-maintained) rendered to
+`writing\completion-plan.pdf` via the shared Markdown→A4-PDF pipeline documented in
+`~/.arti/tools/arti-pdf/README.md`. Do not hand-roll a self-contained HTML file for this — the pipeline
+already handles the print CSS (A4 page size, `break-inside: avoid` per phase, `print-color-adjust:
+exact`, sized checkbox glyphs); this template only needs to specify the Markdown structure.
 
-**Hand-maintained, not generated.** Compile it once from `idea\experiment-blueprint.md`, the
+**Hand-maintained, not generated.** Compile it once from `idea\research-design.md`, the
 Manuscript Blueprint, Journal Profile Blocks A/B, and the open `- [ ]` items in
 `memory\todo-list.md` — then the researcher (or Claude, on request) edits it by hand as scope
 firms up. It does not regenerate from `todo-list.md` on a schedule; the two artifacts have a
@@ -14,73 +14,88 @@ deliberate division of labour:
 
 | Artifact | Scope | Update cadence |
 |---|---|---|
-| `completion-plan.html` | frozen full scope to submission-ready | only when scope genuinely changes |
-| `memory\todo-list.md` | living session-to-session working state | every session |
+| `completion-plan.md`/`.pdf` | frozen full scope to submission-ready | only when scope genuinely changes — re-render the PDF after each hand edit |
+| `memory\todo-list.md` + `memory\status.md` | living session-to-session working state (checklist + narrative) | every session |
 
-**Density target:** one side of one printed sheet (A4). If content doesn't fit, cut detail, not
-sections — every phase below should survive in at least skeleton form.
+**Density target:** fits compactly — no hard page-count limit, let content decide. Use real
+`☐`/`☑` glyphs directly in the Markdown cells (not `- [ ]` task-list syntax or HTML checkbox
+inputs — see `~/.arti/tools/arti-pdf/README.md` for why).
 
-**Required CSS properties** (bake these into the `<style>` block, don't rely on browser defaults):
-- `@media print { @page { size: A4; margin: 12mm; } }`
-- `break-inside: avoid` on each phase group, so a group doesn't split across a page edge
-- `print-color-adjust: exact` (and `-webkit-print-color-adjust: exact`) so phase-group background
-  tints actually print instead of being dropped to white
-- Checkbox glyphs sized for a pen — a real `☐`/`☑` character or a bordered `<span>` box at least
-  ~4mm square when printed, not a tiny native `<input type=checkbox>`
+## Precondition — Blueprint completeness gate
+
+Before compiling this document, read the Manuscript Blueprint end-to-end. Every top-level section
+(Introduction, Materials & Methods, Results & Discussion, Conclusion) must carry an explicit
+figure/table decision — a specific display item, or an explicit "no display items needed" call,
+never silence. If any section's decision is missing, **stop** and ask the researcher to decide it
+in the Blueprint's Revision Notes first; do not compile the Figures & Tables Inventory around a
+silent gap.
 
 ## Structure
 
-```html
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Completion Plan — [Paper Title]</title>
-<style>
-  /* screen + print styles inline here — see required properties above */
-</style>
-</head>
-<body>
+```markdown
+# [Paper Title] — Completion Plan
 
-<h1>[Paper Title] — Completion Plan</h1>
-<p><em>Frozen [YYYY-MM-DD]. Update only when scope genuinely changes — see memory/todo-list.md for
-session-to-session state.</em></p>
+*Frozen [YYYY-MM-DD]. Update only when scope genuinely changes — see memory/status.md for
+session-to-session state.*
 
-<section class="phase">
-  <h2>1. Data Collection</h2>
-  <!-- ☐ one line per data-collection task, with target date/instrument if known -->
-</section>
+## 1. Data Collection
 
-<section class="phase">
-  <h2>2. Analysis Plan (per hypothesis)</h2>
-  <!-- ☐ one line per hypothesis: test/analysis to run, tool, expected output -->
-</section>
+| # | Item | Status |
+|---|---|:---:|
+| 1.1 | [one row per data-collection task, with target date/instrument if known] | ☐ |
 
-<section class="phase">
-  <h2>3. Figures &amp; Tables Inventory</h2>
-  <!-- table: # | description | status (create / redraw / verify) -->
-</section>
+## 2. Analysis Plan (per hypothesis)
 
-<section class="phase">
-  <h2>4. Remaining Manuscript Sections</h2>
-  <!-- ☐ one line per section/subsection still to draft -->
-</section>
+| # | Item | Status |
+|---|---|:---:|
+| 2.1 | [test/analysis to run, tool, expected output — one row per hypothesis] | ☐ |
 
-<section class="phase">
-  <h2>5. Pre-Submission Checks</h2>
-  <!-- ☐ journal allowances (word/figure/table limits) ☐ reference verification ☐ IRB/ethics -->
-</section>
+## 3. Figures & Tables Inventory
 
-<section class="phase">
-  <h2>6. Submission Package</h2>
-  <!-- ☐ cover letter ☐ manuscript file ☐ figures as separate files ☐ supplementary ☐ author forms -->
-</section>
+| # | Description | Status |
+|---|---|:---:|
+| 3.1 | [display item] | [create / redraw / verify] |
 
-</body>
-</html>
+## 4. Remaining Manuscript Sections
+
+| # | Item | Status |
+|---|---|:---:|
+| 4.1 | [section/subsection still to draft] | ☐ |
+
+## 5. Pre-Submission Checks
+
+| # | Item | Status |
+|---|---|:---:|
+| 5.1 | Journal allowances (word/figure/table limits) | ☐ |
+| 5.2 | Reference verification | ☐ |
+| 5.3 | IRB/ethics | ☐ |
+
+## 6. Submission Package
+
+| # | Item | Status |
+|---|---|:---:|
+| 6.1 | Cover letter | ☐ |
+| 6.2 | Manuscript file (render with arti-docx — see below) | ☐ |
+| 6.3 | Figures as separate files | ☐ |
+| 6.4 | Supplementary | ☐ |
+| 6.5 | Author forms | ☐ |
 ```
+
+Render with:
+```
+python ~/.arti/tools/arti-pdf/render.py --md writing\completion-plan.md --out-dir writing
+```
+
+**Item 6.2, Manuscript file:** render `writing\manuscript_draft[N]_[date].md` to `.docx` with
+`arti-docx` (`~/.arti/tools/arti-docx/`), the same "Markdown is truth, docx is a rebuilt snapshot"
+philosophy as this plan's own PDF pipeline:
+```
+"~/.arti/python/python.exe" "~/.arti/tools/arti-docx/render.py" --md writing\manuscript_draft[N]_[date].md --template writing\manuscript-template.docx --out writing\manuscript_draft[N]_[date].docx
+```
+`--template` defaults to ARTi's shared academic template if the project has not saved its own
+`writing\manuscript-template.docx` house-style copy yet.
 
 ## Change log
 Keep this template's own history to a one-line-per-date list if it is ever revised; do not
 document individual project plans here — those live in each project's own
-`writing\completion-plan.html`.
+`writing\completion-plan.md`.

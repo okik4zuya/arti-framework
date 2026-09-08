@@ -1,5 +1,5 @@
 # Researcher Profile
-**File location:** `~/.arti/researcher-profile.md` (persistent, cross-project — not inside any
+**File location:** `~/.arti/memory/researcher-profile.md` (persistent, cross-project — not inside any
 single project folder)
 **Date Created:** [YYYY-MM-DD]
 **Last Updated:** [YYYY-MM-DD]
@@ -130,7 +130,7 @@ For each technique, rate your independence level:
 ## I. Positioning Line
 
 > Not filled at profile creation. Written automatically by Claude the first time an entry is
-> ever appended to `~/.arti/idea-bank.md` — combining that entry with the rest of this profile.
+> ever appended to `~/.arti/memory/research-idea-bank.md` — combining that entry with the rest of this profile.
 > Revised only if the researcher explicitly asks.
 
 **Positioning Line:** [One sentence capturing the researcher's standing thematic axis —

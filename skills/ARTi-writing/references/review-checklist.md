@@ -70,6 +70,15 @@ Check each item and note any issues found.
 
 ## H. Overall Quality
 - [ ] Writing is clear, concise, and precise throughout
+- [ ] No signposting filler ("Note that…", "Firstly/secondly" scaffolding, restating what a
+      sentence just showed) — cut on sight rather than left for a later compression pass
+- [ ] No prose restates in full what an adjacent table or figure already states — point to the
+      display item instead
+- [ ] No sentence elaborates on a claim without a citation, statistic, or Scratchbook data backing
+      it — unsupported color/plausible-sounding asides are cut or flagged `[SOURCE NEEDED]`, not
+      written up at length
+- [ ] Every citation and stated figure/statistic present before this review is still present now
+      (a concision edit must never have thinned the evidence, only the elaboration around it)
 - [ ] No undefined abbreviations on first use
 - [ ] Consistent terminology across all sections
 - [ ] No grammatical or typographical errors

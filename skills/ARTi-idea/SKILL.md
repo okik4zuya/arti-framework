@@ -41,12 +41,12 @@ project without being rebuilt or duplicated.
 - Prior publications and established methods (to avoid self-plagiarism risk)
 - Language and writing support available
 - **Positioning Line** — one sentence capturing the researcher's standing thematic axis;
-  written automatically once the first Idea Bank entry exists (see Stage 3)
+  written automatically once the first Research Idea Bank entry exists (see Stage 3)
 
 **When to create:** At Stage 0, before any other document — but only if it doesn't already exist
 in `~/.arti/`. Claude must ask the researcher directly for each field — do not assume or infer.
 
-**File:** `~/.arti/researcher-profile.md`
+**File:** `~/.arti/memory/researcher-profile.md`
 
 ---
 
@@ -120,9 +120,11 @@ go through Novelty Scoring before a decision is made.
 
 ---
 
-### 4. Experiment Blueprint
-A feasibility-checked experiment design for the confirmed research idea. Every proposed
-technique and method is cross-referenced against the Researcher Profile. Unfeasible
+### 4. Research Design
+A feasibility-checked experiment design for the confirmed research idea, framed as the guide that
+locks the study *before* data collection begins — finalizing hypotheses, methods, and analysis
+plan early is what keeps major changes and unpredictable problems from surfacing mid-study. Every
+proposed technique and method is cross-referenced against the Researcher Profile. Unfeasible
 elements are flagged and alternatives proposed.
 
 **Structure:**
@@ -162,7 +164,12 @@ elements are flagged and alternatives proposed.
 collaborative stage — Claude proposes, researcher confirms or adjusts based on actual
 lab knowledge.
 
-**File:** `experiment-blueprint.md`
+**Closing step — print it.** Once feasibility flags are resolved and the design is confirmed,
+render `research-design.md` → `research-design.pdf` (A4, via the shared pipeline documented in
+`~/.arti/tools/arti-pdf/README.md`) as the printed reference the researcher keeps at hand during execution.
+See `references/research-design-template.md` for the print-specific requirements.
+
+**File:** `research-design.md`
 
 ---
 
@@ -219,7 +226,7 @@ no papers were read for them.)
 in ARTi-writing.]
 ```
 
-**When to create:** After the Experiment Blueprint is stable. Uses 2–3 papers for the top two
+**When to create:** After the Research Design is stable. Uses 2–3 papers for the top two
 candidates only — enough to assess novelty threshold and scope fit, not a full style
 extraction (that happens in ARTi-writing).
 
@@ -227,10 +234,12 @@ extraction (that happens in ARTi-writing).
 
 ---
 
-### 6. Idea Bank
-A persistent, cross-project backlog of ideas that cleared novelty scoring but didn't become the
-confirmed idea for their originating project. Lives in the researcher's `~/.arti` folder (see
-Stage 0), not any single project folder, so it accumulates across every future topic.
+### 6. Research Idea Bank
+A persistent, cross-project backlog of research/paper-topic ideas that cleared novelty scoring but
+didn't become the confirmed idea for their originating project. Lives in the researcher's `~/.arti`
+folder (see Stage 0), not any single project folder, so it accumulates across every future topic.
+Scoped to research ideas only — for framework/skill ideas or general cross-project raw ideas, see
+`~/.arti/wdyt/idea-index.md` instead.
 
 **Structure per entry:**
 ```
@@ -245,10 +254,10 @@ Stage 0), not any single project folder, so it accumulates across every future t
 **When an entry is added:** Automatically, whenever an idea clears Meaningful-or-above on the
 Idea Canvas (Stage 3) but is not the one selected to advance. Never discarded silently.
 
-**When it's read:** At the start of every new Gap Map (Stage 2), Claude checks the Idea Bank
-first and surfaces any parked ideas relevant to the new topic before generating fresh ones.
+**When it's read:** At the start of every new Gap Map (Stage 2), Claude checks the Research Idea
+Bank first and surfaces any parked ideas relevant to the new topic before generating fresh ones.
 
-**File:** `~/.arti/idea-bank.md`
+**File:** `~/.arti/memory/research-idea-bank.md`
 
 ---
 
@@ -295,7 +304,7 @@ After scoring all three dimensions, assign a composite label:
 
 ### Novelty Ceiling
 Before scoring, **read** the researcher's Novelty Ceiling from Section H of the Researcher
-Profile (`~/.arti/researcher-profile.md`). `ARTi-setup` derives it once, at profile creation —
+Profile (`~/.arti/memory/researcher-profile.md`). `ARTi-setup` derives it once, at profile creation —
 downstream stages read it and must not re-derive it. What Section H records:
 
 - **C ceiling:** Limited by domain expertise and literature depth. A researcher with
@@ -324,7 +333,7 @@ Score-5 ideas are only advanced if the Researcher Profile explicitly supports th
 ```
 [Stage 0: Persistent ~/.arti Folder] → [Researcher Profile] → [Gap Map] → [Idea Canvas + Novelty Scoring]
                                                                                 ↓
-                                                                   [Experiment Blueprint]
+                                                                   [Research Design]
                                                                                 ↓
                                                                    [Journal Target Sheet]
                                                                                 ↓
@@ -338,12 +347,12 @@ Score-5 ideas are only advanced if the Researcher Profile explicitly supports th
 Runs once per researcher, not once per project. The persistent ARTi data folder is the fixed path
 `~/.arti` (`C:\Users\<user>\.arti\` on Windows, `~/.arti` on Mac/Linux) — same on every machine,
 never asked about or confirmed with the researcher (this used to be a per-researcher Drive-folder
-question; it isn't anymore). If `~/.arti/researcher-profile.md` doesn't exist yet, run the
+question; it isn't anymore). If `~/.arti/memory/researcher-profile.md` doesn't exist yet, run the
 `ARTi-setup` skill's Workflow A instead of duplicating that logic here.
 
-- If `~/.arti/researcher-profile.md` already exists, load and reuse it — skip re-asking all
+- If `~/.arti/memory/researcher-profile.md` already exists, load and reuse it — skip re-asking all
   Stage 1 fields, only confirm nothing has changed.
-- `~/.arti` also holds: `idea-bank.md`, `journal-library\<journal-slug>.md` per journal, and
+- `~/.arti` also holds: `research-idea-bank.md`, `journal-library\<journal-slug>.md` per journal, and
   `progress-index.md` — all described under their relevant document/stage below.
 
 ---
@@ -366,7 +375,7 @@ question; it isn't anymore). If `~/.arti/researcher-profile.md` doesn't exist ye
 ---
 
 ### Stage 2: Gap Map Construction
-- Before generating anything new, Claude checks `~/.arti/idea-bank.md` for parked ideas relevant
+- Before generating anything new, Claude checks `~/.arti/memory/research-idea-bank.md` for parked ideas relevant
   to this topic and surfaces them to the researcher first
 - The researcher feeds literature: papers, summaries, or notes
 - Claude identifies which gaps are Conceptual, Methodological, or Empirical
@@ -398,27 +407,30 @@ better foundation than three thin ones. More gaps are welcome, but not required 
 When multiple ideas are viable, rank them and ask the researcher to select one
 before proceeding to Stage 4.
 
-**Idea Bank auto-park:** Any idea that clears Meaningful-or-above but is not the one selected to
-advance is automatically appended to `~/.arti/idea-bank.md` — never silently discarded. Record
-idea text, C/M/E score, composite label, date, source project, and reason parked (lost selection
-vs. explicitly deferred by the researcher).
+**Research Idea Bank auto-park:** Any idea that clears Meaningful-or-above but is not the one
+selected to advance is automatically appended to `~/.arti/memory/research-idea-bank.md` — never
+silently discarded. Record idea text, C/M/E score, composite label, date, source project, and
+reason parked (lost selection vs. explicitly deferred by the researcher).
 
-**Positioning Line trigger:** The first time an Idea Bank entry is ever written (i.e., the first
+**Positioning Line trigger:** The first time a Research Idea Bank entry is ever written (i.e., the first
 time the paragraph above fires for this researcher), Claude also writes a one-sentence
-"Positioning Line" into `~/.arti/researcher-profile.md`, capturing the researcher's standing
+"Positioning Line" into `~/.arti/memory/researcher-profile.md`, capturing the researcher's standing
 thematic axis from that entry plus the rest of the Researcher Profile. This only happens once
 unless the researcher asks to revise it.
 
 ---
 
-### Stage 4: Experiment Blueprint
+### Stage 4: Research Design
 - Claude proposes the experiment design based on the confirmed idea
 - Every technique is checked against the Researcher Profile
 - Feasibility flags are assigned: 🔴 🟡 🟢
 - 🔴 flags must be resolved (via collaboration, alternative technique, or scope change)
-  before the blueprint is finalized
+  before the design is finalized
 - Claude must confirm that the experiment as designed actually produces the data
   needed to support the novelty claim — if not, revise the design or revise the score
+- Once finalized, render `research-design.md` → `research-design.pdf` via the shared
+  `~/.arti/tools/arti-pdf/README.md` pipeline — this is the frozen reference the researcher keeps at hand
+  during execution
 
 ---
 
@@ -509,13 +521,13 @@ decision exist. **Copy the decisions, point at the content.**
 | Source file | Feeds |
 |---|---|
 | `idea\gap-map.md` | Scratchbook — Introduction section |
-| `idea\experiment-blueprint.md` | Scratchbook — Methods + Results structure |
+| `idea\research-design.md` | Scratchbook — Methods + Results structure |
 | `idea\journal-target-sheet.md` | Journal Profile Block A + Block D threshold |
 | `idea\idea-canvas.md` | Title, Abstract framing, Introduction gap statement; Block D |
-| `~/.arti/researcher-profile.md` | Writing support context and technical gap flags |
+| `~/.arti/memory/researcher-profile.md` | Writing support context and technical gap flags |
 ```
 
-**Progress index cadence:** upsert this project's row in `~/.arti/progress-index.md` here, at the
+**Progress index cadence:** upsert this project's row in `~/.arti/memory/progress-index.md` here, at the
 phase boundary — status "idea complete / handed off". The index is updated at phase boundaries
 only (idea complete → writing started → submitted), not once per stage.
 
@@ -534,14 +546,14 @@ them through a Gap Map, five ideas, and five journals only to land where they st
 fastest way to get this workflow abandoned.
 
 If the idea and the journal are already settled:
-- Enter at **Stage 4 (Experiment Blueprint)** here, and at the **Journal Profile** in ARTi-writing
+- Enter at **Stage 4 (Research Design)** here, and at the **Journal Profile** in ARTi-writing
 - Build the Gap Map **retroactively**, as the Scratchbook's Introduction section — which is where
   it was always headed anyway
 - Skip Stages 2, 3's idea generation, and 5's ranking; record the already-chosen journal directly
   on the Journal Target Sheet with the reason it was chosen
 
 **Two prerequisites are not skippable:**
-1. The **Researcher Profile** (`~/.arti/researcher-profile.md`), including its Section H Novelty
+1. The **Researcher Profile** (`~/.arti/memory/researcher-profile.md`), including its Section H Novelty
    Ceiling — without it there is no basis for any feasibility judgment
 2. The **C/M/E score** for the settled idea — without it there is no basis for journal fit
 
@@ -560,7 +572,7 @@ idea on the Idea Canvas even when there are no competitors to compare it against
    before a decision is made.
 4. **Ceiling is a redesign trigger, not a rejection** — when an idea exceeds the ceiling,
    propose a redesign rather than discarding the idea.
-5. **Feasibility is non-negotiable** — a 🔴 flag in the Experiment Blueprint must be
+5. **Feasibility is non-negotiable** — a 🔴 flag in the Research Design must be
    resolved before the workflow advances.
 6. **Light journal analysis here, deep analysis in writing** — do not perform full
    Block B/C extraction at this stage. Save that effort for the committed journal.
@@ -589,12 +601,12 @@ idea on the Idea Canvas even when there are no competitors to compare it against
 - `references/novelty-scoring-guide.md` — detailed scoring rubric with examples
 - `references/journal-target-sheet-template.md` — blank Journal Target Sheet (target +
   fallback decision record, including the two-row Journal Comparison Table)
-- `references/idea-bank-template.md` — blank Idea Bank entry shape (`~/.arti/idea-bank.md`)
+- `references/research-idea-bank-template.md` — blank Research Idea Bank entry shape (`~/.arti/memory/research-idea-bank.md`)
 - `references/predatory-journal-screen.md` — conditional screen: full checklist for unfamiliar
   journals, recorded auto-pass for Scopus Q1–Q2 journals the group already publishes in
 - `references/journal-library-template.md` — cached per-journal entry shape
   (`~/.arti/journal-library/<journal-slug>.md`)
 - `references/progress-index-template.md` — cross-project dashboard row shape
-  (`~/.arti/progress-index.md`)
+  (`~/.arti/memory/progress-index.md`)
 
 Read the relevant reference file before starting any stage.

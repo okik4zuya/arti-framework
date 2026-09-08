@@ -1,7 +1,10 @@
-# Idea Bank
+# Research Idea Bank
 
-**File location:** `~/.arti/idea-bank.md` (persistent, cross-project — not inside any single
-project folder)
+**Scope:** research/paper-topic ideas only. For framework/skill ideas or general cross-project raw
+ideas, see `~/.arti/wdyt/idea-index.md` instead.
+
+**File location:** `~/.arti/memory/research-idea-bank.md` (persistent, cross-project — not inside
+any single project folder)
 
 > Auto-populated. Any idea that clears Meaningful-or-above on the Idea Canvas (Stage 3) but is
 > not the one selected to advance is appended here automatically — never silently discarded.

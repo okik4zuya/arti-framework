@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARTi Framework</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23f7f8fa'/%3E%3Cpath d='M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50' fill='none' stroke='%23475569' stroke-width='19' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='103' cy='34' r='16' fill='%232563eb'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#f7f8fa; --surface:#ffffff; --surface-2:#f1f3f6; --border:#e3e6eb;
+    --text:#1a1d23; --text-muted:#697182;
+    --accent:#2563eb; --accent-soft:#e8f0fe;
+    --amber:#b45309; --amber-soft:#fdf2e3;
+    --slate:#475569; --slate-soft:#eef1f6;
+    --red:#dc2626; --red-soft:#fdecec;
+    --green:#15803d; --green-soft:#e8f7ee;
+    --shadow: 0 1px 2px rgba(16,24,40,0.05);
+    color-scheme: light;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Inter",system-ui,sans-serif;
+    font-size:15.5px; line-height:1.55;
+  }
+  ::selection{ background:var(--accent-soft); }
+  .wrap{ max-width:1240px; margin:0 auto; padding:32px 36px 48px; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-bottom:28px;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand .mark{
+    display:inline-block; width:34px; height:34px; border-radius:8px;
+    background:var(--surface-2); flex:none;
+  }
+  h1{
+    font-family:"Inter",system-ui,sans-serif; font-size:26px; font-weight:700;
+    letter-spacing:-0.01em; margin:0;
+  }
+  .tag{ color:var(--text-muted); font-size:14px; }
+
+  .cat-badge{
+    display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
+    padding:4px 12px; border-radius:20px; white-space:nowrap;
+  }
+  .cat-badge.cat-paper{ color:var(--accent); background:var(--accent-soft); }
+  .cat-badge.cat-project{ color:var(--slate); background:var(--slate-soft); }
+  .cat-badge.cat-other{ color:var(--amber); background:var(--amber-soft); }
+
+  .tags-line{ font-size:13px; color:var(--text-muted); margin-top:3px; }
+
+  .filter-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .search-input{
+    font-family:inherit; font-size:14px; padding:9px 14px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface); color:var(--text); min-width:200px;
+  }
+  .search-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{
+    font-family:"Inter",system-ui,sans-serif; font-size:13px; font-weight:500; padding:6px 14px;
+    border-radius:20px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); cursor:pointer; white-space:nowrap;
+  }
+  .chip:hover{ border-color:var(--accent); color:var(--accent); }
+  .chip.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .sort-select{
+    font-family:"Inter",system-ui,sans-serif; font-size:13px; padding:9px 12px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface); color:var(--text);
+  }
+
+  .stats-strip{ display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
+  .stat{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); padding:16px 20px; flex:1; min-width:160px;
+  }
+  .stat .n{ font-family:"Inter",system-ui,sans-serif; font-size:28px; font-weight:700; }
+  .stat .l{ font-size:13px; color:var(--text-muted); margin-top:2px; }
+
+  .launcher{ display:flex; gap:14px; margin-bottom:26px; flex-wrap:wrap; }
+  .launch-btn{
+    flex:1; min-width:240px; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; box-shadow:var(--shadow);
+    padding:20px; text-align:left; cursor:pointer; font-family:inherit; color:var(--text);
+    transition:border-color .12s ease, box-shadow .12s ease, transform .06s ease;
+  }
+  .launch-btn:hover{ border-color:var(--accent); box-shadow:0 4px 12px rgba(37,99,235,0.10); }
+  .launch-btn:active{ transform:translateY(1px); box-shadow:none; }
+  .launch-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .launch-btn.primary{ border-color:var(--accent); background:var(--accent-soft); }
+  .launch-btn.primary .lt{ color:var(--accent); }
+  .launch-btn .lt{ font-family:"Inter",system-ui,sans-serif; font-size:16px; font-weight:600; }
+  .launch-btn .ld{ font-size:13.5px; color:var(--text-muted); margin-top:6px; line-height:1.5; }
+
+  .col{ display:flex; flex-direction:column; gap:20px; }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap;
+  }
+  .panel-title{
+    font-family:"Inter",system-ui,sans-serif; font-size:16px; font-weight:600;
+    color:var(--text);
+    display:flex; align-items:center; gap:9px;
+  }
+  .count-badge{
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--accent);
+    background:var(--accent-soft); padding:2px 9px; border-radius:20px;
+  }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th{
+    text-align:left; font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600;
+    color:var(--text-muted);
+    padding:11px 20px; border-bottom:1px solid var(--border);
+  }
+  td{ padding:14px 20px; border-top:1px solid var(--border); vertical-align:top; }
+  .substage{ font-size:12.5px; color:var(--text-muted); margin-top:3px; }
+  tr:first-child td{ border-top:none; }
+  .row-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .icon-btn{
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:500; padding:6px 12px;
+    border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); text-decoration:none; cursor:pointer; white-space:nowrap;
+    transition:background-color .1s ease, border-color .1s ease, color .1s ease, transform .06s ease;
+  }
+  .icon-btn:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .icon-btn:active{ transform:translateY(1px); }
+  .icon-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .icon-btn.primary{
+    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;
+  }
+  .icon-btn.primary:hover{ background:var(--accent); color:#fff; opacity:0.88; }
+  .icon-btn.info{
+    background:var(--slate); border-color:var(--slate); color:#fff; font-weight:600;
+  }
+  .icon-btn.info:hover{ background:var(--slate); color:#fff; opacity:0.88; }
+  .empty{ padding:36px 20px; text-align:center; color:var(--text-muted); font-size:14px; }
+
+  .proj-list{ max-height:360px; overflow-y:auto; }
+  .proj-list thead th{ position:sticky; top:0; background:var(--surface); z-index:1; }
+  .proj-updated{ white-space:nowrap; }
+  .stale-badge{ display:inline-block; margin-top:3px; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:600; background:var(--amber-soft); color:var(--amber); }
+  .lifecycle-tag{
+    display:inline-block; font-size:11px; font-weight:600; color:var(--text-muted);
+    background:var(--surface-2); padding:2px 8px; border-radius:20px; margin-left:8px;
+  }
+  .archived-toggle{
+    display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted);
+    cursor:pointer; white-space:nowrap;
+  }
+  .row-menu{ position:relative; display:inline-block; }
+  .menu-toggle{
+    font-family:"Inter",system-ui,sans-serif; font-size:15px; font-weight:700; line-height:1;
+    padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); cursor:pointer;
+  }
+  .menu-toggle:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .menu-dropdown{
+    position:absolute; top:calc(100% + 4px); right:0; min-width:150px; background:var(--surface);
+    border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 20px rgba(16,24,40,0.16);
+    z-index:5; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .menu-dropdown[hidden]{ display:none; }
+  .menu-dropdown button{
+    font-family:"Inter",system-ui,sans-serif; font-size:13px; font-weight:500; text-align:left;
+    padding:9px 14px; border:none; background:none; color:var(--text); cursor:pointer; white-space:nowrap;
+  }
+  .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
+
+  .idea-list{ max-height:360px; overflow-y:auto; }
+  .idea-row{ padding:16px 20px; border-top:1px solid var(--border); }
+  .idea-row:first-child{ border-top:none; }
+  .idea-title{ font-weight:600; font-size:15px; }
+  .idea-text{ font-size:14px; color:var(--text-muted); margin-top:5px; }
+  .idea-meta{
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text-muted);
+  }
+  .idea-score{ background:var(--accent-soft); color:var(--accent); padding:2px 8px; border-radius:20px; }
+
+  .sess-list{ max-height:320px; overflow-y:auto; }
+  .sess-row{
+    padding:12px 20px; border-top:1px solid var(--border); font-size:14px;
+    display:flex; justify-content:space-between; gap:10px;
+  }
+  .sess-row:first-child{ border-top:none; }
+  .sess-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sess-date{ font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text-muted); flex:none; }
+
+  footer{ margin-top:28px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  footer .note{ font-size:13px; color:var(--text-muted); font-family:"Inter",system-ui,sans-serif; }
+  .btn{
+    font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600;
+    background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px;
+    padding:10px 16px; cursor:pointer; transition:border-color .1s ease, opacity .1s ease, transform .06s ease;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn:active{ transform:translateY(1px); }
+  .btn.danger:hover{ border-color:var(--red); color:var(--red); }
+  .btn.primary{ background:var(--accent); color:#fff; border:none; }
+  .btn.primary:hover{ opacity:0.88; border-color:transparent; }
+  .btn.outline-primary{ background:transparent; border-color:var(--accent); color:var(--accent); }
+  .btn.outline-primary:hover{ background:var(--accent-soft); opacity:1; }
+  .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .btn:disabled{ cursor:default; opacity:0.6; transform:none; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(16,24,40,0.4); display:flex;
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay[hidden]{ display:none; }
+  .modal{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:0 12px 32px rgba(16,24,40,0.16); width:100%; max-width:460px; overflow:hidden;
+  }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--border);
+  }
+  .modal-head h2{ margin:0; font-size:16px; font-family:"Inter",system-ui,sans-serif; font-weight:600; }
+  .modal-close{ background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; }
+  .modal-close:hover{ color:var(--text); }
+  .modal-body{ padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
+  .modal-body input{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+    background:var(--surface); color:var(--text); font-family:inherit; font-size:14px;
+  }
+  .path-row{ display:flex; gap:8px; }
+  .path-row input{ flex:1; }
+  .hint{ font-size:12.5px; color:var(--text-muted); }
+  .toggle-row{ display:flex; gap:8px; }
+  .toggle-row button{
+    flex:1; font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600; padding:9px 12px;
+    border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    cursor:pointer;
+  }
+  .toggle-row button.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .modal-actions{ display:flex; gap:8px; padding:0 20px 18px; justify-content:flex-end; }
+  .err{ font-size:13px; color:var(--red); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 160 160" aria-hidden="true">
+        <rect width="160" height="160" rx="36" fill="var(--surface-2)" />
+        <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+              fill="none" stroke="var(--slate)" stroke-width="19"
+              stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="103" cy="34" r="16" fill="var(--accent)" />
+      </svg>
+      <h1>ARTi Framework</h1>
+      <span class="tag">— project launcher &amp; research state (local only)</span>
+    </div>
+  </header>
+
+  <div class="stats-strip">
+    <div class="stat"><div class="n" id="statPipeline">0</div><div class="l">Active</div></div>
+    <div class="stat"><div class="n" id="statIdeas">0</div><div class="l">Ideas</div></div>
+    <div class="stat"><div class="n" id="statSessions">0</div><div class="l">Recent sessions</div></div>
+  </div>
+
+  <div class="col">
+    <div class="panel">
+      <div class="panel-head">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div class="panel-title">Projects <span class="count-badge" id="projectsCount">0</span></div>
+          <button class="btn primary" id="openNewProject">New</button>
+          <button class="btn outline-primary" id="openExistingFolder">Convert From Folder</button>
+        </div>
+        <div class="filter-row">
+          <input class="search-input" id="projectSearch" placeholder="Search name or path…" />
+          <div class="chip-row" id="categoryChips"></div>
+          <select class="sort-select" id="projectSort">
+            <option value="recent">Recently opened</option>
+            <option value="name">Name</option>
+            <option value="added">Date added</option>
+          </select>
+          <label class="archived-toggle"><input type="checkbox" id="showArchivedToggle" /> Show archived</label>
+        </div>
+      </div>
+      <div class="proj-list">
+        <table id="projectsTable">
+          <thead>
+            <tr><th>Category</th><th>Name</th><th>Target / Status</th><th>Updated</th><th></th></tr>
+          </thead>
+          <tbody id="projectsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Idea Bank <span class="count-badge" id="ideaCount">0</span></div>
+      </div>
+      <div class="idea-list" id="ideaList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Recent Sessions <span class="count-badge" id="sessCount">0</span></div>
+      </div>
+      <div class="sess-list" id="sessList"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="note">served locally by <code>server/server.py</code> — nothing leaves this machine.</span>
+    <button class="btn danger" id="quitBtn">Quit Dashboard</button>
+  </footer>
+</div>
+
+<div class="modal-overlay" id="projectOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="projectModalTitle">New Project</h2>
+      <button class="modal-close" id="closeProjectModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="toggle-row" id="categoryToggleRow" hidden>
+        <button type="button" id="toggleCatPaper" class="active">Paper</button>
+        <button type="button" id="toggleCatGeneral">General</button>
+      </div>
+      <div id="nameField">
+        <input id="projName" placeholder="Project name" />
+      </div>
+      <div class="path-row">
+        <input id="projPath" placeholder="Full path" readonly />
+        <button class="btn" id="browseFolderBtn" type="button">Browse…</button>
+      </div>
+      <div id="categoryFields" hidden>
+        <input id="projCategory" placeholder="Category (e.g. Project, Other)" />
+        <input id="projTags" placeholder="Tags, comma-separated" style="margin-top:8px;" />
+      </div>
+      <div class="hint" id="projectHint">Browse opens a native folder picker. This is the parent folder the new project subfolder will be created in.</div>
+      <div class="err" id="projectErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="projectConfirmBtn">Create &amp; Open</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="quitOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Quit Dashboard?</h2>
+      <button class="modal-close" id="closeQuitModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint">This stops the local server. You can restart it anytime from the desktop icon.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelQuitBtn">Cancel</button>
+      <button class="btn danger" id="confirmQuitBtn">Quit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var API = "/api";
+  var mode = "new"; // "new" | "existing" | "idea"
+  var newProjectCategory = "Paper"; // toggle state inside "new" mode
+
+  var allProjects = [];
+  var activeCategory = "All";
+  var searchQuery = "";
+  var sortBy = "recent";
+  var showArchived = false;
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function api(path, opts){
+    return fetch(API + path, opts).then(function(r){
+      return r.json().then(function(data){
+        if (!r.ok) throw new Error(data.error || ("request failed: " + path));
+        return data;
+      });
+    });
+  }
+
+  function loadAll(){
+    return api("/data").then(function(data){
+      renderStats(data.stats);
+      allProjects = data.projects;
+      renderCategoryChips();
+      renderProjects();
+      renderIdeaBank(data.ideaBank);
+      renderSessions(data.sessions);
+    });
+  }
+
+  function renderStats(stats){
+    document.getElementById("statPipeline").textContent = stats.pipelineCount;
+    document.getElementById("statIdeas").textContent = stats.ideaBankCount;
+    document.getElementById("statSessions").textContent = stats.sessionsCount;
+  }
+
+  function formatUpdated(s){
+    if (!s) return '—';
+    var m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(s);
+    if (m) return m[1] + ' ' + m[2];
+    return s;
+  }
+
+  function catClass(cat){
+    if (cat === "Paper") return "cat-paper";
+    if (cat === "Project") return "cat-project";
+    return "cat-other";
+  }
+
+  function renderCategoryChips(){
+    var cats = [];
+    allProjects.forEach(function(p){
+      if (cats.indexOf(p.category) === -1) cats.push(p.category);
+    });
+    cats.sort();
+    if (activeCategory !== "All" && cats.indexOf(activeCategory) === -1) activeCategory = "All";
+    var el = document.getElementById("categoryChips");
+    var all = ["All"].concat(cats);
+    el.innerHTML = all.map(function(c){
+      return '<button type="button" class="chip' + (c === activeCategory ? ' active' : '') + '" data-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '</button>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll(".chip"), function(btn){
+      btn.addEventListener("click", function(){
+        activeCategory = btn.getAttribute("data-cat");
+        renderCategoryChips();
+        renderProjects();
+      });
+    });
+  }
+
+  function filteredSortedProjects(){
+    var q = searchQuery.trim().toLowerCase();
+    var rows = allProjects.filter(function(p){
+      var lifecycle = p.lifecycle || "active";
+      if (lifecycle === "archived" && !showArchived) return false;
+      if (activeCategory !== "All" && p.category !== activeCategory) return false;
+      if (!q) return true;
+      return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
+    });
+    rows = rows.slice();
+    if (sortBy === "name"){
+      rows.sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
+    } else if (sortBy === "added"){
+      rows.sort(function(a, b){ return (b.addedAt || "").localeCompare(a.addedAt || ""); });
+    } else {
+      rows.sort(function(a, b){ return (b.lastOpenedAt || "").localeCompare(a.lastOpenedAt || ""); });
+    }
+    return rows;
+  }
+
+  function renderProjects(){
+    var rows = filteredSortedProjects();
+    document.getElementById("projectsCount").textContent = rows.length;
+    var body = document.getElementById("projectsBody");
+    if (!allProjects.length){
+      body.innerHTML = '<tr><td colspan="5"><div class="empty">No projects yet — use New Project or Add Project above.</div></td></tr>';
+      return;
+    }
+    if (!rows.length){
+      body.innerHTML = '<tr><td colspan="5"><div class="empty">No projects match this search/filter.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(r){
+      var badge = '<span class="cat-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span>';
+      var detail;
+      if (r.category === "Paper"){
+        var progress = r.progress && r.progress.total ? (r.progress.done + '/' + r.progress.total) : '—';
+        var substage = r.substage ? '<div class="substage">' + escapeHtml(r.substage) + ' · ' + escapeHtml(progress) + '</div>' : '';
+        detail = escapeHtml(r.journal || '—') + substage;
+      } else {
+        var tags = (r.tags || []).join(", ");
+        detail = tags ? '<div class="tags-line">' + escapeHtml(tags) + '</div>' : '<span class="tag">—</span>';
+      }
+      var updated = escapeHtml(formatUpdated(r.category === "Paper" ? r.updated : r.lastOpenedAt));
+      var staleBadge = r.stale ? '<span class="stale-badge" title="memory/todo-list.md has changed since this row\'s Last updated date">possibly stale</span>' : '';
+      var lifecycle = r.lifecycle || "active";
+      var doneTag = lifecycle === "complete" ? '<span class="lifecycle-tag">Done</span>' : '';
+      var lifecycleBtns;
+      if (lifecycle === "complete"){
+        lifecycleBtns =
+          '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Reopen</button>' +
+          '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
+      } else if (lifecycle === "archived"){
+        lifecycleBtns = '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Restore</button>';
+      } else {
+        lifecycleBtns =
+          '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="complete">Mark complete</button>' +
+          '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
+      }
+      return '<tr>' +
+        '<td>' + badge + '</td>' +
+        '<td title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag + '</td>' +
+        '<td>' + detail + '</td>' +
+        '<td class="proj-updated">' + updated + staleBadge + '</td>' +
+        '<td><div class="row-actions">' +
+          '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">Open folder</button>' +
+          '<button class="icon-btn info" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '">Open VS Code</button>' +
+          '<div class="row-menu">' +
+            '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
+            '<div class="menu-dropdown" hidden>' + lifecycleBtns + '</div>' +
+          '</div>' +
+        '</div></td>' +
+      '</tr>';
+    }).join("");
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="open-folder"]'), function(btn){
+      btn.addEventListener("click", function(){
+        api("/open-folder", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: btn.getAttribute("data-path") }) }).then(loadAll);
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="open-vscode"]'), function(btn){
+      btn.addEventListener("click", function(){
+        api("/open-vscode", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: btn.getAttribute("data-path") }) }).then(loadAll);
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="lifecycle"]'), function(btn){
+      btn.addEventListener("click", function(){
+        api("/projects/lifecycle", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: btn.getAttribute("data-path"), lifecycle: btn.getAttribute("data-lifecycle") }) }).then(loadAll);
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="row-menu-toggle"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = btn.nextElementSibling;
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+    });
+  }
+
+  function closeAllRowMenus(){
+    Array.prototype.forEach.call(document.querySelectorAll(".menu-dropdown"), function(d){ d.hidden = true; });
+  }
+  document.addEventListener("click", function(e){
+    if (!e.target.closest || !e.target.closest(".row-menu")) closeAllRowMenus();
+  });
+
+  document.getElementById("projectSearch").addEventListener("input", function(e){
+    searchQuery = e.target.value;
+    renderProjects();
+  });
+  document.getElementById("projectSort").addEventListener("change", function(e){
+    sortBy = e.target.value;
+    renderProjects();
+  });
+  document.getElementById("showArchivedToggle").addEventListener("change", function(e){
+    showArchived = e.target.checked;
+    renderProjects();
+  });
+
+  function renderIdeaBank(entries){
+    document.getElementById("ideaCount").textContent = entries.length;
+    var el = document.getElementById("ideaList");
+    if (!entries.length){
+      el.innerHTML = '<div class="empty">No parked ideas yet.</div>';
+      return;
+    }
+    el.innerHTML = entries.map(function(e){
+      return '<div class="idea-row">' +
+        '<div class="idea-title">' + escapeHtml(e.title) + '</div>' +
+        '<div class="idea-text">' + escapeHtml(e.ideaText) + '</div>' +
+        '<div class="idea-meta">' +
+          (e.noveltyScore ? '<span class="idea-score">' + escapeHtml(e.noveltyScore) + '</span>' : '') +
+          (e.dateParked ? '<span>parked ' + escapeHtml(e.dateParked) + '</span>' : '') +
+          (e.source ? '<span>' + escapeHtml(e.source) + '</span>' : '') +
+        '</div>' +
+        '<div class="row-actions" style="margin-top:8px;">' +
+          '<button class="icon-btn primary" data-role="convert-to-project" data-title="' + escapeHtml(e.title) + '">Convert to Project</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="convert-to-project"]'), function(btn){
+      btn.addEventListener("click", function(){
+        openProjectModal("idea", btn.getAttribute("data-title"));
+      });
+    });
+  }
+
+  function renderSessions(sessions){
+    document.getElementById("sessCount").textContent = sessions.length;
+    var el = document.getElementById("sessList");
+    if (!sessions.length){
+      el.innerHTML = '<div class="empty">No workflow sessions yet.</div>';
+      return;
+    }
+    el.innerHTML = sessions.map(function(s){
+      var d = s.mtime ? new Date(s.mtime * 1000).toISOString().slice(0,10) : "";
+      return '<div class="sess-row"><span class="sess-name" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</span><span class="sess-date">' + d + '</span></div>';
+    }).join("");
+  }
+
+  // ---- New Project / Open Existing Folder modal ----
+
+  var overlay = document.getElementById("projectOverlay");
+  var nameField = document.getElementById("nameField");
+  var projName = document.getElementById("projName");
+  var projPath = document.getElementById("projPath");
+  var projectErr = document.getElementById("projectErr");
+  var categoryToggleRow = document.getElementById("categoryToggleRow");
+  var categoryFields = document.getElementById("categoryFields");
+  var projCategory = document.getElementById("projCategory");
+  var projTags = document.getElementById("projTags");
+  var toggleCatPaper = document.getElementById("toggleCatPaper");
+  var toggleCatGeneral = document.getElementById("toggleCatGeneral");
+  var ideaTitle = null;
+
+  function setNewProjectCategory(cat){
+    newProjectCategory = cat;
+    toggleCatPaper.classList.toggle("active", cat === "Paper");
+    toggleCatGeneral.classList.toggle("active", cat === "General");
+    categoryFields.hidden = cat === "Paper";
+  }
+  toggleCatPaper.addEventListener("click", function(){ setNewProjectCategory("Paper"); });
+  toggleCatGeneral.addEventListener("click", function(){ setNewProjectCategory("General"); });
+
+  function openProjectModal(m, title){
+    mode = m;
+    ideaTitle = title || null;
+    projName.value = mode === "idea" ? (title || "") : "";
+    projPath.value = "";
+    projCategory.value = "";
+    projTags.value = "";
+    projectErr.hidden = true;
+    projName.placeholder = "Project name";
+    categoryToggleRow.hidden = true;
+    categoryFields.hidden = true;
+    if (mode === "new"){
+      document.getElementById("projectModalTitle").textContent = "New Project";
+      nameField.hidden = false;
+      categoryToggleRow.hidden = false;
+      setNewProjectCategory("Paper");
+      document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the parent folder the new project subfolder will be created in.";
+      document.getElementById("projectConfirmBtn").textContent = "Create & Open";
+    } else if (mode === "idea"){
+      document.getElementById("projectModalTitle").textContent = "Convert Idea to Project";
+      nameField.hidden = false;
+      document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the parent folder the new project subfolder will be created in. The idea's content seeds idea/idea-bank-entry.md and is removed from the idea bank.";
+      document.getElementById("projectConfirmBtn").textContent = "Create & Open";
+    } else {
+      document.getElementById("projectModalTitle").textContent = "Add Project";
+      nameField.hidden = false;
+      categoryFields.hidden = false;
+      projName.placeholder = "Label for dashboard (defaults to folder name)";
+      projCategory.placeholder = "Category (e.g. Project, Other)";
+      document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the folder itself. Nothing inside it is created or touched; this just adds it to the dashboard's project list and opens it in VS Code.";
+      document.getElementById("projectConfirmBtn").textContent = "Add & Open";
+    }
+    overlay.hidden = false;
+  }
+
+  document.getElementById("openNewProject").addEventListener("click", function(){ openProjectModal("new"); });
+  document.getElementById("openExistingFolder").addEventListener("click", function(){ openProjectModal("existing"); });
+  document.getElementById("closeProjectModal").addEventListener("click", function(){ overlay.hidden = true; });
+  overlay.addEventListener("click", function(e){ if (e.target === overlay) overlay.hidden = true; });
+
+  document.getElementById("browseFolderBtn").addEventListener("click", function(){
+    var btn = this;
+    btn.textContent = "Waiting…";
+    btn.disabled = true;
+    projectErr.hidden = true;
+    api("/browse-folder", { method:"POST" }).then(function(data){
+      if (data.path) projPath.value = data.path;
+    }).catch(function(err){
+      projectErr.textContent = err.message + " — paste the path directly instead.";
+      projectErr.hidden = false;
+      projPath.readOnly = false;
+    }).finally(function(){
+      btn.textContent = "Browse…";
+      btn.disabled = false;
+    });
+  });
+
+  document.getElementById("projectConfirmBtn").addEventListener("click", function(){
+    var path = projPath.value.trim();
+    if (!path) return;
+    projectErr.hidden = true;
+    function parseTags(s){
+      return s.split(",").map(function(t){ return t.trim(); }).filter(Boolean);
+    }
+    if (mode === "new"){
+      var name = projName.value.trim();
+      if (!name) return;
+      var body = { parentPath: path, name: name, category: newProjectCategory };
+      if (newProjectCategory !== "Paper"){
+        body.category = projCategory.value.trim() || "Project";
+        body.tags = parseTags(projTags.value);
+      }
+      api("/new-project", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) }).then(function(){
+        overlay.hidden = true;
+        loadAll();
+      }).catch(function(err){
+        projectErr.textContent = err.message;
+        projectErr.hidden = false;
+      });
+    } else if (mode === "idea"){
+      var ideaName = projName.value.trim();
+      if (!ideaName) return;
+      api("/idea-to-project", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ parentPath: path, name: ideaName, title: ideaTitle }) }).then(function(){
+        overlay.hidden = true;
+        loadAll();
+      }).catch(function(err){
+        projectErr.textContent = err.message;
+        projectErr.hidden = false;
+      });
+    } else {
+      var label = projName.value.trim();
+      api("/projects/register", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: label, category: projCategory.value.trim() || "Other", tags: parseTags(projTags.value) }) }).then(function(){
+        overlay.hidden = true;
+        loadAll();
+      }).catch(function(err){
+        projectErr.textContent = err.message;
+        projectErr.hidden = false;
+      });
+    }
+  });
+
+  // ---- Quit Dashboard ----
+
+  var quitOverlay = document.getElementById("quitOverlay");
+  document.getElementById("quitBtn").addEventListener("click", function(){ quitOverlay.hidden = false; });
+  document.getElementById("closeQuitModal").addEventListener("click", function(){ quitOverlay.hidden = true; });
+  document.getElementById("cancelQuitBtn").addEventListener("click", function(){ quitOverlay.hidden = true; });
+  quitOverlay.addEventListener("click", function(e){ if (e.target === quitOverlay) quitOverlay.hidden = true; });
+  document.getElementById("confirmQuitBtn").addEventListener("click", function(){
+    api("/shutdown", { method:"POST" }).finally(function(){
+      document.body.innerHTML = '<div style="padding:40px; text-align:center; font-family:\'IBM Plex Mono\',monospace; color:var(--text-muted);">Dashboard stopped. You can close this tab.</div>';
+    });
+  });
+
+  window.addEventListener("focus", loadAll);
+
+  loadAll();
+})();
+</script>
+</body>
+</html>

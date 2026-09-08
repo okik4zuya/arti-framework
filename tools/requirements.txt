@@ -1,3 +1,4 @@
 # Dependencies for ~/.arti tools, installed into the vendored interpreter.
-# Empty for now - arti-render needs only stdlib. Add matplotlib here once
-# arti-plot is actually built (deferred, no plot data yet).
+# arti-render needs only stdlib. Add matplotlib here once arti-plot is
+# actually built (deferred, no plot data yet).
+python-docx

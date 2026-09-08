@@ -20,6 +20,19 @@ If this section is filled, skip everything below — the pointed-to skill is the
 
 ---
 
+## If this is a multi-file corpus (Path C)
+
+**Folder:** `~/.arti/voice-profiles/<slug>/`
+**Built from:** [Single example article title/source — Path C is built from one article, not 3–5]
+**Provisional until reconfirmed against a second sample:** [Yes / No — see the folder's own `00-INDEX.md`]
+
+This is a `gtmk-voice`-style multi-file corpus (`00-INDEX.md` through `07-PROMPT-BLOCK.md`),
+generalized to this researcher's field rather than field-specific. If this section is filled, skip
+everything below — the corpus folder's own `00-INDEX.md` is the Voice Profile; this file is a
+pointer to it, same role as the "pointer to an existing style skill" section above.
+
+---
+
 ## Source Papers Analyzed
 
 | Paper | Journal | Year |

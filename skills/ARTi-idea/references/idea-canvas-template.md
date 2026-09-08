@@ -3,7 +3,7 @@
 **Date Created:** [YYYY-MM-DD]
 **Last Updated:** [YYYY-MM-DD]
 **Researcher Novelty Ceiling:** C[n] / M[n] / E[n]
-> Copied from Section H of `~/.arti/researcher-profile.md` — read it, do not re-derive it.
+> Copied from Section H of `~/.arti/memory/researcher-profile.md` — read it, do not re-derive it.
 
 > One entry per candidate idea. Generated from the Gap Map.
 > Every idea must be scored before a decision is made.

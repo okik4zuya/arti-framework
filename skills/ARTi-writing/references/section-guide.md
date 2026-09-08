@@ -3,6 +3,13 @@
 Guidance for drafting each standard manuscript section. Always cross-check with the Journal Profile
 for section-specific word limits and structural requirements.
 
+**Carry the full section skeleton from the first draft on** — Abstract, Results and Discussion,
+Conclusions, CRediT, References, etc. — with placeholder body text for anything not yet written,
+rather than adding sections only once they're ready. `arti-docx` (see
+`references/completion-plan-template.md`, item 6.2) rebuilds the manuscript `.docx` fresh from the
+`.md` on every run, so a `.md` missing a section produces an incomplete `.docx` snapshot; a full
+skeleton from early drafting on means every conversion is a complete shell.
+
 ---
 
 ## Title

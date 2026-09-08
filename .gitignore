@@ -1,22 +1,24 @@
 # vendored interpreter - fetched by install.ps1 / install.sh, not tracked
 /python/
 
-# researcher content - personal, migrated from Drive's _ARTi, never in git history
-/researcher-profile.md
+# researcher content + package planning docs - personal/maintainer-only, never in git history.
+# All memory-system files live under /memory/ as of 2026-09-06 (moved from root) - exclude the
+# whole folder rather than itemizing files, so a future addition there is private by default.
+/memory/
 /voice-profiles/
 /workflow-sessions/
 /journal-library/
-/idea-bank.md
-/arti-workflow-profile.md
-/arti-workflow-profile-archive.md
-/arti-skill-upgrade-plan.md
-/ebook-notes.md
-/landing-page-feature-inventory.md
-/progress-index.md
-/skill-improvement-ideas.md
-/working-preferences.md
 /MOVED.md
 
+# raw-idea inbox - researcher-owned content, same rule as /memory/. The installers seed
+# blank wdyt/index.md + wdyt/idea-index.md on a fresh install; the ideas themselves
+# never enter git history.
+/wdyt/
+
 # misc
+# PowerShell drops this here if HOME is ever redirected at ~/.arti while a child
+# powershell.exe starts up - never part of the framework.
+/Microsoft/
 *.pyc
 __pycache__/
+/dashboard/server.log

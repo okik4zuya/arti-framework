@@ -104,7 +104,7 @@ After scoring all three dimensions:
 
 ## Novelty Ceiling Check
 
-Before finalising a score, check the researcher's Novelty Ceiling — read it from Section H of `~/.arti/researcher-profile.md`, where ARTi-setup derived it once. Do not re-derive it here.
+Before finalising a score, check the researcher's Novelty Ceiling — read it from Section H of `~/.arti/memory/researcher-profile.md`, where ARTi-setup derived it once. Do not re-derive it here.
 
 **Ceiling check procedure:**
 1. Read the C, M, E ceilings from Section H of the Researcher Profile.

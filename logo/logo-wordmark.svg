@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- ARTi wordmark lockup: locked icon (logo-v6.svg) + wordmark, ART in slate / i in blue -->
+<svg
+   width="1095"
+   height="480"
+   viewBox="0 0 365 160"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <rect x="8" y="8" width="144" height="144" rx="32" fill="#f7f8fa" />
+    <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+          fill="none" stroke="#475569" stroke-width="19"
+          stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="103" cy="34" r="16" fill="#2563eb" />
+  </g>
+  <text x="176" y="107" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-weight="700" font-size="72">
+    <tspan fill="#475569">ART</tspan><tspan fill="#2563eb">i</tspan>
+  </text>
+</svg>

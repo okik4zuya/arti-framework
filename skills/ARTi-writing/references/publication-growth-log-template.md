@@ -6,7 +6,7 @@
 > The only document in ARTi-writing written after the paper is done, not before or during.
 > Triggered by the researcher confirming acceptance — never speculatively before that. Its job is
 > to close the loop: what this paper's Limitations section left on the table becomes the next
-> Idea Bank entry, not a thread that quietly gets forgotten.
+> Research Idea Bank entry, not a thread that quietly gets forgotten.
 
 ---
 
@@ -37,9 +37,9 @@
 
 ---
 
-## Idea Bank Entry
+## Research Idea Bank Entry
 
-> Written to `~/.arti/idea-bank.md` in the same turn as this document. Do not leave this as a
+> Written to `~/.arti/memory/research-idea-bank.md` in the same turn as this document. Do not leave this as a
 > pending action — the point of this stage is that the thread surfaces automatically next time,
 > not that it's recorded somewhere and hoped to be remembered.
 
