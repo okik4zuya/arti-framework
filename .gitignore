@@ -1,6 +1,16 @@
 # vendored interpreter - fetched by install.ps1 / install.sh, not tracked
 /python/
 
+# vendored poppler/tesseract - populated exclusively by installer\arti-installer.nsi's build
+# step, not fetched by install.ps1 / install.sh. Never committed - same reasoning as /python/.
+/bin/
+
+# NSIS installer build output - local staging folder (poppler/tesseract copied in from
+# C:\python_tools\artipdf) plus the built .exe, both produced by installer\build_installer.bat.
+# Never committed - same reasoning as /python/ above.
+/installer/payload/
+/installer/dist/
+
 # researcher content + package planning docs - personal/maintainer-only, never in git history.
 # All memory-system files live under /memory/ as of 2026-09-06 (moved from root) - exclude the
 # whole folder rather than itemizing files, so a future addition there is private by default.
@@ -11,9 +21,9 @@
 /MOVED.md
 
 # raw-idea inbox - researcher-owned content, same rule as /memory/. The installers seed
-# blank wdyt/index.md + wdyt/idea-index.md on a fresh install; the ideas themselves
+# blank inbox/index.md + inbox/idea-index.md on a fresh install; the ideas themselves
 # never enter git history.
-/wdyt/
+/inbox/
 
 # misc
 # PowerShell drops this here if HOME is ever redirected at ~/.arti while a child

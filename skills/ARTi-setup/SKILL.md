@@ -40,20 +40,21 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
    `skills/` parts) is created by running `install.ps1` (Windows) or `install.sh` (Mac) from the
    `arti` tooling repo, not by this skill — if those are missing, tell the researcher to run the
    installer first, since this skill only manages researcher-content subfolders.
-2. Create the researcher-content subfolders under `~/.arti` if missing: `research-idea-bank.md`,
-   `progress-index.md` (headers only,
-   matching the shapes in `references/progress-index-template.md` and `references/`), and empty
-   `journal-library\` and `voice-profiles\` folders. `voice-profiles\` holds ARTi-writing's
+2. Run `arti-db init` (see Reference Files for the invocation) — it creates `~/.arti/memory/arti.db`
+   and, if the legacy `research-idea-bank.md`/`project-index.md`/`inbox/idea-index.md` files exist
+   already, one-time migrates them; either way it also (re)generates all three `.md` files from the
+   database, so this single command replaces the old by-hand "create these markdown files" step.
+   Also create empty `journal-library\` and `voice-profiles\` folders. `voice-profiles\` holds ARTi-writing's
    per-researcher Voice Profile files (Stage 0 of that skill) — created empty here, populated the
    first time ARTi-writing needs one.
-   Also create `wdyt\` with a header-only `index.md` (`File · Status · One-line hook · Date
-   added`), same shape as a per-project `wdyt/index.md` (see
+   Also create `inbox\` with a header-only `index.md` (`File · Status · One-line hook · Date
+   added`), same shape as a per-project `inbox/index.md` (see
    `references/project-scaffold-template.md`). This is the cross-project raw-idea inbox — for
    capture about the **ARTi framework/skills themselves** (new skill ideas, workflow friction,
    tooling gaps), distinct from `research-idea-bank.md` (research ideas for future papers). A per-project
-   `wdyt/` note that turns out to be about the framework rather than that paper gets moved here
+   `inbox/` note that turns out to be about the framework rather than that paper gets moved here
    and PARKED in the project's own index, same triage convention (`YYMMDD_STATUS_<slug>.md`).
-   Create `wdyt\archive\` alongside it, empty — same archiving rule as a per-project `wdyt/`
+   Create `inbox\archive\` alongside it, empty — same archiving rule as a per-project `inbox/`
    (see `references/project-scaffold-template.md`): untriaged files stay in the root uncapped,
    triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`, oldest moves in first when
    the cap is exceeded, with its `index.md` row's `File` column updated to `archive/<filename>`.
@@ -97,7 +98,7 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
 - Confirm `~/.arti` setup exists (`researcher-profile.md` present); if not, run Workflow A
   first — one coherent onboarding flow, not two disconnected features.
 - Follow `references/project-scaffold-template.md` to create the new project's standard folder
-  boilerplate — `idea/`, `writing/`, `literature/`, `data/`, `figures/`, `submission/`, `wdyt/` —
+  boilerplate — `idea/`, `writing/`, `literature/`, `data/`, `figures/`, `submission/`, `inbox/` —
   plus a `memory/` folder holding `MEMORY.md`, `todo-list.md` (checklist only), and `status.md`
   (living Current-state narrative + archive) flat, with any topic files under `memory/memories/`
   (see the template's tiering rule), and a root `CLAUDE.md`.
@@ -111,22 +112,26 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
   `{{PROJECT_NAME}}` substituted — the single source of truth the dashboard scaffolder renders
   too. Regeneration preserves everything below the `<!-- arti: local additions below -->`
   fence; anything project-specific belongs there, not above it.
-- Add a new row for this project to `~/.arti/memory/progress-index.md` (stage: "Not started", status:
-  "Scaffolded"). After that, the index is updated at phase boundaries only — idea complete,
-  writing started, submitted.
+- Run `project upsert --stage "Not started" --status "Scaffolded"` for this project's row. After
+  that, the index is updated at phase boundaries only — idea complete, writing started, submitted.
+- Also pass `--summary` (a keyword-style listing of the project's actual memory sub-topics, not
+  just its headline research question — this is what makes cross-project topic lookup via
+  `project list` work). Refresh it whenever stage/status changes meaningfully, the same way
+  `status` itself is kept current — not a one-time-at-scaffold field.
 - Confirm the folder/file layout once done (same closing instruction as
   `references/project-scaffold-template.md`).
 
 ---
 
-## Cross-cutting session convention — progress-index upsert
+## Cross-cutting session convention — project-index upsert
 
 Applies regardless of which skill is active: at the end of any session that changed a child paper
-project's stage or status (idea complete, writing started, submitted, published, or similar), upsert
-that project's row in `~/.arti/memory/progress-index.md` before ending the session. This is a
-generic catch-all — `ARTi-idea` and `ARTi-writing` also carry their own stage-specific reminders to
-upsert earlier, during the work itself; this one exists so the dashboard stays current even if a
-skill's own reminder is missing or gets skipped.
+project's stage or status (idea complete, writing started, submitted, published, or similar), run
+`project upsert` for that project's row before ending the session. This is a generic catch-all —
+`ARTi-idea` and `ARTi-writing` also carry their own stage-specific reminders to upsert earlier,
+during the work itself; this one exists so the dashboard stays current even if a skill's own
+reminder is missing or gets skipped. When stage/status changes meaningfully, also consider whether
+`--summary` needs refreshing to reflect what the project's memory now covers.
 
 ---
 
@@ -136,5 +141,12 @@ skill's own reminder is missing or gets skipped.
   including the Positioning Line
 - `references/project-scaffold-template.md` — the project memory-scaffolding procedure (`memory/`
   folder + root `CLAUDE.md`)
+
+**`arti-db` invocation** — every `arti-db init`/`project upsert` command above runs as:
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand> ...` (Mac/Linux:
+`~/.arti/python/bin/python3`). Each call prints one JSON object (`{"ok": true, ...}` or
+`{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for the full subcommand
+surface. Never hand-edit `project-index.md`, `research-idea-bank.md`, or `idea-index.md`
+directly — all three are generated exports, overwritten on every write.
 
 Read the relevant reference file before starting either workflow.

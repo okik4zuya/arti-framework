@@ -23,7 +23,7 @@ REPO_URL=""
 
 ARTI_HOME="$HOME/.arti"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRACKED_ITEMS=(tools skills dashboard logo CLAUDE.md README.md install.ps1 install.sh install.bat VERSION .gitignore)
+TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md install.ps1 install.sh install.bat VERSION .gitignore)
 
 # Copy one tracked item into $ARTI_HOME under its own name.
 #
@@ -86,43 +86,43 @@ fi
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --
 
-mkdir -p "$ARTI_HOME/memory" "$ARTI_HOME/memory/memories" "$ARTI_HOME/voice-profiles" "$ARTI_HOME/workflow-sessions" "$ARTI_HOME/wdyt/archive"
+mkdir -p "$ARTI_HOME/memory" "$ARTI_HOME/memory/memories" "$ARTI_HOME/voice-profiles" "$ARTI_HOME/workflow-sessions" "$ARTI_HOME/inbox/archive"
 
-# wdyt/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
+# inbox/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
 # ideas never ship), so a fresh install seeds the two index files it needs, missing-only.
-if [ ! -f "$ARTI_HOME/wdyt/index.md" ]; then
-  cat > "$ARTI_HOME/wdyt/index.md" <<'EOF'
-# ~/.arti/wdyt/ index
+if [ ! -f "$ARTI_HOME/inbox/index.md" ]; then
+  cat > "$ARTI_HOME/inbox/index.md" <<'EOF'
+# ~/.arti/inbox/ index
 
 Cross-project raw-idea inbox - for capture about the ARTi framework/skills themselves (new skill
 ideas, workflow friction, tooling gaps), distinct from `~/.arti/memory/research-idea-bank.md`
-(research ideas for future papers) and from `~/.arti/wdyt/idea-index.md` (the general cross-project
-aggregator of every project's triaged `wdyt/` ideas, this file's own entries included). Unprefixed
+(research ideas for future papers) and from `~/.arti/inbox/idea-index.md` (the general cross-project
+aggregator of every project's triaged `inbox/` ideas, this file's own entries included). Unprefixed
 filename = not yet reviewed. Triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`;
 untriaged ones are uncapped and never archived.
 
 | File | Type | Status | One-line hook | Used in | Date added |
 |---|---|---|---|---|---|
 EOF
-  echo "  [ok] stub created: wdyt/index.md"
+  echo "  [ok] stub created: inbox/index.md"
 fi
 
-if [ ! -f "$ARTI_HOME/wdyt/idea-index.md" ]; then
-  cat > "$ARTI_HOME/wdyt/idea-index.md" <<'EOF'
+if [ ! -f "$ARTI_HOME/inbox/idea-index.md" ]; then
+  cat > "$ARTI_HOME/inbox/idea-index.md" <<'EOF'
 # Idea List Index
 
-**File location:** `~/.arti/wdyt/idea-index.md` - a `progress-index.md`-style aggregator: one row
-per raw idea captured in any project's `wdyt/` folder (this `~/.arti` home's own `wdyt/` included),
+**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator: one row
+per raw idea captured in any project's `inbox/` folder (this `~/.arti` home's own `inbox/` included),
 so "what's my idea list and status" is answered by reading this one file, no per-project scanning
 needed.
 
 > Claude upserts a row here the moment an idea is triaged (OK/SKIP/PARKED) in any project's
-> `wdyt/index.md`.
+> `inbox/index.md`.
 
 | Idea | Project | Status | One-line hook | Date added |
 |---|---|---|---|---|
 EOF
-  echo "  [ok] stub created: wdyt/idea-index.md"
+  echo "  [ok] stub created: inbox/idea-index.md"
 fi
 
 # Minimal tracker stubs (created only if missing - never overwrites real content).

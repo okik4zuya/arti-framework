@@ -42,12 +42,12 @@ it isn't code-signed.
 - Downloads a private Python 3.11 into `~/.arti/python` (~25 MB — the slow step) and installs
   `tools/requirements.txt` into it
 - Links each skill into `~/.claude/skills/` so Claude Code picks it up
-- Seeds empty `memory/` and `wdyt/` index files **only if they don't already exist**
+- Seeds empty `memory/` and `inbox/` index files **only if they don't already exist**
 - Creates an **ARTi Framework** icon on your Desktop that opens the dashboard
 
 It never overwrites your own content. Re-running it is also how you **update**: it re-syncs the
 repo files, skips the Python download if `VERSION` is unchanged, and leaves `memory/`,
-`wdyt/`, `voice-profiles/` and `workflow-sessions/` untouched.
+`inbox/`, `voice-profiles/` and `workflow-sessions/` untouched.
 
 ### Optional extras
 
@@ -110,6 +110,6 @@ Your paper project folders are separate and are not touched.
   tools/      arti-render, arti-docx, arti-pdf, arti-table, arti-memcheck, ...
   dashboard/  local launcher (127.0.0.1:4174)
   python/     vendored Python 3.11 - downloaded by the installer, never tracked
-  memory/     your profile, idea bank, progress index  (yours; never in git)
-  wdyt/       raw-idea inbox                            (yours; never in git)
+  memory/     your profile, idea bank, project index  (yours; never in git)
+  inbox/      raw-idea inbox                            (yours; never in git)
 ```

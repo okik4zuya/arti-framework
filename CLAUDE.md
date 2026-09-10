@@ -14,14 +14,19 @@ directly.
   `CLAUDE.md` is generated from `skills/ARTi-setup/references/project-claude-template.md` —
   the one canonical copy, rendered by both ARTi-setup and the dashboard scaffolder
 - `tools/` — standalone export/render tools (`arti-render`, `arti-plot`, `arti-table`,
-  `arti-docx`, `arti-pdf`, `scopus-ris-batch-export`, …)
-- `dashboard/` — the local launcher (`server/server.py` + `arti-dashboard.html`), a general
+  `arti-docx`, `arti-pdf`, `arti-db`, `arti-lit`, `scopus-ris-batch-export`, …)
+- `dashboard/` — the local launcher (`dashboard/server/server.py` + `arti-dashboard.html`), a general
   project launcher with ARTi-specific detail for paper projects — see `dashboard/README.md`
 - `python/` — vendored interpreter, fetched by `install.ps1`/`install.sh`, not tracked
-- `voice-profiles/`, `workflow-sessions/`, `journal-library/`, `wdyt/` — researcher-content
+- `bin/` — vendored poppler/tesseract, populated exclusively by `installer/arti-installer.nsi`
+  (the NSIS installer's build step); **not** fetched by `install.ps1`/`install.sh` — see
+  `tools/_shared/README.md`
+- `installer/` — the NSIS installer source (`arti-installer.nsi`, `build_installer.bat`); its
+  `payload/` and `dist/` build output are git-ignored, never tracked
+- `voice-profiles/`, `workflow-sessions/`, `journal-library/`, `inbox/` — researcher-content
   folders, not memory-system files in the T0/T1 sense below
 - `memory/` — everything else: this project's own tracker plus every cross-project singleton the
-  skills read by hardcoded path (researcher profile, idea bank, progress index, working
+  skills read by hardcoded path (researcher profile, idea bank, project index, working
   preferences, figure style). **The whole folder is git-ignored** — nothing in it enters git
   history except the blank scaffold stubs the installer seeds on a fresh install.
 
@@ -46,18 +51,18 @@ directly.
   `created` in frontmatter on creation and `updated` on every write, and add a line to that file's
   `## Change log`.
 
-## `wdyt/` — raw-idea inbox for the framework itself
+## `inbox/` — raw-idea inbox for the framework itself
 
 The one folder in this project meant for the researcher to create and edit files in directly;
-everything else here is Claude-managed. `wdyt/index.md` is the file Claude reads first each
+everything else here is Claude-managed. `inbox/index.md` is the file Claude reads first each
 session. Untriaged files (no status prefix) are uncapped and never archived — surface any of them
 near session start rather than waiting to be asked. Triaging renames a file to
 `YYMMDD_STATUS_<slug>.md` — **OK** (ingested somewhere), **SKIP** (reviewed, not used), or
 **PARKED** (good idea, not actionable yet) — and updates its `index.md` row to match. Triaged
-files are capped at 10 outside `wdyt/archive/`; nothing archived is deleted, only the index row
-is — grep `wdyt/archive/*.md` directly if asked about something not in the live table. Every
-triage event also upserts a row into `~/.arti/wdyt/idea-index.md`, the cross-project idea-list
-aggregator, so a project's own `wdyt/` triage and this framework's own `wdyt/` triage both land in
+files are capped at 10 outside `inbox/archive/`; nothing archived is deleted, only the index row
+is — grep `inbox/archive/*.md` directly if asked about something not in the live table. Every
+triage event also upserts a row into `~/.arti/inbox/idea-index.md`, the cross-project idea-list
+aggregator, so a project's own `inbox/` triage and this framework's own `inbox/` triage both land in
 the same place.
 
 ## Session-end wrap-up ritual
@@ -73,10 +78,10 @@ checklist:
 - Check whether anything said this session should be promoted to
   `memory/working-preferences.md` (a correction on *how* to do something, not a one-off fact)
 
-This project has no `progress-index.md` row of its own to upsert — that file tracks paper
+This project has no `project-index.md` row of its own to upsert — that file tracks paper
 projects, not the framework itself.
 
 ## Session-start standing asks
 
-Surface any open question a memory file recorded, and any untriaged `wdyt/index.md` rows, near
+Surface any open question a memory file recorded, and any untriaged `inbox/index.md` rows, near
 the start of the session rather than waiting to be asked.

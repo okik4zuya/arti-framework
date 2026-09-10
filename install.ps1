@@ -37,7 +37,7 @@ $RepoUrl = ''
 
 $ArtiHome  = Join-Path $HOME '.arti'
 $ScriptDir = $PSScriptRoot
-$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'CLAUDE.md', 'README.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore')
+$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore')
 
 function Write-StubFile {
   # Set-Content -Encoding UTF8 emits a BOM in Windows PowerShell 5.1, which then
@@ -119,7 +119,7 @@ if ($RepoUrl) {
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --
 
-foreach ($dir in @('memory', 'memory\memories', 'voice-profiles', 'workflow-sessions', 'wdyt\archive')) {
+foreach ($dir in @('memory', 'memory\memories', 'voice-profiles', 'workflow-sessions', 'inbox\archive')) {
   $p = Join-Path $ArtiHome $dir
   if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
 }
@@ -172,15 +172,15 @@ metadata:
 ## Change log
 '@
 
-# wdyt/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
+# inbox/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
 # ideas never ship), so a fresh install seeds the two index files it needs, missing-only.
-$wdytIndexStub = @'
-# ~/.arti/wdyt/ index
+$inboxIndexStub = @'
+# ~/.arti/inbox/ index
 
 Cross-project raw-idea inbox - for capture about the ARTi framework/skills themselves (new skill
 ideas, workflow friction, tooling gaps), distinct from `~/.arti/memory/research-idea-bank.md`
-(research ideas for future papers) and from `~/.arti/wdyt/idea-index.md` (the general cross-project
-aggregator of every project's triaged `wdyt/` ideas, this file's own entries included). Unprefixed
+(research ideas for future papers) and from `~/.arti/inbox/idea-index.md` (the general cross-project
+aggregator of every project's triaged `inbox/` ideas, this file's own entries included). Unprefixed
 filename = not yet reviewed. Triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`;
 untriaged ones are uncapped and never archived.
 
@@ -191,27 +191,27 @@ untriaged ones are uncapped and never archived.
 $ideaIndexStub = @'
 # Idea List Index
 
-**File location:** `~/.arti/wdyt/idea-index.md` - a `progress-index.md`-style aggregator: one row
-per raw idea captured in any project's `wdyt/` folder (this `~/.arti` home's own `wdyt/` included),
+**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator: one row
+per raw idea captured in any project's `inbox/` folder (this `~/.arti` home's own `inbox/` included),
 so "what's my idea list and status" is answered by reading this one file, no per-project scanning
 needed.
 
 > Claude upserts a row here the moment an idea is triaged (OK/SKIP/PARKED) in any project's
-> `wdyt/index.md`.
+> `inbox/index.md`.
 
 | Idea | Project | Status | One-line hook | Date added |
 |---|---|---|---|---|
 '@
 
-$wdytIndexPath = Join-Path $ArtiHome 'wdyt\index.md'
-$ideaIndexPath = Join-Path $ArtiHome 'wdyt\idea-index.md'
-if (-not (Test-Path $wdytIndexPath)) {
-  Write-StubFile -Path $wdytIndexPath -Content $wdytIndexStub
-  Write-Host "  [ok] stub created: wdyt\index.md"
+$inboxIndexPath = Join-Path $ArtiHome 'inbox\index.md'
+$ideaIndexPath = Join-Path $ArtiHome 'inbox\idea-index.md'
+if (-not (Test-Path $inboxIndexPath)) {
+  Write-StubFile -Path $inboxIndexPath -Content $inboxIndexStub
+  Write-Host "  [ok] stub created: inbox\index.md"
 }
 if (-not (Test-Path $ideaIndexPath)) {
   Write-StubFile -Path $ideaIndexPath -Content $ideaIndexStub
-  Write-Host "  [ok] stub created: wdyt\idea-index.md"
+  Write-Host "  [ok] stub created: inbox\idea-index.md"
 }
 
 $memoryPath = Join-Path $ArtiHome 'memory\MEMORY.md'
@@ -322,6 +322,22 @@ if ((Test-Path $reqFile) -and (Test-Path $pythonDir)) {
   }
 }
 
+# pywebview (+ pythonnet, for the WebView2/EdgeChromium bridge) powers the
+# dashboard's native window (dashboard/app.py) -- Windows-only for now, kept
+# out of tools/requirements.txt so a failure here never blocks the mac/linux
+# reconciliation above or arti-docx. Non-fatal for the same reason: without
+# it, app.py won't launch, but every other ARTi tool still works.
+if (Test-Path $pythonDir) {
+  $pyExe = Join-Path $pythonDir 'python.exe'
+  try {
+    & $pyExe -m pip install --quiet --disable-pip-version-check pywebview pythonnet
+    if ($LASTEXITCODE -ne 0) { throw "pip exited with code $LASTEXITCODE" }
+    Write-Host "  [ok] pywebview installed (dashboard native window)"
+  } catch {
+    Write-Warning "pywebview install failed ($($_.Exception.Message)). The dashboard native window (app.py) won't launch until this is resolved; re-run this installer once you're online to finish."
+  }
+}
+
 # --- 4. wire skills into ~/.claude/skills --------------------------------------
 # Junctions, not copies: ~/.arti/skills/<name> is the only place a skill is ever edited.
 # A junction makes ~/.claude/skills/<name> the same directory on disk, so there is no
@@ -372,12 +388,13 @@ if (Test-Path $skillsSrc) {
 try {
   $desktopDir = [Environment]::GetFolderPath('Desktop')
   $shortcutPath = Join-Path $desktopDir 'ARTi Framework.lnk'
-  $vbsTarget = Join-Path $ArtiHome 'dashboard\start-arti-framework.vbs'
-  if (Test-Path $vbsTarget) {
+  $appTarget = Join-Path $ArtiHome 'dashboard\app.py'
+  $pythonwExe = Join-Path $pythonDir 'pythonw.exe'
+  if ((Test-Path $appTarget) -and (Test-Path $pythonwExe)) {
     $wshShell = New-Object -ComObject WScript.Shell
     $shortcut = $wshShell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = 'wscript.exe'
-    $shortcut.Arguments = '"' + $vbsTarget + '"'
+    $shortcut.TargetPath = $pythonwExe
+    $shortcut.Arguments = '"' + $appTarget + '"'
     $shortcut.WorkingDirectory = Join-Path $ArtiHome 'dashboard'
     $shortcut.Description = 'ARTi Framework dashboard'
     $iconPath = Join-Path $ArtiHome 'logo\export\icon\arti-launcher.ico'
@@ -385,7 +402,7 @@ try {
     $shortcut.Save()
     Write-Host "  [ok] Desktop shortcut created: ARTi Framework.lnk"
   } else {
-    Write-Warning "dashboard\start-arti-framework.vbs not found - skipping Desktop shortcut."
+    Write-Warning "dashboard\app.py or vendored pythonw.exe not found - skipping Desktop shortcut."
   }
 } catch {
   Write-Warning "Could not create Desktop shortcut: $($_.Exception.Message)"

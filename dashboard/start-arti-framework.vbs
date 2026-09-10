@@ -1,5 +1,9 @@
-' ARTi Framework -- hidden launcher. This is what the "ARTi Framework" Desktop
-' icon actually runs. No console window ever appears.
+' SUPERSEDED: the "ARTi Framework" Desktop icon now launches app.py directly
+' (pythonw.exe app.py) via a native pywebview window instead of a browser tab
+' -- see dashboard/app.py and install.ps1's shortcut-generation step. Kept in
+' the repo for reference only; no longer wired to any shortcut.
+'
+' --- original hidden-launcher behavior below, unchanged ---
 '
 ' Liveness check first: if the dashboard server is already answering on
 ' 127.0.0.1:4174 (e.g. the researcher closed the browser tab earlier but never

@@ -224,15 +224,43 @@ library row, the fulltext filename, the Scratchbook's per-claim mapping, and the
   (`label.ris.referenceType.BOOK_CHAPTER`, `label.ris.referenceType.CONFERENCE_REVIEW.p`).
   Normalize these to `CHAP` and `JOUR` on ingest.
 
-**Layer 2 — `library.md` (canonical).** One reference = one line. Columns: `key | full citation in
-the target journal's style | DOI | local file path | read-status | used-in`. Read-status
-vocabulary: `export-only` / `abstract` / `fulltext` / `read`. Being a superset that includes
-screened-out sources is what stops a query from being re-run.
+**Layer 2 — `library.md` (canonical, generated).** One reference = one line. Columns: `key | full
+citation in the target journal's style | DOI | local file path | read-status | used-in`.
+Read-status vocabulary: `export-only` / `abstract` / `fulltext` / `read`. Being a superset that
+includes screened-out sources is what stops a query from being re-run. **`library.md` is a
+generated export — never hand-edit it**, but it stays plain, always-current Markdown, so a browsing
+read (e.g. "what have I collected so far", "what's still export-only") can just read the file
+directly — no CLI call needed for that. The CLI is required for anything that *changes* the data,
+and useful for a targeted dedupe check before adding:
+```
+"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library add --key KEY --citation TEXT [--doi TEXT] [--local-file TEXT] [--status export-only|abstract|fulltext|read] [--used-in TEXT] --project PATH
+"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library update --key KEY [--status TEXT] [--used-in TEXT] ... --project PATH
+```
+`library add` rejects a duplicate DOI on a different key instead of inserting a near-duplicate row
+— run `library search KEYWORDS...` first when in doubt. See `tools/arti-lit/README.md` for the
+full subcommand reference.
 
-**Layer 3 — `references.md` (generated).** Regeneration routine: regex the draft body for
-citations → exclude the draft's own "Open flags" and "Change log" sections (they discuss names
-without citing them) → cross-match the Scratchbook's per-claim key mapping → filter `library.md` →
-order per Journal Profile Block B. Re-run whenever new sections add citations.
+When a batch of PDFs already has `library.md` rows (`local file: —`, status `export-only` or
+`abstract`) and needs bulk conversion to fulltext Markdown, use `tools/arti-pdf-ingest` instead of
+ingesting one-by-one:
+```
+"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest --project PATH --manifest PATH
+```
+It requires the `key` to already exist in `library.md` — screening/`library add` still happens
+first, this tool never creates new library rows — and it registers the result itself via
+`arti-lit library update --status fulltext`, so no separate registration step follows. See
+`tools/arti-pdf-ingest/README.md` for the manifest format.
+
+**Layer 3 — `references.md` (generated).** Regeneration routine: Grep the Scratchbook for
+`[LIT: key]` tags (cheap, targeted — not a full draft/Scratchbook/library regex pass) to get the
+key list in appearance order, then:
+```
+"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" refs generate --keys KEY,KEY,... --order appearance|alpha --project PATH
+```
+`--order appearance` preserves the order the Scratchbook tags were found in; `--order alpha` sorts
+by the key's `author-year[ab]` shape — pick per Journal Profile Block B. Any key in the result's
+`unresolved` list is reported as `[CITATION NEEDED]`, never silently dropped or invented. Re-run
+whenever new sections add citations.
 
 ---
 
@@ -359,10 +387,10 @@ document in this skill written after the paper is done, not before or during.
   asks the researcher once acceptance is confirmed, reviewing the Manuscript's own Limitations
   paragraph (and any Reviewer Simulation or real-reviewer Strategic-category comments that were
   deferred rather than resolved) for concrete follow-up directions
-- The answer is not just recorded here — it seeds a new **Research Idea Bank** entry in
-  `~/.arti/memory/research-idea-bank.md` (ARTi-idea's persistent cross-project store), so the
-  leftover thread surfaces automatically the next time a Gap Map is started rather than being
-  re-discovered from memory
+- The answer is not just recorded here — it seeds a new **Research Idea Bank** entry via
+  `idea-bank add` (ARTi-idea's persistent cross-project store, `~/.arti/memory/research-idea-bank.md`),
+  so the leftover thread surfaces automatically the next time a Gap Map is started rather than
+  being re-discovered from memory
 
 **When to create/update:** Once, triggered by the researcher confirming acceptance — never
 speculatively before that. The Research Idea Bank write is a single entry, done at the same time.
@@ -660,9 +688,9 @@ When Claude reads a source file and writes Scratchbook entries itself, it must N
 
 **Literature Feed Protocol:**
 Literature can enter two ways: already ingested into `literature\library.md` (the normal path once
-the Reference System above is in use — Claude reads the row directly, no re-typing), or hand-typed
-in the standard input format below (the fallback, for a one-off note that hasn't gone through the
-library yet). Either way:
+the Reference System above is in use — Claude runs `arti-lit library get --key KEY` to fetch the
+row, no re-typing), or hand-typed in the standard input format below (the fallback, for a one-off
+note that hasn't gone through the library yet). Either way:
 
 1. **Receive** the literature entry — from a `library.md` row, or in the standard input format (see below)
 2. **Identify** which Scratchbook section(s) the entry is relevant to
@@ -711,10 +739,11 @@ Entries missing full bibliographic details get `export-only` or `abstract` read-
 
 ### Stage 4: Manuscript Drafting
 
-**Progress index cadence:** the first time this stage produces "Draft 1" content (not on later
-revisions of the same draft), upsert this project's row in `~/.arti/memory/progress-index.md` —
-stage "Drafting", status "writing started". This is the phase boundary ARTi-idea's handoff row
-left open; skipping it is why the dashboard can show a project stuck at "Handed off" indefinitely.
+**Project index cadence:** the first time this stage produces "Draft 1" content (not on later
+revisions of the same draft), run `project upsert --stage "Drafting" --status "writing started"`
+for this project's row. This is the phase boundary ARTi-idea's handoff row left open; skipping it
+is why the dashboard can show a project stuck at "Handed off" indefinitely. Consider whether
+`--summary` needs updating too (e.g. a voice-implementation pass or new section added).
 
 - Skim the `**Argumen saat ini:**` lines first for a quick orientation on each section's current
   argument, then go to the full dumps beneath them for the supporting material
@@ -896,10 +925,10 @@ items outstanding.
   manuscript to something this journal specifically publishes or has stated it wants
 - Write to `submission\cover-letter_[journal-abbreviation].md`
 
-**Progress index cadence:** once the researcher confirms the package was actually submitted to the
-journal (not merely that the cover letter draft is done), upsert this project's row in
-`~/.arti/memory/progress-index.md` — stage "Submitted", status "Under review" (or the journal name
-if not already set), last updated to today.
+**Project index cadence:** once the researcher confirms the package was actually submitted to the
+journal (not merely that the cover letter draft is done), run
+`project upsert --stage "Submitted" --status "Under review"` (or the journal name if not already
+set) for this project's row. Consider whether `--summary` needs updating too.
 
 ---
 
@@ -928,8 +957,8 @@ only stage that runs after the paper is done, and the one that closes the loop b
   Manuscript's own Limitations paragraph, plus any Strategic-category comments from Reviewer
   Simulation or real reviewers that were deliberately deferred rather than resolved, for concrete
   follow-up directions
-- Record the answer in `submission\growth-log.md`, and in the same turn write it as a new
-  entry to `~/.arti/memory/research-idea-bank.md` so it surfaces automatically the next time a Gap Map is started
+- Record the answer in `submission\growth-log.md`, and in the same turn run `idea-bank add` so it
+  surfaces automatically the next time a Gap Map is started
 
 ---
 
@@ -996,6 +1025,13 @@ cross-project and lives in `~/.arti/`.
 - `publication-growth-log-template.md` — Ready-to-use blank Publication Growth Log template
 
 Read the relevant reference file before starting any stage.
+
+**`arti-db` invocation** — every `project upsert`/`idea-bank add` command above runs as:
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand> ...` (Mac/Linux:
+`~/.arti/python/bin/python3`). Each call prints one JSON object (`{"ok": true, ...}` or
+`{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for the full subcommand
+surface. Never hand-edit `project-index.md` or `research-idea-bank.md` directly — both are
+generated exports, overwritten on every write.
 
 **Integration with ARTi-idea:**
 If the researcher completed the ARTi-idea workflow before starting here, read the handoff manifest

@@ -71,14 +71,6 @@
     border-radius:8px; background:var(--surface); color:var(--text);
   }
 
-  .stats-strip{ display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
-  .stat{
-    background:var(--surface); border:1px solid var(--border); border-radius:12px;
-    box-shadow:var(--shadow); padding:16px 20px; flex:1; min-width:160px;
-  }
-  .stat .n{ font-family:"Inter",system-ui,sans-serif; font-size:28px; font-weight:700; }
-  .stat .l{ font-size:13px; color:var(--text-muted); margin-top:2px; }
-
   .launcher{ display:flex; gap:14px; margin-bottom:26px; flex-wrap:wrap; }
   .launch-btn{
     flex:1; min-width:240px; background:var(--surface); border:1px solid var(--border);
@@ -174,26 +166,6 @@
   }
   .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
 
-  .idea-list{ max-height:360px; overflow-y:auto; }
-  .idea-row{ padding:16px 20px; border-top:1px solid var(--border); }
-  .idea-row:first-child{ border-top:none; }
-  .idea-title{ font-weight:600; font-size:15px; }
-  .idea-text{ font-size:14px; color:var(--text-muted); margin-top:5px; }
-  .idea-meta{
-    display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;
-    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text-muted);
-  }
-  .idea-score{ background:var(--accent-soft); color:var(--accent); padding:2px 8px; border-radius:20px; }
-
-  .sess-list{ max-height:320px; overflow-y:auto; }
-  .sess-row{
-    padding:12px 20px; border-top:1px solid var(--border); font-size:14px;
-    display:flex; justify-content:space-between; gap:10px;
-  }
-  .sess-row:first-child{ border-top:none; }
-  .sess-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sess-date{ font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text-muted); flex:none; }
-
   footer{ margin-top:28px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
   footer .note{ font-size:13px; color:var(--text-muted); font-family:"Inter",system-ui,sans-serif; }
   .btn{
@@ -262,12 +234,6 @@
     </div>
   </header>
 
-  <div class="stats-strip">
-    <div class="stat"><div class="n" id="statPipeline">0</div><div class="l">Active</div></div>
-    <div class="stat"><div class="n" id="statIdeas">0</div><div class="l">Ideas</div></div>
-    <div class="stat"><div class="n" id="statSessions">0</div><div class="l">Recent sessions</div></div>
-  </div>
-
   <div class="col">
     <div class="panel">
       <div class="panel-head">
@@ -290,25 +256,11 @@
       <div class="proj-list">
         <table id="projectsTable">
           <thead>
-            <tr><th>Category</th><th>Name</th><th>Target / Status</th><th>Updated</th><th></th></tr>
+            <tr><th>Category</th><th>Name</th><th>Updated</th><th></th></tr>
           </thead>
           <tbody id="projectsBody"></tbody>
         </table>
       </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <div class="panel-title">Idea Bank <span class="count-badge" id="ideaCount">0</span></div>
-      </div>
-      <div class="idea-list" id="ideaList"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <div class="panel-title">Recent Sessions <span class="count-badge" id="sessCount">0</span></div>
-      </div>
-      <div class="sess-list" id="sessList"></div>
     </div>
   </div>
 
@@ -368,7 +320,7 @@
 <script>
 (function(){
   var API = "/api";
-  var mode = "new"; // "new" | "existing" | "idea"
+  var mode = "new"; // "new" | "existing"
   var newProjectCategory = "Paper"; // toggle state inside "new" mode
 
   var allProjects = [];
@@ -394,19 +346,10 @@
 
   function loadAll(){
     return api("/data").then(function(data){
-      renderStats(data.stats);
       allProjects = data.projects;
       renderCategoryChips();
       renderProjects();
-      renderIdeaBank(data.ideaBank);
-      renderSessions(data.sessions);
     });
-  }
-
-  function renderStats(stats){
-    document.getElementById("statPipeline").textContent = stats.pipelineCount;
-    document.getElementById("statIdeas").textContent = stats.ideaBankCount;
-    document.getElementById("statSessions").textContent = stats.sessionsCount;
   }
 
   function formatUpdated(s){
@@ -468,26 +411,16 @@
     document.getElementById("projectsCount").textContent = rows.length;
     var body = document.getElementById("projectsBody");
     if (!allProjects.length){
-      body.innerHTML = '<tr><td colspan="5"><div class="empty">No projects yet — use New Project or Add Project above.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="4"><div class="empty">No projects yet — use New Project or Add Project above.</div></td></tr>';
       return;
     }
     if (!rows.length){
-      body.innerHTML = '<tr><td colspan="5"><div class="empty">No projects match this search/filter.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="4"><div class="empty">No projects match this search/filter.</div></td></tr>';
       return;
     }
     body.innerHTML = rows.map(function(r){
       var badge = '<span class="cat-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span>';
-      var detail;
-      if (r.category === "Paper"){
-        var progress = r.progress && r.progress.total ? (r.progress.done + '/' + r.progress.total) : '—';
-        var substage = r.substage ? '<div class="substage">' + escapeHtml(r.substage) + ' · ' + escapeHtml(progress) + '</div>' : '';
-        detail = escapeHtml(r.journal || '—') + substage;
-      } else {
-        var tags = (r.tags || []).join(", ");
-        detail = tags ? '<div class="tags-line">' + escapeHtml(tags) + '</div>' : '<span class="tag">—</span>';
-      }
-      var updated = escapeHtml(formatUpdated(r.category === "Paper" ? r.updated : r.lastOpenedAt));
-      var staleBadge = r.stale ? '<span class="stale-badge" title="memory/todo-list.md has changed since this row\'s Last updated date">possibly stale</span>' : '';
+      var updated = escapeHtml(formatUpdated(r.lastOpenedAt));
       var lifecycle = r.lifecycle || "active";
       var doneTag = lifecycle === "complete" ? '<span class="lifecycle-tag">Done</span>' : '';
       var lifecycleBtns;
@@ -505,8 +438,7 @@
       return '<tr>' +
         '<td>' + badge + '</td>' +
         '<td title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag + '</td>' +
-        '<td>' + detail + '</td>' +
-        '<td class="proj-updated">' + updated + staleBadge + '</td>' +
+        '<td class="proj-updated">' + updated + '</td>' +
         '<td><div class="row-actions">' +
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">Open folder</button>' +
           '<button class="icon-btn info" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '">Open VS Code</button>' +
@@ -563,47 +495,6 @@
     renderProjects();
   });
 
-  function renderIdeaBank(entries){
-    document.getElementById("ideaCount").textContent = entries.length;
-    var el = document.getElementById("ideaList");
-    if (!entries.length){
-      el.innerHTML = '<div class="empty">No parked ideas yet.</div>';
-      return;
-    }
-    el.innerHTML = entries.map(function(e){
-      return '<div class="idea-row">' +
-        '<div class="idea-title">' + escapeHtml(e.title) + '</div>' +
-        '<div class="idea-text">' + escapeHtml(e.ideaText) + '</div>' +
-        '<div class="idea-meta">' +
-          (e.noveltyScore ? '<span class="idea-score">' + escapeHtml(e.noveltyScore) + '</span>' : '') +
-          (e.dateParked ? '<span>parked ' + escapeHtml(e.dateParked) + '</span>' : '') +
-          (e.source ? '<span>' + escapeHtml(e.source) + '</span>' : '') +
-        '</div>' +
-        '<div class="row-actions" style="margin-top:8px;">' +
-          '<button class="icon-btn primary" data-role="convert-to-project" data-title="' + escapeHtml(e.title) + '">Convert to Project</button>' +
-        '</div>' +
-      '</div>';
-    }).join("");
-    Array.prototype.forEach.call(el.querySelectorAll('[data-role="convert-to-project"]'), function(btn){
-      btn.addEventListener("click", function(){
-        openProjectModal("idea", btn.getAttribute("data-title"));
-      });
-    });
-  }
-
-  function renderSessions(sessions){
-    document.getElementById("sessCount").textContent = sessions.length;
-    var el = document.getElementById("sessList");
-    if (!sessions.length){
-      el.innerHTML = '<div class="empty">No workflow sessions yet.</div>';
-      return;
-    }
-    el.innerHTML = sessions.map(function(s){
-      var d = s.mtime ? new Date(s.mtime * 1000).toISOString().slice(0,10) : "";
-      return '<div class="sess-row"><span class="sess-name" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</span><span class="sess-date">' + d + '</span></div>';
-    }).join("");
-  }
-
   // ---- New Project / Open Existing Folder modal ----
 
   var overlay = document.getElementById("projectOverlay");
@@ -617,7 +508,6 @@
   var projTags = document.getElementById("projTags");
   var toggleCatPaper = document.getElementById("toggleCatPaper");
   var toggleCatGeneral = document.getElementById("toggleCatGeneral");
-  var ideaTitle = null;
 
   function setNewProjectCategory(cat){
     newProjectCategory = cat;
@@ -628,10 +518,9 @@
   toggleCatPaper.addEventListener("click", function(){ setNewProjectCategory("Paper"); });
   toggleCatGeneral.addEventListener("click", function(){ setNewProjectCategory("General"); });
 
-  function openProjectModal(m, title){
+  function openProjectModal(m){
     mode = m;
-    ideaTitle = title || null;
-    projName.value = mode === "idea" ? (title || "") : "";
+    projName.value = "";
     projPath.value = "";
     projCategory.value = "";
     projTags.value = "";
@@ -645,11 +534,6 @@
       categoryToggleRow.hidden = false;
       setNewProjectCategory("Paper");
       document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the parent folder the new project subfolder will be created in.";
-      document.getElementById("projectConfirmBtn").textContent = "Create & Open";
-    } else if (mode === "idea"){
-      document.getElementById("projectModalTitle").textContent = "Convert Idea to Project";
-      nameField.hidden = false;
-      document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the parent folder the new project subfolder will be created in. The idea's content seeds idea/idea-bank-entry.md and is removed from the idea bank.";
       document.getElementById("projectConfirmBtn").textContent = "Create & Open";
     } else {
       document.getElementById("projectModalTitle").textContent = "Add Project";
@@ -701,16 +585,6 @@
         body.tags = parseTags(projTags.value);
       }
       api("/new-project", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) }).then(function(){
-        overlay.hidden = true;
-        loadAll();
-      }).catch(function(err){
-        projectErr.textContent = err.message;
-        projectErr.hidden = false;
-      });
-    } else if (mode === "idea"){
-      var ideaName = projName.value.trim();
-      if (!ideaName) return;
-      api("/idea-to-project", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ parentPath: path, name: ideaName, title: ideaTitle }) }).then(function(){
         overlay.hidden = true;
         loadAll();
       }).catch(function(err){

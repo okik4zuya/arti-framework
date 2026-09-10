@@ -1,6 +1,6 @@
-# Idea/Paper Progress Index
+# Idea/Paper Project Index
 
-**File location:** `~/.arti/memory/progress-index.md` — one dashboard row per project folder, so the
+**File location:** `~/.arti/memory/project-index.md` — one dashboard row per project folder, so the
 researcher can see everything in flight without opening each project individually.
 
 > Claude upserts a project's row at **phase boundaries only** — project scaffolded, idea

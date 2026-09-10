@@ -83,7 +83,8 @@ contradictions lie. The Gap Map is the evidence base that justifies the research
 
 ## Reference List
 [Key mapping only — full bibliographic details live in `literature\library.md` (ARTi-writing's
-Reference System, keyed `author-year[a|b]`), read directly from there rather than re-typed here]
+Reference System, keyed `author-year[a|b]`), fetched via `arti-lit library get --key KEY` rather
+than re-typed here]
 ```
 
 **When to create:** After the Researcher Profile is complete. Built iteratively as literature
@@ -239,7 +240,7 @@ A persistent, cross-project backlog of research/paper-topic ideas that cleared n
 didn't become the confirmed idea for their originating project. Lives in the researcher's `~/.arti`
 folder (see Stage 0), not any single project folder, so it accumulates across every future topic.
 Scoped to research ideas only — for framework/skill ideas or general cross-project raw ideas, see
-`~/.arti/wdyt/idea-index.md` instead.
+`~/.arti/inbox/idea-index.md` instead.
 
 **Structure per entry:**
 ```
@@ -353,7 +354,7 @@ question; it isn't anymore). If `~/.arti/memory/researcher-profile.md` doesn't e
 - If `~/.arti/memory/researcher-profile.md` already exists, load and reuse it — skip re-asking all
   Stage 1 fields, only confirm nothing has changed.
 - `~/.arti` also holds: `research-idea-bank.md`, `journal-library\<journal-slug>.md` per journal, and
-  `progress-index.md` — all described under their relevant document/stage below.
+  `project-index.md` — all described under their relevant document/stage below.
 
 ---
 
@@ -375,8 +376,9 @@ question; it isn't anymore). If `~/.arti/memory/researcher-profile.md` doesn't e
 ---
 
 ### Stage 2: Gap Map Construction
-- Before generating anything new, Claude checks `~/.arti/memory/research-idea-bank.md` for parked ideas relevant
-  to this topic and surfaces them to the researcher first
+- Before generating anything new, Claude runs `idea-bank search <keywords>` (see Reference Files
+  for the `arti-db` invocation) for parked ideas relevant to this topic and surfaces them to the
+  researcher first
 - The researcher feeds literature: papers, summaries, or notes
 - Claude identifies which gaps are Conceptual, Methodological, or Empirical
 - Claude flags contradictions between sources with `[⚠️ CONTRADICTION]` tags
@@ -408,9 +410,10 @@ When multiple ideas are viable, rank them and ask the researcher to select one
 before proceeding to Stage 4.
 
 **Research Idea Bank auto-park:** Any idea that clears Meaningful-or-above but is not the one
-selected to advance is automatically appended to `~/.arti/memory/research-idea-bank.md` — never
-silently discarded. Record idea text, C/M/E score, composite label, date, source project, and
-reason parked (lost selection vs. explicitly deferred by the researcher).
+selected to advance is automatically recorded via `idea-bank add` — never silently discarded.
+Pass idea text, C/M/E score, composite label, date, source project, and reason parked (lost
+selection vs. explicitly deferred by the researcher); the command regenerates
+`~/.arti/memory/research-idea-bank.md` itself.
 
 **Positioning Line trigger:** The first time a Research Idea Bank entry is ever written (i.e., the first
 time the paragraph above fires for this researcher), Claude also writes a one-sentence
@@ -527,9 +530,11 @@ decision exist. **Copy the decisions, point at the content.**
 | `~/.arti/memory/researcher-profile.md` | Writing support context and technical gap flags |
 ```
 
-**Progress index cadence:** upsert this project's row in `~/.arti/memory/progress-index.md` here, at the
-phase boundary — status "idea complete / handed off". The index is updated at phase boundaries
-only (idea complete → writing started → submitted), not once per stage.
+**Project index cadence:** run `project upsert` for this project's row here, at the phase
+boundary — status "idea complete / handed off". The index is updated at phase boundaries only
+(idea complete → writing started → submitted), not once per stage. Consider whether `--summary`
+needs updating too — a new major topic (e.g. an instrument-design sub-study) emerging during
+idea development is worth reflecting there.
 
 Claude must explicitly tell the researcher when the handoff is ready:
 *"Your research idea is confirmed, your experiment is designed, and your target journal is
@@ -593,6 +598,13 @@ idea on the Idea Canvas even when there are no competitors to compare it against
 
 ## Reference Files
 
+**`arti-db` invocation** — every `idea-bank`/`project` command below runs as:
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand> ...` (Mac/Linux:
+`~/.arti/python/bin/python3`). Each call prints one JSON object (`{"ok": true, ...}` or
+`{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for the full subcommand
+surface. Never hand-edit `research-idea-bank.md` or `project-index.md` directly — both are
+generated exports, overwritten on every write.
+
 - `../ARTi-setup/references/researcher-profile-template.md` — blank Researcher Profile with all
   fields, including the Positioning Line (owned by `ARTi-setup`, which creates this document —
   read from there rather than expecting a duplicate in this skill's own `references/`)
@@ -606,7 +618,7 @@ idea on the Idea Canvas even when there are no competitors to compare it against
   journals, recorded auto-pass for Scopus Q1–Q2 journals the group already publishes in
 - `references/journal-library-template.md` — cached per-journal entry shape
   (`~/.arti/journal-library/<journal-slug>.md`)
-- `references/progress-index-template.md` — cross-project dashboard row shape
-  (`~/.arti/memory/progress-index.md`)
+- `references/project-index-template.md` — cross-project dashboard row shape
+  (`~/.arti/memory/project-index.md`)
 
 Read the relevant reference file before starting any stage.

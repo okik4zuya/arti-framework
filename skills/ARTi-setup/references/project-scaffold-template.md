@@ -1,6 +1,27 @@
 Set up this project's persistent memory system and the standard research-paper folder boilerplate,
 project-local (not the default ~/.claude memory).
 
+**`arti-db` invocation** — every `project upsert`/`idea-index upsert`/`idea-index archive`
+command below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand>
+...` (Mac/Linux: `~/.arti/python/bin/python3`). Each call prints one JSON object
+(`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for
+the full subcommand surface. This is the *cross-project* index only — each project's own local
+`inbox/index.md` stays plain markdown, hand-edited by Claude directly, unchanged by this tool.
+
+**`arti-lit` invocation** — every `library add`/`update`/`remove`/`refs generate` command in the
+`literature/` bullet below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py"
+<subcommand> ... --project PATH` (Mac/Linux: `~/.arti/python/bin/python3`). Each call prints one
+JSON object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see
+`~/.arti/tools/arti-lit/README.md` for the full subcommand surface. Unlike `arti-db`, this is
+per-project, not a cross-project singleton.
+
+**`arti-pdf-ingest` invocation** — batch-converts PDFs to `literature\fulltext\` Markdown and
+registers each conversion in `arti-lit` (status `fulltext`) in one pass, instead of ingesting one
+PDF at a time: `"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest --project
+PATH --manifest PATH` (Mac/Linux: `~/.arti/python/bin/python3`). Requires each manifest row's `key`
+to already exist in `library.md` — it never creates new library rows. See
+`~/.arti/tools/arti-pdf-ingest/README.md` for the manifest format.
+
 0. Create the standard paper-project folder layout in the project root, alongside `memory/` and
    `CLAUDE.md`:
    - `idea/` — ARTi-idea's outputs live here: `gap-map.md`, `idea-canvas.md`,
@@ -17,12 +38,16 @@ project-local (not the default ~/.claude memory).
    - `literature/` — three layers, one shared key (`author-year[a|b]`, e.g. `kaw-2016`):
      - `literature\exports\` — raw downloads, **never renamed by the researcher**; Claude parses
        them and assigns the key
-     - `literature\fulltext\` — PDFs and their `.md` conversions, named by key
+     - `literature\fulltext\` — PDFs and their `.md` conversions, named by key; PDFs land here
+       either by hand or via a batch `arti-pdf-ingest` run once a manifest exists (see invocation
+       above)
      - `literature\search-log.md` — one row per search round: query (bare, copy-ready) · date ·
        hits · export file · target claim/paragraph · status
-     - `literature\library.md` — canonical bibliography, one source per line (superset including
-       screened-out sources), columns: key · full citation in the target journal's style · DOI ·
-       local file path · read-status · used-in
+     - `literature\library.md` — **generated export**, auto-regenerated on every `library
+       add`/`update`/`remove` from `literature\arti-lit.db` (the canonical store) — never hand-edit
+       it directly. Canonical bibliography, one source per line (superset including screened-out
+       sources), columns: key · full citation in the target journal's style · DOI · local file path
+       · read-status · used-in
    - `data/` — raw and processed research data
    - `figures/` — generated plots, images, and diagrams for the manuscript, plus
      `figures/figure-register.md` (one row per figure/table; seeded from `ARTi-figure/references/
@@ -32,17 +57,18 @@ project-local (not the default ~/.claude memory).
      `cover-letter_[journal-abbreviation].md`, `rebuttal_[journal-abbreviation]_round[N].md`
      (both keep their placeholder for the same reason as the Journal Profile), `growth-log.md`,
      journal-formatted export, supplementary files
-   - `wdyt/` — ("what do you think?") raw-idea inbox: pure capture, no structural expectation on
-     content, for anything the researcher thinks might improve the project but that doesn't
-     obviously belong to any existing document yet. `wdyt/index.md` is a header-only Markdown
-     table (`File · Tipe · Status · One-line hook · Dipakai di · Date added`) — the file Claude
-     reads first to see what's still live. Idea files use free-form naming while unreviewed
-     (`wdyt/<anything>.md`); once triaged, rename with a status prefix — `YYMMDD_STATUS_<slug>.md`
-     — where `STATUS` is one of **OK** (ingested somewhere in the project), **SKIP** (reviewed,
-     deliberately not used), or **PARKED** (good idea, not for this paper — candidate for the next
-     one, `~/.arti/memory/research-idea-bank.md` if it's a research idea, or `~/.arti/wdyt/` if
-     it's about the ARTi framework/skills themselves rather than any paper) — and update its row
-     in `index.md` to match. The date in the filename is when the note was *triaged*, not written.
+   - `inbox/` — (named "wdyt" — "what do you think?" — before 2026-09-09) raw-idea inbox: pure
+     capture, no structural expectation on content, for anything the researcher thinks might
+     improve the project but that doesn't obviously belong to any existing document yet.
+     `inbox/index.md` is a header-only Markdown table (`File · Tipe · Status · One-line hook ·
+     Dipakai di · Date added`) — the file Claude reads first to see what's still live. Idea files
+     use free-form naming while unreviewed (`inbox/<anything>.md`); once triaged, rename with a
+     status prefix — `YYMMDD_STATUS_<slug>.md` — where `STATUS` is one of **OK** (ingested
+     somewhere in the project), **SKIP** (reviewed, deliberately not used), or **PARKED** (good
+     idea, not for this paper — candidate for the next one, an `idea-bank add` entry
+     if it's a research idea, or `~/.arti/inbox/` if it's about the ARTi framework/skills
+     themselves rather than any paper) — and update its row in `index.md` to match. The date in the
+     filename is when the note was *triaged*, not written.
      **`Tipe` determines lifecycle, not just navigation** — only two values, don't add a third
      without a real case: **Ide** (default) = a note *about* something to decide/do, the
      OK/SKIP/PARKED behavior above unchanged. **Narasi** = verbatim researcher prose that *is* the
@@ -51,34 +77,34 @@ project-local (not the default ~/.claude memory).
      A Narasi file is never archived and immune to the cap of 10 below; its `OK` means "used in a
      deliverable," not "ingested and done," and the file stays put. `Dipakai di` records where a
      Narasi file has actually been used (e.g. `ebook Bab 1`, `landing: hero`) — `—` until it has.
-     **Whenever an idea is triaged (OK/SKIP/PARKED) in this or any project's `wdyt/index.md`, also
-     upsert one row into `~/.arti/wdyt/idea-index.md`** — a `progress-index.md`-style cross-project
-     aggregator (`Project · File · Status · One-line hook · Date added`), the same touch-point
-     pattern used for the Idea Bank auto-park and Positioning Line write. This lets "what's my idea
-     list and status" be answered by reading one file, with no per-project scanning.
-     `wdyt/` is the one folder in a scaffolded project meant for the researcher to create and edit
-     files in directly — everything else is Claude-managed. To keep it tidy: `wdyt/archive/` holds
+     **Whenever an idea is triaged (OK/SKIP/PARKED) in this or any project's `inbox/index.md`, also
+     run `idea-index upsert`** — a `project-index.md`-style cross-project aggregator
+     (`Project · File · Status · One-line hook · Date added`), the same touch-point pattern used
+     for the Idea Bank auto-park and Positioning Line write. This lets "what's my idea list and
+     status" be answered by reading one file, with no per-project scanning.
+     `inbox/` is the one folder in a scaffolded project meant for the researcher to create and edit
+     files in directly — everything else is Claude-managed. To keep it tidy: `inbox/archive/` holds
      old triaged notes. Untriaged files (no status prefix) are uncapped and never archived — they're
      exactly what the "still live" scan needs to see. Triaged files (OK/SKIP/PARKED) are capped at
-     10 outside `archive/`; once a triage step pushes the count past 10, move the oldest
-     triaged-by-filename-date file(s) into `wdyt/archive/` and **delete their rows** from the main
-     table — do not relabel `File` to `archive/<filename>` in place, since a row that never leaves
-     the table just recreates the append-only growth this convention exists to avoid. Instead fold
-     each archived file into a single collapsed summary line in a `## Archived` section at the
-     bottom of `index.md`, e.g. `- 12 ideas archived 2026-09 to 2026-11 (see wdyt/archive/*.md —
-     filenames retain date+status+slug)`; update that line's count/date-range in place on every
-     later archival batch (overwrite, not append-per-file), matching the "living state is
-     overwritten, not appended" house rule. Findability does not depend on the row surviving:
-     archived filenames are self-describing (`YYMMDD_STATUS_slug.md`) and file content is untouched
-     in `wdyt/archive/` — if a researcher asks about past `wdyt/` content not found in the live
-     table, grep `wdyt/archive/*.md` directly (filenames and content) rather than relying on a
-     summary row.
+     10 outside `archive/` — this cap is local to this project's own `inbox/index.md`, unrelated to
+     the cross-project `idea-index upsert` above. Once a triage step pushes the count past 10, move
+     the oldest triaged-by-filename-date file(s) into `inbox/archive/`, then run
+     `idea-index archive --ids <row ids> --summary "<one line>"` (e.g. "12 ideas archived 2026-09 to
+     2026-11 (see inbox/archive/*.md — filenames retain date+status+slug)") — this marks those rows
+     archived in `~/.arti/inbox/idea-index.md` and appends the summary line to its Change log in one
+     call, so the aggregator never accumulates per-file rows past their local archival. Findability
+     does not depend on the row surviving: archived filenames are self-describing
+     (`YYMMDD_STATUS_slug.md`) and file content is untouched in `inbox/archive/` — if a researcher
+     asks about past `inbox/` content not found in the live table, grep `inbox/archive/*.md`
+     directly (filenames and content) rather than relying on a summary row.
 
    Note: ARTi-writing's Voice Profile is deliberately **not** in this project's `writing/` folder
    — it's cross-project and lives in `~/.arti/voice-profiles/`, alongside the Researcher Profile and
    Research Idea Bank (created by this skill's Workflow A).
-   Seed `literature\search-log.md` and `literature\library.md` as header-only files; create
-   `literature\exports\` and `literature\fulltext\` empty. `data/` holds raw and processed research
+   Seed `literature\search-log.md` as a header-only file; create `literature\exports\` and
+   `literature\fulltext\` empty. Do not hand-seed `literature\library.md` — run `arti-lit init
+   --project PATH` (or let it lazily run on first `library add`) to create the empty `library.md`
+   export itself, backed by `literature\arti-lit.db`. `data/` holds raw and processed research
    data — data-collection instruments, pretest/posttest packets, and scoring keys belong in
    `data/instruments/`, not `writing/`, even though they're referenced from the Methods section:
    placement follows what a file *is* (a data-collection artifact), not who cites it. All other
@@ -179,18 +205,17 @@ project-local (not the default ~/.claude memory).
    context to draft real tasks or a real Current-state block, draft them rather than leaving empty
    scaffolding.
 
-6. Add a new row for this project to `~/.arti/memory/progress-index.md` (stage: "Not started", status:
-   "Scaffolded"), per `references/progress-index-template.md` in the `ARTi-idea` skill's reference
-   folder — this ties the new project into the researcher's cross-project dashboard. After this,
-   the index is updated at **phase boundaries only**: idea complete, writing started, submitted.
+6. Run `project upsert --stage "Not started" --status "Scaffolded"` for this project — this ties
+   the new project into the researcher's cross-project dashboard. After this, the index is updated
+   at **phase boundaries only**: idea complete, writing started, submitted.
 
 7. **Session-end wrap-up ritual.** Any phrasing that means "we're done for now" — not only the
    exact words "update memory" — fires this fixed checklist: update the relevant project memory
    file(s) · overwrite `status.md`'s "Current state" block · check off/add any `todo-list.md` items
    the session resolved or surfaced · **check whether a phase boundary (idea complete / writing
-   started / submitted / published) was crossed this session and, if so, upsert this project's row
-   in `~/.arti/memory/progress-index.md`** — this is what keeps the cross-project dashboard current;
-   a session that changes stage/status but skips this leaves the dashboard showing stale data even
+   started / submitted / published) was crossed this session and, if so, run `project upsert`
+   for this project's row** — this is what keeps the cross-project dashboard current; a session
+   that changes stage/status but skips this leaves the dashboard showing stale data even
    though every project file is up to date · append to the cross-project
    workflow-session log (`~/.arti/workflow-sessions/`) · check whether anything said this session
    should be promoted to `~/.arti/memory/working-preferences.md` (a correction on *how* to do something) ·
@@ -202,7 +227,7 @@ project-local (not the default ~/.claude memory).
 8. **Surface standing asks at session start.** If any memory file records an open question Claude
    was supposed to ask the researcher (e.g. "ask whether an Iteration Log entry is wanted"), ask it
    near the start of the session rather than merely re-recording that it's still open. Same
-   pattern for `wdyt/index.md`: if it has any unprefixed (untriaged) rows, surface them near
+   pattern for `inbox/index.md`: if it has any unprefixed (untriaged) rows, surface them near
    session start.
 
 Confirm the folder and file layout once done.

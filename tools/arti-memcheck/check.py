@@ -22,7 +22,7 @@ import re
 import sys
 
 ARTI_HOME = os.path.join(os.path.expanduser("~"), ".arti")
-PROGRESS_PATH = os.path.join(ARTI_HOME, "memory", "progress-index.md")
+PROJECT_INDEX_PATH = os.path.join(ARTI_HOME, "memory", "project-index.md")
 TEMPLATE_PATH = os.path.join(
     ARTI_HOME, "skills", "ARTi-setup", "references", "project-claude-template.md"
 )
@@ -517,9 +517,9 @@ def imperative(project, findings):
     return "Compact %s memory before other work - %s." % (os.path.basename(project.rstrip("\\/")), ", ".join(parts))
 
 
-def projects_from_progress():
+def projects_from_project_index():
     out = []
-    text, err = read_text(PROGRESS_PATH)
+    text, err = read_text(PROJECT_INDEX_PATH)
     if text is None:
         return out
     for line in text.splitlines():
@@ -537,13 +537,13 @@ def projects_from_progress():
 def main():
     ap = argparse.ArgumentParser(description="Composition checker for an ARTi project's T0 memory set.")
     ap.add_argument("--project", default=None, help="project directory (default: cwd)")
-    ap.add_argument("--all", action="store_true", help="every path in progress-index.md, plus ~/.arti")
+    ap.add_argument("--all", action="store_true", help="every path in project-index.md, plus ~/.arti")
     ap.add_argument("--budget", type=int, default=DEFAULT_BUDGET, help="T0 byte budget (default 20480)")
     ap.add_argument("--hook", action="store_true", help="summary mode: silent when clean, always exit 0")
     args = ap.parse_args()
 
     if args.all:
-        targets = projects_from_progress()
+        targets = projects_from_project_index()
         if ARTI_HOME not in targets and os.path.isdir(ARTI_HOME):
             targets.append(ARTI_HOME)
     else:

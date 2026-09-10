@@ -29,7 +29,7 @@ turns a nag into a patch list.
 ```
 "$HOME/.arti/python/python.exe" "$HOME/.arti/tools/arti-memcheck/check.py" \
     [--project DIR]   # default: cwd
-    [--all]           # every path in progress-index.md, plus ~/.arti itself
+    [--all]           # every path in project-index.md, plus ~/.arti itself
     [--budget N]      # bytes, default 20480
     [--hook]          # summary mode: silent when clean, always exit 0
 ```
