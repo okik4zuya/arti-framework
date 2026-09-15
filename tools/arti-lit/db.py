@@ -1,6 +1,6 @@
 """SQLite-backed store for a single paper project's bibliography -- Layer 2
 (`literature\\library.md`, canonical) and Layer 3 (`writing\\references.md`,
-generated per-draft reference list) of ARTi-writing's Reference System. Unlike
+generated per-draft reference list) of the `ARTi-ref` skill's literature system. Unlike
 `tools/arti-db` (a cross-project singleton under `~/.arti`), this tool is
 per-project: it resolves its data file relative to `--project` (default cwd),
 since bibliography data belongs to one paper project, not the framework as a
@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS sources (
   local_file   TEXT,
   read_status  TEXT NOT NULL DEFAULT 'export-only',
   used_in      TEXT,
+  summary      TEXT,
+  abstract     TEXT,
   created_at   TEXT NOT NULL,
   updated_at   TEXT NOT NULL
 );
@@ -73,6 +75,22 @@ def init_db(project=None):
         try:
             conn.executescript(SCHEMA)
             conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(sources)").fetchall()}
+            if "summary" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN summary TEXT")
+                conn.commit()
+            if "abstract" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN abstract TEXT")
+                conn.commit()
+            if "journal_name" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN journal_name TEXT")
+                conn.commit()
+            if "issn" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN issn TEXT")
+                conn.commit()
+            if "article_type" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN article_type TEXT")
+                conn.commit()
             if is_new:
                 _migrate_legacy(conn, paths["legacy_library"])
                 conn.commit()
@@ -134,7 +152,8 @@ def _parse_library_md(path):
 # ---------------------------------------------------------------------------
 
 def library_add(project, key, citation, doi=None, local_file=None,
-                 read_status="export-only", used_in=None):
+                 read_status="export-only", used_in=None, summary=None, abstract=None):
+    key = key.lower()
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
@@ -150,9 +169,9 @@ def library_add(project, key, citation, doi=None, local_file=None,
                     )
             now = _now()
             conn.execute(
-                "INSERT INTO sources (key, citation, doi, local_file, read_status, used_in, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (key, citation, doi, local_file, read_status, used_in, now, now),
+                "INSERT INTO sources (key, citation, doi, local_file, read_status, used_in, summary, abstract, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (key, citation, doi, local_file, read_status, used_in, summary, abstract, now, now),
             )
             conn.commit()
             row = _row_to_dict(conn.execute("SELECT * FROM sources WHERE key = ?", (key,)).fetchone())
@@ -163,7 +182,7 @@ def library_add(project, key, citation, doi=None, local_file=None,
 
 
 def library_update(project, key, citation=None, doi=None, local_file=None,
-                    read_status=None, used_in=None):
+                    read_status=None, used_in=None, summary=None, abstract=None):
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
@@ -186,10 +205,12 @@ def library_update(project, key, citation=None, doi=None, local_file=None,
             new_local_file = local_file if local_file is not None else entry["local_file"]
             new_read_status = read_status if read_status is not None else entry["read_status"]
             new_used_in = used_in if used_in is not None else entry["used_in"]
+            new_summary = summary if summary is not None else entry["summary"]
+            new_abstract = abstract if abstract is not None else entry["abstract"]
             conn.execute(
-                "UPDATE sources SET citation=?, doi=?, local_file=?, read_status=?, used_in=?, updated_at=? "
+                "UPDATE sources SET citation=?, doi=?, local_file=?, read_status=?, used_in=?, summary=?, abstract=?, updated_at=? "
                 "WHERE key=?",
-                (new_citation, new_doi, new_local_file, new_read_status, new_used_in, _now(), key),
+                (new_citation, new_doi, new_local_file, new_read_status, new_used_in, new_summary, new_abstract, _now(), key),
             )
             conn.commit()
             result = _row_to_dict(conn.execute("SELECT * FROM sources WHERE key = ?", (key,)).fetchone())
@@ -209,17 +230,27 @@ def library_get(project, key):
             conn.close()
 
 
-def library_list(project, status=None):
+def library_list(project, status=None, journal=None, article_type=None):
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
         try:
+            clauses = []
+            params = []
             if status:
-                rows = conn.execute(
-                    "SELECT * FROM sources WHERE read_status = ? ORDER BY key", (status,)
-                ).fetchall()
-            else:
-                rows = conn.execute("SELECT * FROM sources ORDER BY key").fetchall()
+                clauses.append("read_status = ?")
+                params.append(status)
+            if journal:
+                clauses.append("journal_name LIKE ?")
+                params.append(f"%{journal}%")
+            if article_type:
+                clauses.append("article_type LIKE ?")
+                params.append(f"%{article_type}%")
+            query = "SELECT * FROM sources"
+            if clauses:
+                query += " WHERE " + " AND ".join(clauses)
+            query += " ORDER BY key"
+            rows = conn.execute(query, params).fetchall()
             return [_row_to_dict(r) for r in rows]
         finally:
             conn.close()
@@ -261,6 +292,178 @@ def library_remove(project, key):
     return result
 
 
+_RIS_TAG_RE = re.compile(r"^([A-Za-z0-9]{2})\s+-\s?(.*)$")
+
+
+def _parse_ris_records(text):
+    """Splits an RIS export into a list of dict-of-lists (tag -> values, in
+    file order), one dict per TY..ER record. A non-tag line is treated as a
+    continuation of the previous tag's value (Scopus/ScienceDirect both wrap
+    long AB abstracts across lines this way)."""
+    records = []
+    current = None
+    last_tag = None
+    for raw_line in text.splitlines():
+        line = raw_line.rstrip("\r")
+        if not line.strip():
+            continue
+        m = _RIS_TAG_RE.match(line)
+        if m:
+            tag, value = m.group(1).upper(), m.group(2).strip()
+            if tag == "TY":
+                current = {}
+                last_tag = None
+            if current is None:
+                continue
+            if tag == "ER":
+                records.append(current)
+                current = None
+                last_tag = None
+                continue
+            current.setdefault(tag, []).append(value)
+            last_tag = tag
+        elif current is not None and last_tag is not None:
+            current[last_tag][-1] = (current[last_tag][-1] + " " + line.strip()).strip()
+    return records
+
+
+def _ris_surname(author):
+    if "," in author:
+        return author.split(",", 1)[0].strip()
+    parts = author.strip().split()
+    return parts[-1] if parts else "Unknown"
+
+
+def _ris_format_authors(authors):
+    def display(a):
+        if "," in a:
+            surname, rest = a.split(",", 1)
+            return f"{surname.strip()}, {rest.strip()}"
+        return a.strip()
+    names = [display(a) for a in authors]
+    if not names:
+        return "Unknown"
+    if len(names) == 1:
+        return names[0]
+    if len(names) <= 3:
+        return ", ".join(names[:-1]) + " & " + names[-1]
+    return names[0] + " et al."
+
+
+def _ris_make_key(surname, year, used_keys):
+    base = re.sub(r"[^A-Za-z0-9]", "", surname).lower() or "unknown"
+    base_key = f"{base}-{year}"
+    if base_key not in used_keys:
+        return base_key
+    for i in range(26):
+        candidate = base_key + chr(ord("a") + i)
+        if candidate not in used_keys:
+            return candidate
+    i = 1
+    while True:
+        candidate = f"{base_key}{i}"
+        if candidate not in used_keys:
+            return candidate
+        i += 1
+
+
+def library_import_ris(project, ris_paths):
+    """Batch-imports one or more RIS export files (Scopus, ScienceDirect, or
+    any other database that exports RIS) into this project's library in a
+    single call, so DOI-dedup works across files in the same batch and
+    library_export() only regenerates library.md once at the end."""
+    paths = _paths(project)
+    imported = []
+    skipped_duplicate = []
+    skipped_invalid = []
+    seen_dois_in_batch = {}
+
+    with _lock:
+        conn = _connect(paths["db"])
+        try:
+            existing_rows = conn.execute("SELECT key, doi FROM sources").fetchall()
+            used_keys = {r["key"] for r in existing_rows}
+            existing_dois = {r["doi"]: r["key"] for r in existing_rows if r["doi"]}
+
+            for ris_path in ris_paths:
+                p = Path(ris_path)
+                try:
+                    text = p.read_text(encoding="utf-8-sig")
+                except OSError as e:
+                    skipped_invalid.append({"file": str(p), "record_index": None, "reason": str(e)})
+                    continue
+                records = _parse_ris_records(text)
+                for idx, rec in enumerate(records):
+                    ty_vals = rec.get("TY")
+                    article_type = ty_vals[0].strip() if ty_vals and ty_vals[0].strip() else None
+                    titles = rec.get("TI") or rec.get("T1")
+                    authors = rec.get("AU") or []
+                    title = titles[0] if titles else None
+                    if not title and not authors:
+                        skipped_invalid.append({
+                            "file": p.name, "record_index": idx,
+                            "reason": "missing both title and authors",
+                        })
+                        continue
+                    title = title or "Untitled"
+
+                    years = rec.get("PY") or rec.get("Y1")
+                    year_raw = years[0] if years else ""
+                    year_match = re.search(r"\d{4}", year_raw)
+                    year = year_match.group(0) if year_match else "n.d."
+
+                    doi = None
+                    dois = rec.get("DO")
+                    if dois:
+                        doi = re.sub(r"^https?://(dx\.)?doi\.org/", "", dois[0].strip(), flags=re.I) or None
+
+                    if doi and doi in existing_dois:
+                        skipped_duplicate.append({
+                            "doi": doi, "existing_key": existing_dois[doi], "row_title": title,
+                        })
+                        continue
+                    if doi and doi in seen_dois_in_batch:
+                        skipped_duplicate.append({
+                            "doi": doi, "existing_key": seen_dois_in_batch[doi], "row_title": title,
+                        })
+                        continue
+
+                    source_vals = rec.get("T2") or rec.get("JO") or rec.get("JF")
+                    source = source_vals[0] if source_vals else ""
+
+                    issn_vals = rec.get("SN")
+                    issn = issn_vals[0].strip() if issn_vals and issn_vals[0].strip() else None
+
+                    abstract_vals = rec.get("AB") or rec.get("N2")
+                    abstract = abstract_vals[0].strip() if abstract_vals and abstract_vals[0].strip() else None
+
+                    surname = _ris_surname(authors[0]) if authors else "Unknown"
+                    key = _ris_make_key(surname, year, used_keys)
+                    used_keys.add(key)
+
+                    citation = f"{_ris_format_authors(authors)} ({year}). {title}."
+                    if source:
+                        citation += f" {source}."
+
+                    now = _now()
+                    conn.execute(
+                        "INSERT INTO sources (key, citation, doi, local_file, read_status, used_in, summary, abstract, journal_name, issn, article_type, created_at, updated_at) "
+                        "VALUES (?, ?, ?, NULL, 'export-only', NULL, NULL, ?, ?, ?, ?, ?, ?)",
+                        (key, citation, doi, abstract, source or None, issn, article_type, now, now),
+                    )
+                    row = _row_to_dict(conn.execute("SELECT * FROM sources WHERE key = ?", (key,)).fetchone())
+                    imported.append(row)
+                    if doi:
+                        existing_dois[doi] = key
+                        seen_dois_in_batch[doi] = key
+            conn.commit()
+        finally:
+            conn.close()
+
+    library_export(project)
+    return {"imported": imported, "skipped_duplicate": skipped_duplicate, "skipped_invalid": skipped_invalid}
+
+
 def library_export(project=None):
     paths = _paths(project)
     with _lock:
@@ -275,7 +478,7 @@ def library_export(project=None):
         "# Literature Library",
         "",
         "**File location:** `literature\\library.md` — canonical bibliography, one source per line,",
-        "superset including screened-out sources. See ARTi-writing's Reference System (Layer 2).",
+        "superset including screened-out sources. Owned by the `ARTi-ref` skill (Layer 2).",
         "",
         EXPORT_BANNER,
         "",

@@ -110,10 +110,11 @@
   th{
     text-align:left; font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600;
     color:var(--text-muted);
-    padding:11px 20px; border-bottom:1px solid var(--border);
+    padding:8px 20px; border-bottom:1px solid var(--border);
   }
-  td{ padding:14px 20px; border-top:1px solid var(--border); vertical-align:top; }
+  td{ padding:8px 20px; border-top:1px solid var(--border); vertical-align:top; }
   .substage{ font-size:12.5px; color:var(--text-muted); margin-top:3px; }
+  .proj-path{ font-size:12px; color:var(--text-muted); margin-top:2px; font-family:"SFMono-Regular",Consolas,monospace; }
   tr:first-child td{ border-top:none; }
   .row-actions{ display:flex; gap:8px; flex-wrap:wrap; }
   .icon-btn{
@@ -137,7 +138,63 @@
 
   .proj-list{ max-height:360px; overflow-y:auto; }
   .proj-list thead th{ position:sticky; top:0; background:var(--surface); z-index:1; }
-  .proj-updated{ white-space:nowrap; }
+
+  .ref-list{ display:flex; flex-direction:column; gap:10px; }
+  .ref-card{
+    border:1px solid var(--border); border-radius:10px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:8px; background:var(--surface);
+  }
+  .ref-title{ font-weight:700; font-size:14.5px; line-height:1.4; }
+  .ref-meta{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--text-muted); }
+  .ref-key{ font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; color:var(--text-muted); }
+  .doi-row{ display:flex; align-items:center; gap:6px; }
+  .doi-row a{ color:var(--accent); text-decoration:none; }
+  .doi-row a:hover{ text-decoration:underline; }
+  .copy-doi-btn{
+    font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600; padding:2px 8px;
+    border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); cursor:pointer; line-height:1.6;
+  }
+  .copy-doi-btn:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .copy-doi-btn.copied{ border-color:var(--green); color:var(--green); background:var(--green-soft); }
+
+  .ref-badges{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .sjm-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; line-height:1.4;
+    font-weight:600; font-family:"Inter",system-ui,sans-serif; padding:2px 8px;
+    border-radius:999px; white-space:nowrap; background:#eee; color:#333;
+    text-decoration:none; cursor:pointer; border:none;
+  }
+  .sjm-badge:hover, .sjm-badge:visited, .sjm-badge:active{ color:inherit; text-decoration:none; }
+  .sjm-badge:hover{ box-shadow:0 0 0 1px currentColor; }
+  .sjm-badge--q1{ background:#d4edda; color:#14532d; }
+  .sjm-badge--q2{ background:#fff3cd; color:#664d03; }
+  .sjm-badge--q3{ background:#ffe5d0; color:#7a3e00; }
+  .sjm-badge--q4{ background:#f8d7da; color:#842029; }
+  .sjm-badge--empty{ background:transparent; color:#999; font-weight:400; }
+  .sjm-badge__quartile{ font-weight:800; font-size:13px; letter-spacing:0.02em; color:inherit; }
+  .sjm-badge__text{
+    font-weight:500; color:inherit; padding-left:5px;
+    border-left:1px solid color-mix(in srgb, currentColor 35%, transparent);
+  }
+  .avail-badge{
+    display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
+    padding:2px 10px; border-radius:20px; white-space:nowrap; border:none; margin:0;
+  }
+  .avail-badge.avail-citation{ color:var(--slate); background:var(--slate-soft); cursor:default; }
+  .avail-badge.avail-fulltext{ color:var(--accent); background:var(--accent-soft); cursor:default; }
+  .avail-badge.avail-abstract, .avail-badge.avail-summary{
+    color:var(--amber); background:var(--amber-soft); cursor:pointer; font-family:inherit;
+  }
+  .avail-badge.avail-abstract:hover, .avail-badge.avail-summary:hover{ opacity:0.85; }
+  .avail-badge.avail-abstract.expanded, .avail-badge.avail-summary.expanded{ color:var(--green); background:var(--green-soft); }
+
+  .ref-expand{
+    font-size:13px; color:var(--text); background:var(--surface-2); border-radius:8px;
+    padding:10px 12px;
+  }
+  .ref-expand strong{ display:block; font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.02em; }
+  .ref-expand p{ margin:0; line-height:1.5; white-space:pre-wrap; }
   .stale-badge{ display:inline-block; margin-top:3px; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:600; background:var(--amber-soft); color:var(--amber); }
   .lifecycle-tag{
     display:inline-block; font-size:11px; font-weight:600; color:var(--text-muted);
@@ -192,15 +249,27 @@
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
     box-shadow:0 12px 32px rgba(16,24,40,0.16); width:100%; max-width:460px; overflow:hidden;
   }
+  .modal.fullsize{
+    max-width:none; width:95vw; height:90vh;
+    display:flex; flex-direction:column;
+  }
+  .modal.fullsize .modal-body{ flex:1; overflow-y:auto; }
   .modal-head{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 20px; border-bottom:1px solid var(--border);
   }
-  .modal-head h2{ margin:0; font-size:16px; font-family:"Inter",system-ui,sans-serif; font-weight:600; }
+  .modal-head h2{
+    margin:0; font-size:16px; font-family:"Inter",system-ui,sans-serif; font-weight:600;
+    display:flex; align-items:center; gap:9px; min-width:0;
+  }
+  .ref-project-name{
+    font-size:12.5px; font-weight:500; color:var(--text-muted);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
   .modal-close{ background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; }
   .modal-close:hover{ color:var(--text); }
   .modal-body{ padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
-  .modal-body input{
+  .modal-body input, .modal-body select{
     width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
     background:var(--surface); color:var(--text); font-family:inherit; font-size:14px;
   }
@@ -256,7 +325,7 @@
       <div class="proj-list">
         <table id="projectsTable">
           <thead>
-            <tr><th>Category</th><th>Name</th><th>Updated</th><th></th></tr>
+            <tr><th>Category</th><th>Name</th><th></th></tr>
           </thead>
           <tbody id="projectsBody"></tbody>
         </table>
@@ -289,7 +358,7 @@
         <button class="btn" id="browseFolderBtn" type="button">Browse…</button>
       </div>
       <div id="categoryFields" hidden>
-        <input id="projCategory" placeholder="Category (e.g. Project, Other)" />
+        <select id="projCategory"></select>
         <input id="projTags" placeholder="Tags, comma-separated" style="margin-top:8px;" />
       </div>
       <div class="hint" id="projectHint">Browse opens a native folder picker. This is the parent folder the new project subfolder will be created in.</div>
@@ -297,6 +366,41 @@
     </div>
     <div class="modal-actions">
       <button class="btn primary" id="projectConfirmBtn">Create &amp; Open</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editProjectOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Edit Project</h2>
+      <button class="modal-close" id="closeEditProjectModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input id="editProjName" placeholder="Project name" />
+      <select id="editProjCategory"></select>
+      <div class="err" id="editProjectErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="editProjectConfirmBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="referencesOverlay" hidden>
+  <div class="modal fullsize">
+    <div class="modal-head">
+      <h2>References <span class="count-badge" id="referencesCount">0</span><span class="ref-project-name" id="referencesProjectName"></span></h2>
+      <button class="modal-close" id="closeReferencesModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input class="search-input" id="referencesSearch" placeholder="Search references…" style="width:100%;" />
+      <div class="hint" id="referencesSummary"></div>
+      <div class="err" id="referencesErr" hidden></div>
+      <div class="ref-list" id="referencesBody"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="addReferencesBtn">Add references…</button>
     </div>
   </div>
 </div>
@@ -352,11 +456,15 @@
     });
   }
 
-  function formatUpdated(s){
-    if (!s) return '—';
-    var m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(s);
-    if (m) return m[1] + ' ' + m[2];
-    return s;
+  var BASE_CATEGORIES = ["Paper", "Project", "Other"];
+
+  function populateCategorySelect(selectEl, selected){
+    var opts = BASE_CATEGORIES.slice();
+    if (selected && opts.indexOf(selected) === -1) opts.push(selected);
+    selectEl.innerHTML = opts.map(function(c){
+      return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>';
+    }).join("");
+    selectEl.value = selected || opts[0];
   }
 
   function catClass(cat){
@@ -411,37 +519,39 @@
     document.getElementById("projectsCount").textContent = rows.length;
     var body = document.getElementById("projectsBody");
     if (!allProjects.length){
-      body.innerHTML = '<tr><td colspan="4"><div class="empty">No projects yet — use New Project or Add Project above.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="3"><div class="empty">No projects yet — use New Project or Add Project above.</div></td></tr>';
       return;
     }
     if (!rows.length){
-      body.innerHTML = '<tr><td colspan="4"><div class="empty">No projects match this search/filter.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="3"><div class="empty">No projects match this search/filter.</div></td></tr>';
       return;
     }
     body.innerHTML = rows.map(function(r){
       var badge = '<span class="cat-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span>';
-      var updated = escapeHtml(formatUpdated(r.lastOpenedAt));
       var lifecycle = r.lifecycle || "active";
       var doneTag = lifecycle === "complete" ? '<span class="lifecycle-tag">Done</span>' : '';
+      var editBtn = '<button type="button" data-role="edit-project" data-path="' + escapeHtml(r.path) + '">Edit</button>';
       var lifecycleBtns;
       if (lifecycle === "complete"){
-        lifecycleBtns =
+        lifecycleBtns = editBtn +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Reopen</button>' +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
       } else if (lifecycle === "archived"){
-        lifecycleBtns = '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Restore</button>';
+        lifecycleBtns = editBtn +
+          '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Restore</button>';
       } else {
-        lifecycleBtns =
+        lifecycleBtns = editBtn +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="complete">Mark complete</button>' +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
       }
       return '<tr>' +
         '<td>' + badge + '</td>' +
-        '<td title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag + '</td>' +
-        '<td class="proj-updated">' + updated + '</td>' +
+        '<td title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag +
+          '<div class="proj-path">' + escapeHtml(r.path) + '</div></td>' +
         '<td><div class="row-actions">' +
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">Open folder</button>' +
           '<button class="icon-btn info" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '">Open VS Code</button>' +
+          '<button class="icon-btn info" data-role="references" data-path="' + escapeHtml(r.path) + '">References</button>' +
           '<div class="row-menu">' +
             '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
             '<div class="menu-dropdown" hidden>' + lifecycleBtns + '</div>' +
@@ -457,6 +567,18 @@
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="open-vscode"]'), function(btn){
       btn.addEventListener("click", function(){
         api("/open-vscode", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: btn.getAttribute("data-path") }) }).then(loadAll);
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="references"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        openReferencesModal(btn.getAttribute("data-path"));
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="edit-project"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        openEditProjectModal(btn.getAttribute("data-path"));
       });
     });
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="lifecycle"]'), function(btn){
@@ -514,6 +636,7 @@
     toggleCatPaper.classList.toggle("active", cat === "Paper");
     toggleCatGeneral.classList.toggle("active", cat === "General");
     categoryFields.hidden = cat === "Paper";
+    if (cat === "General") populateCategorySelect(projCategory, "Project");
   }
   toggleCatPaper.addEventListener("click", function(){ setNewProjectCategory("Paper"); });
   toggleCatGeneral.addEventListener("click", function(){ setNewProjectCategory("General"); });
@@ -522,7 +645,6 @@
     mode = m;
     projName.value = "";
     projPath.value = "";
-    projCategory.value = "";
     projTags.value = "";
     projectErr.hidden = true;
     projName.placeholder = "Project name";
@@ -540,7 +662,7 @@
       nameField.hidden = false;
       categoryFields.hidden = false;
       projName.placeholder = "Label for dashboard (defaults to folder name)";
-      projCategory.placeholder = "Category (e.g. Project, Other)";
+      populateCategorySelect(projCategory, "Other");
       document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the folder itself. Nothing inside it is created or touched; this just adds it to the dashboard's project list and opens it in VS Code.";
       document.getElementById("projectConfirmBtn").textContent = "Add & Open";
     }
@@ -601,6 +723,235 @@
         projectErr.hidden = false;
       });
     }
+  });
+
+  // ---- Edit Project modal ----
+
+  var editOverlay = document.getElementById("editProjectOverlay");
+  var editProjName = document.getElementById("editProjName");
+  var editProjCategory = document.getElementById("editProjCategory");
+  var editProjectErr = document.getElementById("editProjectErr");
+  var editProjectPath = null;
+
+  function openEditProjectModal(path){
+    var r = allProjects.filter(function(p){ return p.path === path; })[0];
+    if (!r) return;
+    editProjectPath = path;
+    editProjName.value = r.name || "";
+    populateCategorySelect(editProjCategory, r.category || "Other");
+    editProjectErr.hidden = true;
+    editOverlay.hidden = false;
+  }
+  document.getElementById("closeEditProjectModal").addEventListener("click", function(){ editOverlay.hidden = true; });
+  editOverlay.addEventListener("click", function(e){ if (e.target === editOverlay) editOverlay.hidden = true; });
+
+  document.getElementById("editProjectConfirmBtn").addEventListener("click", function(){
+    var name = editProjName.value.trim();
+    var category = editProjCategory.value.trim();
+    if (!name || !category){
+      editProjectErr.textContent = "Name and category are both required.";
+      editProjectErr.hidden = false;
+      return;
+    }
+    editProjectErr.hidden = true;
+    api("/projects/update", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: editProjectPath, name: name, category: category }) }).then(function(){
+      editOverlay.hidden = true;
+      loadAll();
+    }).catch(function(err){
+      editProjectErr.textContent = err.message;
+      editProjectErr.hidden = false;
+    });
+  });
+
+  // ---- References modal ----
+
+  var referencesOverlay = document.getElementById("referencesOverlay");
+  var referencesBody = document.getElementById("referencesBody");
+  var referencesSummary = document.getElementById("referencesSummary");
+  var referencesErr = document.getElementById("referencesErr");
+  var referencesCount = document.getElementById("referencesCount");
+  var referencesProjectName = document.getElementById("referencesProjectName");
+  var referencesSearch = document.getElementById("referencesSearch");
+  var referencesPath = null;
+  var allReferences = [];
+
+  function buildJournalBadgeHtml(result){
+    if (!result){
+      return '<span class="sjm-badge sjm-badge--empty" title="Not found in the Scimago snapshot">—</span>';
+    }
+    var quartile = result.sjr_best_quartile || "?";
+    var sjr = result.sjr != null ? Number(result.sjr).toFixed(3) : "?";
+    var hIndex = result.h_index != null ? result.h_index : "?";
+    return '<a class="sjm-badge sjm-badge--' + quartile.toLowerCase() + '" ' +
+      'href="https://www.scimagojr.com/journalsearch.php?q=' + encodeURIComponent(result.sourceid) + '&tip=sid" ' +
+      'target="_blank" rel="noopener" title="Open on Scimago">' +
+      '<span class="sjm-badge__quartile">' + escapeHtml(quartile) + '</span>' +
+      '<span class="sjm-badge__text">SJR ' + sjr + '</span>' +
+      '<span class="sjm-badge__text">H ' + hIndex + '</span>' +
+    '</a>';
+  }
+
+  // Journal metrics are looked up lazily (one request per reference, after
+  // the card list itself has rendered) rather than blocking /references/list
+  // -- the per-row Scimago lookup (title fallback especially) otherwise made
+  // opening the modal noticeably slow for large libraries.
+  function buildJournalBadge(r){
+    if (Object.prototype.hasOwnProperty.call(r, "journal_metrics")){
+      return buildJournalBadgeHtml(r.journal_metrics);
+    }
+    return '<span class="sjm-badge sjm-badge--empty" data-journal-key="' + escapeHtml(r.key) + '" title="Looking up…">…</span>';
+  }
+
+  function patchJournalBadge(r){
+    var el = referencesBody.querySelector('[data-journal-key="' + CSS.escape(r.key) + '"]');
+    if (el) el.outerHTML = buildJournalBadgeHtml(r.journal_metrics);
+  }
+
+  function fetchJournalBadges(rows){
+    rows.forEach(function(r){
+      if (Object.prototype.hasOwnProperty.call(r, "journal_metrics")) return;
+      var parts = [];
+      if (r.issn) parts.push("issn=" + encodeURIComponent(r.issn));
+      if (r.journal_name) parts.push("journal_name=" + encodeURIComponent(r.journal_name));
+      if (r.citation) parts.push("citation=" + encodeURIComponent(r.citation));
+      if (!parts.length){
+        r.journal_metrics = null;
+        patchJournalBadge(r);
+        return;
+      }
+      api("/references/journal-metrics?" + parts.join("&")).then(function(data){
+        r.journal_metrics = data.journal_metrics || null;
+        patchJournalBadge(r);
+      }).catch(function(){
+        r.journal_metrics = null;
+        patchJournalBadge(r);
+      });
+    });
+  }
+
+  function renderReferenceCards(rows){
+    if (!rows.length){
+      referencesBody.innerHTML = '<div class="empty">' + (allReferences.length ? "No references match your search." : "No references yet.") + '</div>';
+      return;
+    }
+    referencesBody.innerHTML = rows.map(function(r){
+      var doiRow = r.doi
+        ? '<span class="doi-row">DOI: <a href="https://dx.doi.org/' + encodeURIComponent(r.doi) + '" target="_blank" rel="noopener">' + escapeHtml(r.doi) + '</a>' +
+          '<button class="copy-doi-btn" data-doi="' + escapeHtml(r.doi) + '">Copy</button></span>'
+        : '<span class="doi-row">DOI: —</span>';
+
+      var badges = buildJournalBadge(r);
+      badges += '<span class="avail-badge avail-citation">Citation</span>';
+      if (r.abstract) badges += '<button type="button" class="avail-badge avail-abstract" data-expand="abstract">Abstract</button>';
+      if (r.local_file) badges += '<span class="avail-badge avail-fulltext"' + (r.local_file ? ' title="' + escapeHtml(r.local_file) + '"' : '') + '>Fulltext</span>';
+      if (r.summary) badges += '<button type="button" class="avail-badge avail-summary" data-expand="summary">Summary</button>';
+
+      var expands = "";
+      if (r.abstract) expands += '<div class="ref-expand ref-expand-abstract" hidden><strong>Abstract</strong><p>' + escapeHtml(r.abstract) + '</p></div>';
+      if (r.summary) expands += '<div class="ref-expand ref-expand-summary" hidden><strong>Summary</strong><p>' + escapeHtml(r.summary) + '</p></div>';
+
+      return '<div class="ref-card">' +
+        '<div class="ref-title">' + escapeHtml(r.citation) + '</div>' +
+        '<div class="ref-meta">' +
+          '<span class="ref-key">' + escapeHtml(r.key) + '</span>' +
+          doiRow +
+        '</div>' +
+        '<div class="ref-badges">' + badges + '</div>' +
+        expands +
+      '</div>';
+    }).join("");
+    fetchJournalBadges(rows);
+  }
+
+  function applyReferencesFilter(){
+    var q = referencesSearch.value.trim().toLowerCase();
+    if (!q){
+      renderReferenceCards(allReferences);
+      return;
+    }
+    var filtered = allReferences.filter(function(r){
+      return [r.citation, r.key, r.doi, r.used_in, r.abstract, r.summary].some(function(v){
+        return v && String(v).toLowerCase().indexOf(q) !== -1;
+      });
+    });
+    renderReferenceCards(filtered);
+  }
+  referencesSearch.addEventListener("input", applyReferencesFilter);
+
+  function loadReferences(){
+    return api("/references/list?path=" + encodeURIComponent(referencesPath)).then(function(data){
+      allReferences = data.rows || [];
+      referencesCount.textContent = allReferences.length;
+      applyReferencesFilter();
+    });
+  }
+
+  referencesBody.addEventListener("click", function(e){
+    var copyBtn = e.target.closest(".copy-doi-btn");
+    if (copyBtn){
+      var doi = copyBtn.getAttribute("data-doi");
+      navigator.clipboard.writeText(doi).then(function(){
+        var prev = copyBtn.textContent;
+        copyBtn.textContent = "Copied";
+        copyBtn.classList.add("copied");
+        setTimeout(function(){ copyBtn.textContent = prev; copyBtn.classList.remove("copied"); }, 1200);
+      });
+      return;
+    }
+    var expandBtn = e.target.closest("[data-expand]");
+    if (expandBtn){
+      var kind = expandBtn.getAttribute("data-expand");
+      var card = expandBtn.closest(".ref-card");
+      var panel = card && card.querySelector(".ref-expand-" + kind);
+      if (panel){
+        panel.hidden = !panel.hidden;
+        expandBtn.classList.toggle("expanded", !panel.hidden);
+      }
+    }
+  });
+
+  function openReferencesModal(path){
+    referencesPath = path;
+    referencesErr.hidden = true;
+    referencesSummary.textContent = "";
+    referencesSearch.value = "";
+    referencesCount.textContent = "0";
+    var proj = allProjects.filter(function(p){ return p.path === path; })[0];
+    referencesProjectName.textContent = proj ? ("· " + proj.name) : "";
+    referencesProjectName.title = proj ? proj.name : "";
+    referencesBody.innerHTML = '<div class="empty">Loading…</div>';
+    referencesOverlay.hidden = false;
+    loadReferences().catch(function(err){
+      referencesErr.textContent = err.message;
+      referencesErr.hidden = false;
+    });
+  }
+  document.getElementById("closeReferencesModal").addEventListener("click", function(){ referencesOverlay.hidden = true; });
+  referencesOverlay.addEventListener("click", function(e){ if (e.target === referencesOverlay) referencesOverlay.hidden = true; });
+
+  document.getElementById("addReferencesBtn").addEventListener("click", function(){
+    var btn = this;
+    btn.textContent = "Waiting…";
+    btn.disabled = true;
+    referencesErr.hidden = true;
+    api("/browse-files", { method:"POST" }).then(function(data){
+      var files = data.paths || [];
+      if (!files.length) return null;
+      return api("/references/import", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: referencesPath, files: files }) }).then(function(result){
+        var imported = (result.imported || []).length;
+        var dupes = (result.skipped_duplicate || []).length;
+        var invalid = (result.skipped_invalid || []).length;
+        referencesSummary.textContent = imported + " imported, " + dupes + " skipped as duplicate" + (dupes === 1 ? "" : "s") +
+          ", " + invalid + " skipped (invalid record" + (invalid === 1 ? "" : "s") + ").";
+        return loadReferences();
+      });
+    }).catch(function(err){
+      referencesErr.textContent = err.message;
+      referencesErr.hidden = false;
+    }).finally(function(){
+      btn.textContent = "Add references…";
+      btn.disabled = false;
+    });
   });
 
   // ---- Quit Dashboard ----

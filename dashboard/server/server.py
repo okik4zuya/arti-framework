@@ -22,9 +22,11 @@ import threading
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 import db
+import journals
+import lit
 import platform_ops
 
 HOST = "127.0.0.1"
@@ -37,6 +39,18 @@ HTML_PATH = DASHBOARD_DIR / "arti-dashboard.html"
 
 
 arti_db = db.arti_db
+
+
+def _parse_journal_from_citation(citation):
+    """Best-effort fallback for pre-migration rows: library_import_ris() formats
+    citation as "{authors} ({year}). {title}. {journal}." -- take the last
+    non-empty segment before the final period."""
+    if not citation:
+        return None
+    segments = [s.strip() for s in citation.strip().rstrip(".").split(". ") if s.strip()]
+    return segments[-1] if len(segments) >= 2 else None
+
+
 CLAUDE_TEMPLATE_PATH = (
     ARTI_HOME / "skills" / "ARTi-setup" / "references" / "project-claude-template.md"
 )
@@ -237,6 +251,16 @@ class Handler(BaseHTTPRequestHandler):
             platform_ops.open_in_vscode(project_path)
             return self._send_json(200, {"path": str(project_path)})
 
+        if pathname == "/api/projects/update" and method == "POST":
+            body = self._read_body()
+            p = body.get("path")
+            if not p:
+                return self._send_json(400, {"error": "path required"})
+            name = (body.get("name") or "").strip() or None
+            category = (body.get("category") or "").strip() or None
+            entry = db.upsert_project(p, name=name, category=category)
+            return self._send_json(200, {"ok": True, "project": entry})
+
         if pathname == "/api/projects/lifecycle" and method == "POST":
             body = self._read_body()
             p = body.get("path")
@@ -263,6 +287,52 @@ class Handler(BaseHTTPRequestHandler):
             platform_ops.open_in_vscode(p)
             db.upsert_project(p, touch_opened=True)
             return self._send_json(200, {"ok": True})
+
+        if pathname == "/api/references/list" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            p = (query.get("path") or [None])[0]
+            if not p:
+                return self._send_json(400, {"error": "path required"})
+            try:
+                rows = lit.list_references(p)
+            except Exception as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, {"rows": rows})
+
+        if pathname == "/api/references/journal-metrics" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            issn = (query.get("issn") or [None])[0]
+            journal_name = (query.get("journal_name") or [None])[0]
+            citation = (query.get("citation") or [None])[0]
+            title = journal_name or _parse_journal_from_citation(citation)
+            if not issn and not title:
+                return self._send_json(400, {"error": "issn, journal_name, or citation required"})
+            try:
+                metrics = journals.lookup(issn=issn, title=title)
+            except Exception as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, {"journal_metrics": metrics})
+
+        if pathname == "/api/references/import" and method == "POST":
+            body = self._read_body()
+            p = body.get("path")
+            files = body.get("files") or []
+            if not p or not files:
+                return self._send_json(400, {"error": "path and files required"})
+            try:
+                result = lit.import_ris(p, files)
+            except Exception as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, result)
+
+        if pathname == "/api/browse-files" and method == "POST":
+            try:
+                chosen = platform_ops.browse_files()
+            except platform_ops.NoPickerAvailable as e:
+                return self._send_json(400, {"error": str(e)})
+            except Exception as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, {"paths": chosen})
 
         if pathname == "/api/focus" and method == "POST":
             if _window is not None:

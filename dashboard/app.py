@@ -54,7 +54,10 @@ def main():
         f"http://{HOST}:{PORT}/",
         width=1280,
         height=860,
-        min_size=(900, 600),
+        # Small enough that Windows' Win+Left/Right half-screen snap can still
+        # shrink the window to 50% width on common laptop resolutions (e.g.
+        # 1366px wide -> 683px half) instead of clamping to the old 900px floor.
+        min_size=(640, 480),
     )
     dashboard_server.set_window(window)
 

@@ -41,7 +41,11 @@ $owner.Activate()
 $quotedArgs = @($payload.args) | ForEach-Object {
     if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
 }
-Start-Process -FilePath $payload.exe -ArgumentList $quotedArgs
+if ($payload.hidden) {
+    Start-Process -FilePath $payload.exe -ArgumentList $quotedArgs -WindowStyle Hidden
+} else {
+    Start-Process -FilePath $payload.exe -ArgumentList $quotedArgs
+}
 
 Start-Sleep -Milliseconds 300
 $owner.Close()

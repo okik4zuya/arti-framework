@@ -188,8 +188,8 @@ FORMAT:
 > *Claim mapping, not bibliographic detail.* Full bibliographic entries live in
 > `literature\library.md` (one line per source, canonical), keyed `author-year[a|b]` (e.g.
 > `kaw-2016`). This section only maps that key to where/how it's used in this Scratchbook — it
-> exists so a `[LIT: Author, Year]` tag has something to resolve against without re-typing the full
-> citation here.
+> exists so a `[LIT: Author, Year]` tag has something to resolve against without re-typing the
+> full citation here.
 > *Every `[LIT: Author, Year]` tag anywhere in this Scratchbook must have a matching key below, and
 > that key must have a full entry in `literature\library.md`.*
 > *If a key isn't in `library.md` yet, tag it `[UNVERIFIED — USER MUST CONFIRM]` here until it is.*

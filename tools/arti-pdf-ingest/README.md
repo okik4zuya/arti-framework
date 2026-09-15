@@ -17,8 +17,8 @@ Same convention as every other `~/.arti/tools/*` tool -- the vendored interprete
 `--source-dir` defaults to the manifest's own folder.
 
 Every row emits one JSON object to stdout (`{"key", "pdf", "status": "ok"|"error", "detail"}`),
-plus a final `{"summary": {"ok": N, "skipped": N, "error": N}}` object -- never a single all-or-
-nothing exit code, so a partial batch is still fully inspectable.
+plus a final summary object -- never a single all-or-nothing exit code, so a partial batch is still
+fully inspectable: `{"summary": {"ok": N, "skipped": N, "error": N}}`.
 
 ## Manifest format (`manifest.csv`)
 

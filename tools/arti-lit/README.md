@@ -1,7 +1,9 @@
 # arti-lit
 
 SQLite-backed store for Layer 2 (`literature\library.md`, canonical bibliography) and Layer 3
-(`writing\references.md`, generated per-draft reference list) of ARTi-writing's Reference System.
+(`writing\references.md`, generated per-draft reference list) of the `ARTi-ref` skill's literature
+system (CRUD, fulltext ingestion, retrieval-trigger rule, Paper Extraction). `ARTi-writing` and
+`ARTi-idea` both call into `ARTi-ref` for these mechanics rather than documenting them separately.
 
 **Per-project, not shared** — unlike `tools/arti-db` (a cross-project singleton living under
 `~/.arti/memory/arti.db`), `arti-lit` manages one SQLite file *inside the paper project it's
@@ -32,17 +34,35 @@ Every subcommand prints one JSON object to stdout: `{"ok": true, "row"/"rows"/..
 init [--project PATH]                   # explicit init/migration trigger; also auto-runs lazily on first use
 
 library add --key KEY --citation TEXT [--doi TEXT] [--local-file TEXT]
-            [--status export-only|abstract|fulltext|read] [--used-in TEXT] [--project PATH]
+            [--status export-only|abstract|fulltext|read] [--used-in TEXT] [--summary TEXT]
+            [--abstract TEXT] [--project PATH]
     # rejects (does not insert) if --doi is given and already exists on a different key,
     # surfacing that key so Claude can dedupe instead of creating a near-duplicate row.
-library update --key KEY [--citation TEXT] [--doi TEXT] [--local-file TEXT] [--status TEXT] [--used-in TEXT] [--project PATH]
+library update --key KEY [--citation TEXT] [--doi TEXT] [--local-file TEXT] [--status TEXT] [--used-in TEXT] [--summary TEXT] [--abstract TEXT] [--project PATH]
     # for bulk export-only/abstract -> fulltext conversion, see tools/arti-pdf-ingest -- it
     # converts a batch of PDFs to Markdown and calls this same update itself, row by row
 library get --key KEY [--project PATH]
-library list [--status TEXT] [--project PATH]
+library list [--status TEXT] [--journal TEXT] [--article-type TEXT] [--project PATH]
+    # --journal and --article-type are substring (LIKE) filters on journal_name/article_type --
+    # only rows added via import-ris have those columns populated (see Schema)
 library search KEYWORDS... [--project PATH]   # LIKE-match over citation/key/used_in -- cheap dedup check before adding
 library remove --key KEY [--project PATH]
 library export [--project PATH]         # regenerates literature\library.md
+library import-ris --files PATH[,PATH...] [--project PATH]
+    # batch-imports RIS exports (Scopus, ScienceDirect, or any other database that exports RIS)
+    # in one call, so DOI-dedup works across files in the same batch. Synthesizes `citation` from
+    # AU/TI/PY/T2 (falling back to T1 for title, Y1 for year, JO/JF for source). Also populates
+    # `journal_name` (from T2/JO/JF), `issn` (from SN), `abstract` (from AB/N2), and `article_type`
+    # (from the record's own RIS TY tag, e.g. "JOUR", "CONF") when present -- article_type is
+    # best-effort: many exports (including some Scopus RIS) tag every record JOUR regardless of
+    # review vs. original research, so a title-based screening pass is still needed as a fallback,
+    # not replaced by this column.
+    # DOI-only dedup: rows without a DOI always insert; a DOI already in the
+    # DB or seen earlier in the same batch goes to `skipped_duplicate` instead of raising. A record
+    # missing both title and authors goes to `skipped_invalid` with file/record_index; never aborts
+    # the whole batch. Prints {"ok": true, "imported": N, "skipped_duplicate": [...],
+    # "skipped_invalid": [...]}. This is also the path the dashboard's References window uses
+    # in-process (see dashboard/server/lit.py), not by shelling out to this CLI.
 
 refs generate --keys KEY,KEY,... [--order alpha|appearance] [--output PATH] [--project PATH]
     # keys not found in the library go into `unresolved` in the JSON result -- never silently
@@ -61,14 +81,33 @@ that point on, still readable with no tool, but no longer hand-edited.
 
 ## Schema
 
-One table, `sources`, deliberately *not* splitting `citation` into authors/journal/volume/etc. —
-the current system already stores one pre-formatted citation string per the target journal's
-style (Claude composes it when adding), and a citation-style formatting engine
-(Harvard/APA/Vancouver/numbered auto-conversion) is out of scope for this tool. `citation` stays a
-Claude-composed pre-formatted string, same as before this tool existed.
+`sources` deliberately does *not* split `citation` into authors/journal/volume/etc. — the current
+system already stores one pre-formatted citation string per the target journal's style (Claude
+composes it when adding), and a citation-style formatting engine (Harvard/APA/Vancouver/numbered
+auto-conversion) is out of scope for this tool. `citation` stays a Claude-composed pre-formatted
+string, same as before this tool existed.
+
+`sources.summary` is a single free-text field, set via `library add`/`library update`, read back
+via `library get` (already returns the full row). It is not included in the generated
+`library.md` — a summary can be arbitrarily long prose and would break that table's row-per-line
+shape. Because `key` is `UNIQUE` and `update` always targets one existing row by key, saving a
+summary for an already-tracked source is structurally an overwrite, never a duplicate row.
+
+`sources.abstract` is the same shape as `summary` — free-text, not included in `library.md`, read
+back via `library get`/`library list`. Set via `library add`/`library update --abstract`, or
+captured automatically from an RIS export's `AB` (falling back to `N2`) tag on `library
+import-ris`. It is the source's own abstract (what the database wrote), distinct from `summary`
+(Claude's own notes on the source).
+
+`sources.journal_name`, `sources.issn`, and `sources.article_type` are populated automatically by
+`library import-ris` (from RIS `T2`/`JO`/`JF`, `SN`, and `TY` respectively) and are otherwise NULL
+-- `library add`/`library update` have no flags for them today, so a manually-added row leaves
+these unset unless the caller extends those commands. `library list --journal`/`--article-type`
+filter on them (substring match); manually-added rows simply won't match either filter.
 
 ## Not in this tool
 
 - Layer 1 (`search-log.md`) / `scopus-ris-batch-export` — separate, already-scoped future work.
 - Citation-style reformatting engine.
-- Any dashboard integration — no read/write path from `dashboard/` to `arti-lit.db`.
+- Fuzzy title/year dedup — `library import-ris` dedupes on DOI only; rows without a DOI always
+  import as new rows.

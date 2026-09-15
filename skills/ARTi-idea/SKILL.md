@@ -6,8 +6,10 @@ description: >
   filter research ideas, score novelty, design a feasibility-checked experiment, or select a target
   journal. Triggers include: "I want to find a research gap", "help me develop a research idea",
   "what should I research", "is my idea novel enough", "help me choose a journal before I start",
-  "design an experiment for me", "I want to publish but don't know what to study", or any request
-  to plan or validate a research topic before writing begins. Always use this skill before
+  "design an experiment for me", "I want to publish but don't know what to study", "summarize
+  paper [title]", "extract this paper", or any request to plan or validate a research topic before
+  writing begins, or to extract a single paper's gap-map/scratchbook-ready fields. Always use this
+  skill before
   ARTi-writing when the researcher does not yet have a confirmed research idea, experiment
   design, or target journal. The skill produces six documents that feed directly into the
   ARTi-writing workflow.
@@ -82,9 +84,9 @@ contradictions lie. The Gap Map is the evidence base that justifies the research
 [Topics touched on but not studied in depth]
 
 ## Reference List
-[Key mapping only — full bibliographic details live in `literature\library.md` (ARTi-writing's
-Reference System, keyed `author-year[a|b]`), fetched via `arti-lit library get --key KEY` rather
-than re-typed here]
+[Key mapping only — full bibliographic details live in `literature\library.md` (owned by
+`ARTi-ref`, keyed `author-year[a|b]`), fetched via `library get --key KEY` rather than re-typed
+here]
 ```
 
 **When to create:** After the Researcher Profile is complete. Built iteratively as literature
@@ -93,6 +95,27 @@ is fed in — never all at once. Claude should identify which gap type each gap 
 supporting references and an explicit reason it matters is enough to proceed.
 
 **File:** `gap-map.md`
+
+---
+
+### Paper Extraction (on-demand, not one of the six core documents)
+
+**Trigger:** "summarize paper [title]", "extract this paper", "give me the NotebookLM extraction
+for [paper]", or any request to pull structured notes from one specific paper. Works at any stage,
+even before a Gap Map exists — it is not gated on Stage 2.
+
+The extraction mechanics themselves (template fields, NotebookLM prompt, registering the paper in
+`arti-lit` and saving the extraction as its `--summary`) live in the **`ARTi-ref`** skill — see its
+"Paper Extraction" section. This skill's own follow-up, specific to Gap Map building:
+- If a Gap Map already exists for this project, offer to fold the extraction's `REFERENCE ENTRY`
+  block and any `⚠️ CONTRADICTION` lines into it directly rather than leaving that step to the
+  researcher.
+- If a Scratchbook already exists, offer to fold `Citable Claims` into the relevant section(s).
+- `Novelty Signals` are raw, unscored input — they feed Idea Canvas scoring later (Stage 3), never
+  a C/M/E score at extraction time.
+
+**File written to:** none of its own — the extraction lives in the `arti-lit` summary field; only
+the pieces the researcher confirms get folded into `gap-map.md` / `scratchbook.md`.
 
 ---
 
@@ -176,13 +199,21 @@ See `references/research-design-template.md` for the print-specific requirements
 
 ### 5. Journal Target Sheet
 A decision record naming the target journal and its fallback. Candidates are ranked first on
-free signals alone — scope fit, Q-rank, the researcher's or their group's own publication history
-— and only the **top two** get a light analysis (2–3 papers each). Journals the researcher or
+free signals — scope fit, Q-rank, the researcher's or their group's own publication history —
+backed by real Scimago data via `arti-jfinder` rather than general knowledge alone: run
+`journal categories` to get exact category text, then `journal search --category TEXT [--quartile
+Q1] [--keyword TEXT]` for a ranked-by-SJR candidate list, and `journal get --id SOURCEID` for a
+specific candidate's full metrics. Aims-and-scope text is not bulk-fetched — for the top two
+candidates only, WebFetch the journal's own site and cache the result with `scope set --id
+SOURCEID --text TEXT --source-url URL` (check `scope get` first so a re-run doesn't refetch).
+Only the **top two** candidates get a light analysis (2–3 papers each). Journals the researcher or
 their group has already published in at Scopus Q1–Q2 auto-pass the **Predatory Journal Screen**
 with a recorded reason; unfamiliar journals get the full screen. Per-journal light-analysis
 results are cached in `~/.arti/journal-library/` so a journal already targeted before doesn't need
-re-extraction. The final committed journal is handed off to the ARTi-writing skill for full
-Journal Profile construction, where its 2–3 papers count toward that skill's 5–8.
+re-extraction — a separate cache from `arti-jfinder`'s own `journal_scope` table (aims-and-scope
+text only; no novelty/screening data). The final committed journal is handed off to the
+ARTi-writing skill for full Journal Profile construction, where its 2–3 papers count toward that
+skill's 5–8.
 
 **Structure per journal entry:**
 ```
@@ -379,7 +410,9 @@ question; it isn't anymore). If `~/.arti/memory/researcher-profile.md` doesn't e
 - Before generating anything new, Claude runs `idea-bank search <keywords>` (see Reference Files
   for the `arti-db` invocation) for parked ideas relevant to this topic and surfaces them to the
   researcher first
-- The researcher feeds literature: papers, summaries, or notes
+- The researcher feeds literature: papers, summaries, or notes — for a single paper, "summarize
+  paper [title]" (see Paper Extraction, above) produces the `REFERENCE ENTRY` and evidence lines
+  ready to fold in directly
 - Claude identifies which gaps are Conceptual, Methodological, or Empirical
 - Claude flags contradictions between sources with `[⚠️ CONTRADICTION]` tags
 - Claude must NOT suggest gaps beyond what the literature supports — flag as
@@ -605,10 +638,23 @@ idea on the Idea Canvas even when there are no competitors to compare it against
 surface. Never hand-edit `research-idea-bank.md` or `project-index.md` directly — both are
 generated exports, overwritten on every write.
 
+**`arti-jfinder` invocation** — every `journal`/`scope` command in Stage 5 below runs as:
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-jfinder/cli.py" <subcommand> ...` (Mac/Linux:
+`~/.arti/python/bin/python3`; no `--project` flag — it is a cross-project singleton like
+`arti-db`). Each call prints one JSON object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`);
+see `~/.arti/tools/arti-jfinder/README.md` for the full subcommand surface. Backed by a
+researcher-downloaded Scimago snapshot — if `journal search`/`get` returns `{"ok": false}` because
+the database is empty or missing, tell the researcher to download the current-year export from
+Scimago and run `ingest --file PATH --year YYYY`, then fall back to general knowledge for that
+session rather than blocking Stage 5 on it.
+
 - `../ARTi-setup/references/researcher-profile-template.md` — blank Researcher Profile with all
   fields, including the Positioning Line (owned by `ARTi-setup`, which creates this document —
   read from there rather than expecting a duplicate in this skill's own `references/`)
 - `references/gap-map-template.md` — blank Gap Map structure
+- `../ARTi-ref/references/paper-extraction-template.md` and
+  `../ARTi-ref/references/notebooklm-extraction-prompt.md` — Paper Extraction's field shapes,
+  owned by `ARTi-ref` (see Paper Extraction above)
 - `references/idea-canvas-template.md` — blank Idea Canvas with scoring table
 - `references/novelty-scoring-guide.md` — detailed scoring rubric with examples
 - `references/journal-target-sheet-template.md` — blank Journal Target Sheet (target +

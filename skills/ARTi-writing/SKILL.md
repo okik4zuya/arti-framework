@@ -1,7 +1,7 @@
 ﻿---
 name: ARTi-writing
 description: >
-  A structured workflow skill for writing and iterating academic research articles, from journal-profile analysis through submission, review response, and post-acceptance follow-up. Use whenever the user wants to write, draft, improve, or revise a research manuscript. Triggers: writing a journal article, drafting a section, planning a manuscript outline, preparing for submission, writing a cover letter, responding to reviewer comments, analyzing a target journal, matching a writing voice, populating a scratchbook, reviewing a draft, logging revisions, evaluating a manuscript, or logging what happened after acceptance. Manages a document set — Journal Profile (Blocks A, C, D), Voice Profile, Manuscript Blueprint, Scratchbook, Manuscript, Iteration Log, Cover Letter, Rebuttal, Publication Growth Log — guiding Claude from pre-writing through publication and back into the next idea. Block D of the Journal Profile contains novelty scoring (C/M/E) verifying the manuscript's novelty matches the target journal — checked at profile creation and every Iteration Log entry. Below-threshold novelty is flagged 🔴 Critical. Always use this skill for any stage of research writing, even if phrased casually. If the researcher has not confirmed a research idea or journal, direct them to ARTi-idea first.
+  A structured workflow skill for writing and iterating academic research articles, from journal-profile analysis through submission, review response, and post-acceptance follow-up. Use whenever the user wants to write, draft, improve, or revise a research manuscript. Triggers: writing a journal article, drafting a section, planning a manuscript outline, preparing for submission, writing a cover letter, responding to reviewer comments, analyzing a target journal, matching a writing voice, reviewing a draft, logging revisions, evaluating a manuscript, or logging what happened after acceptance. Manages a document set — Journal Profile (Blocks A, C, D), Voice Profile, Manuscript Blueprint, Scratchbook, Manuscript, Iteration Log, Cover Letter, Rebuttal, Publication Growth Log — guiding Claude from pre-writing through publication and back into the next idea. Block D of the Journal Profile contains novelty scoring (C/M/E) verifying the manuscript's novelty matches the target journal — checked at profile creation and every Iteration Log entry. Below-threshold novelty is flagged 🔴 Critical. Scratchbook creation and population itself — mechanics, tagging system, large-corpus session-chunking — is `ARTi-scratchbook`'s job; this skill reads the finished Scratchbook at Stage 4 but doesn't populate it. Always use this skill for any stage of research writing, even if phrased casually. If the researcher has not confirmed a research idea or journal, direct them to ARTi-idea first.
 ---
 
 # ARTi-writing Skill
@@ -140,61 +140,24 @@ planned (e.g., a technique turned out to need two subsections, not one).
 ---
 
 ### 4. Scratchbook
-A section-organized working document used in the early stage of research writing, where the writer freely dumps all raw findings, data interpretations, and supporting literature under their respective manuscript sections — without the pressure of synthesizing, structuring, or polishing the prose. It serves as a thinking space that bridges raw research data and the final manuscript, allowing the writer to accumulate material before committing to analytical narrative.
+A section-organized working document where raw findings, data interpretations, and supporting
+literature get dumped under their manuscript sections, before synthesis — the raw material source
+for drafting.
 
-**Key characteristics:**
-- Organized by manuscript sections (e.g., Introduction, Methods, XRD Analysis, etc.)
-- Each section opens with a one-to-three-sentence **`Argumen saat ini`** (current argument) line —
-  the condensed state of that section's argument, sitting directly above its own raw material
-- Contains unfiltered findings, observations, and literature citations tagged inline
-- No expectation of flow, coherence, or formal writing style below the `Argumen saat ini` line
-- Acts as the raw material source for drafting the manuscript
-- Full bibliographic detail lives in `literature\library.md`, not here — the Scratchbook's own
-  `## Reference List` is a per-claim key mapping only (see Reference System, below)
+**Why it moved out of this skill:** the Scratchbook's own mechanics — structure, the `Argumen saat
+ini` discipline, the full tagging system, the population protocol, and large-corpus
+session-chunking — were fully self-contained, referenced but not required by any stage before
+drafting. Splitting them into their own skill (`ARTi-scratchbook`, mirroring the `ARTi-ref`
+precedent) lets a researcher invoke Scratchbook population directly, across any project, without
+routing through this skill's journal-profile/blueprint framing. This skill still names the
+Scratchbook as a Core Document, since Stage 4 reads it, but owns none of its mechanics.
 
-**When to create/update:** After the Journal Profile is ready. Populate section by section as data and literature are gathered. Update freely — this document is never "done" until the manuscript is complete.
+**When to create/update:** After the Journal Profile and Manuscript Blueprint are ready. Invoke
+`ARTi-scratchbook` to create it and populate it section by section; return here once a section has
+enough content to draft from.
 
-**Scratchbook Structure:**
-```
-## [Manuscript Section] (e.g., Introduction / XRD Analysis / Methods)
-**Argumen saat ini:** [1–3 sentences — the current state of this section's argument or
-finding. Not a dump, not raw tags, not full citations.]
-
-[Raw dumps — findings, observations, literature notes tagged inline]
-
-... repeat for all manuscript sections ...
-
-## Unassigned Literature
-[References collected but not yet placed in a section]
-
-## Reference List
-[Master bibliography — full bibliographic details of all cited literature]
-```
-
-The `Argumen saat ini` line exists so that anyone — researcher or Claude — can get oriented on
-where the paper currently stands without reading every raw dump. Because it lives inside the
-section it summarizes, it is updated in the same edit as the material beneath it and cannot drift
-out of sync.
-
-**Tagging System — Complete Reference:**
-
-| Tag | Meaning |
-|---|---|
-| `[OWN]` | User's own data, observation, or finding |
-| `[LIT: Author, Year]` | Claim sourced from a specific literature entry |
-| `[SOURCE NEEDED]` | Claim without a source — must resolve before drafting |
-| `[CONNECTION: Author, Year → note]` | How a reference connects to the research — placed inline near the relevant dump |
-| `[⚠️ CONTRADICTION: A, Year vs. B, Year — note]` | Conflicting findings between two sources — flag for synthesis in Discussion |
-| `[UNVERIFIED — USER MUST CONFIRM]` | Claude-suggested reference not yet verified by user |
-| `[CITATION NEEDED]` | Manuscript draft claim with no source in Scratchbook |
-| `[DATA NEEDED]` | Missing numerical value or experimental result needed for drafting |
-
-**Bibliography Rules:**
-- Every reference used anywhere in the Scratchbook must resolve, via its `author-year[a|b]` key, to
-  a full entry in `literature\library.md` — the canonical bibliography (see Reference System below)
-- Inline tags `[LIT: Author, Year]` must match a key present in `literature\library.md`
-- No claim may be tagged `[LIT:]` without a corresponding `library.md` entry
-- References not yet assigned to a section go to `## Unassigned Literature` first, then moved to the appropriate section as the Scratchbook develops
+**File:** `writing\scratchbook.md` — see `ARTi-scratchbook`'s SKILL.md for structure, the tagging
+system, and the population workflow.
 
 ---
 
@@ -202,12 +165,16 @@ out of sync.
 
 Three layers, one shared key: `author-year[a|b]` (e.g. `kaw-2016`, `pintrich-1991`) links the
 library row, the fulltext filename, the Scratchbook's per-claim mapping, and the in-text citation.
+Layers 2 and 3's CRUD/generation mechanics — `arti-lit` invocation, the DOI-dedup rule, fulltext
+ingestion via `arti-pdf-ingest`, and the retrieval-trigger rule — are owned by **`ARTi-ref`**; this
+section covers only what stays writing-specific: how a search round gets logged, and how `[LIT:
+key]` tags inside the Scratchbook drive Layer 3 regeneration.
 
 | Layer | File | Role | Written by |
 |---|---|---|---|
 | 1 | `literature\search-log.md` | one row per search round | Claude, from raw exports |
-| 2 | `literature\library.md` | **canonical** bibliography, one source per line, superset incl. screened-out | Claude |
-| 3 | `writing\references.md` | **generated** — filtered to citations present in the current draft | Claude, regenerated on demand |
+| 2 | `literature\library.md` | **canonical** bibliography, one source per line, superset incl. screened-out | `ARTi-ref` (`arti-lit`) |
+| 3 | `writing\references.md` | **generated** — filtered to citations present in the current draft | `ARTi-ref` (`arti-lit`), triggered from here |
 
 **Layer 1 — `search-log.md`.** Columns: `ID | query (bare, copy-ready) | date | hits | export file
 | target claim/paragraph | status`. Status vocabulary: `pending` / `screened — N used` /
@@ -223,44 +190,27 @@ library row, the fulltext filename, the Scratchbook's per-claim mapping, and the
 - **Known Scopus RIS defect:** some records carry un-substituted i18n keys in place of type codes
   (`label.ris.referenceType.BOOK_CHAPTER`, `label.ris.referenceType.CONFERENCE_REVIEW.p`).
   Normalize these to `CHAP` and `JOUR` on ingest.
+- A batch imported via `ARTi-ref`'s `library import-ris` (whether Claude runs it or the researcher
+  reports having run it directly) is logged exactly like a manual export — `import-ris` changes
+  *how* the library gets populated (Layer 2), not whether the search round gets recorded here; still
+  assign it a Layer-1 row.
 
-**Layer 2 — `library.md` (canonical, generated).** One reference = one line. Columns: `key | full
-citation in the target journal's style | DOI | local file path | read-status | used-in`.
-Read-status vocabulary: `export-only` / `abstract` / `fulltext` / `read`. Being a superset that
-includes screened-out sources is what stops a query from being re-run. **`library.md` is a
-generated export — never hand-edit it**, but it stays plain, always-current Markdown, so a browsing
-read (e.g. "what have I collected so far", "what's still export-only") can just read the file
-directly — no CLI call needed for that. The CLI is required for anything that *changes* the data,
-and useful for a targeted dedupe check before adding:
-```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library add --key KEY --citation TEXT [--doi TEXT] [--local-file TEXT] [--status export-only|abstract|fulltext|read] [--used-in TEXT] --project PATH
-"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library update --key KEY [--status TEXT] [--used-in TEXT] ... --project PATH
-```
-`library add` rejects a duplicate DOI on a different key instead of inserting a near-duplicate row
-— run `library search KEYWORDS...` first when in doubt. See `tools/arti-lit/README.md` for the
-full subcommand reference.
+**Layer 2 — `library.md` (canonical, generated).** Use the `ARTi-ref` skill for every
+add/update/remove/get/search and for fulltext ingestion — see its SKILL.md for invocation, the
+key format, the DOI-dedup rule, and the read-status vocabulary (`export-only` / `abstract` /
+`fulltext` / `read`). `library.md` itself stays a plain, always-current Markdown export safe to
+read directly ("what have I collected so far") — only writes go through the CLI.
 
-When a batch of PDFs already has `library.md` rows (`local file: —`, status `export-only` or
-`abstract`) and needs bulk conversion to fulltext Markdown, use `tools/arti-pdf-ingest` instead of
-ingesting one-by-one:
-```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest --project PATH --manifest PATH
-```
-It requires the `key` to already exist in `library.md` — screening/`library add` still happens
-first, this tool never creates new library rows — and it registers the result itself via
-`arti-lit library update --status fulltext`, so no separate registration step follows. See
-`tools/arti-pdf-ingest/README.md` for the manifest format.
+**Naming a reference is a retrieval trigger, not a recall trigger** — this applies here exactly as
+`ARTi-ref` states it: the moment the researcher names a reference by key or informally ("jelaskan
+tentang paper xie-2026", "summarize smith-2020"), call `library get`/`search` via `ARTi-ref` before
+answering; never answer from pretrained knowledge of the paper.
 
-**Layer 3 — `references.md` (generated).** Regeneration routine: Grep the Scratchbook for
-`[LIT: key]` tags (cheap, targeted — not a full draft/Scratchbook/library regex pass) to get the
-key list in appearance order, then:
-```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" refs generate --keys KEY,KEY,... --order appearance|alpha --project PATH
-```
-`--order appearance` preserves the order the Scratchbook tags were found in; `--order alpha` sorts
-by the key's `author-year[ab]` shape — pick per Journal Profile Block B. Any key in the result's
-`unresolved` list is reported as `[CITATION NEEDED]`, never silently dropped or invented. Re-run
-whenever new sections add citations.
+**Layer 3 — `references.md` (generated), and the `[LIT: key]` tags that trigger it** — both stay
+`ARTi-scratchbook`'s job now, since the tags live in and are written by the Scratchbook. See that
+skill's SKILL.md for the tagging system and the regeneration routine (grep the Scratchbook for
+`[LIT: key]` tags, then call `ARTi-ref`'s `refs generate`). Pick `--order appearance|alpha` per
+Journal Profile Block B.
 
 ---
 
@@ -406,7 +356,7 @@ speculatively before that. The Research Idea Bank write is a single entry, done 
 (once per researcher,    │
  reused across projects) │
                           ↓
-[Journal Profile] → [Manuscript Blueprint] → [Scratchbook] → [Manuscript Draft 1]
+[Journal Profile] → [Manuscript Blueprint] → [Scratchbook] (→ ARTi-scratchbook) → [Manuscript Draft 1]
         ↑                                                              ↓
   [Example Articles]                                       [Iteration Log Entry 1]
   (single-pass C + D                                        (evaluation + resolution,
@@ -535,6 +485,12 @@ directly on the `gtmk-voice` skill's own decomposition, generalized so it transf
 - Help the user identify and fill in all journal requirement fields
 - Search for or analyze provided journal guidelines
 - Flag any unusual requirements that will affect manuscript structure
+- **Indexing and ranking (Scopus, WoS, Q-rank, Impact Factor) is sourced from `arti-jfinder`, not
+  hand-typed or recalled from general knowledge.** Call `journal get --id SOURCEID` (resolving the
+  id first via `journal search --keyword TEXT` if only the journal's name is known) to populate
+  this field from the real Scimago snapshot — same pattern `ARTi-idea` Stage 5 already uses for the
+  Journal Target Sheet. Fall back to general-knowledge/user-supplied values only if the lookup
+  misses (empty/missing database), per `ARTi-jfinder`'s own documented fallback.
 
 **Block B — pointer only:**
 Record which Voice Profile file is in effect for this project. While reading the journal's example
@@ -651,89 +607,11 @@ population starts.
 ---
 
 ### Stage 3: Scratchbook Population
-- Help the user dump content into the correct section
-- Suggest which section a finding or reference belongs to
-- Ask probing questions to help the user articulate findings
-- Do NOT synthesize or polish the raw dumps — preserve their raw, unfiltered nature
-- Identify gaps: sections with insufficient content to draft from
-- Do NOT revise or edit the manuscript at this stage — scratchbook population and manuscript drafting are strictly separate stages
-- After any substantive Scratchbook edit, update that section's `**Argumen saat ini:**` line in the
-  same turn — a short synthesis sentence or two of the section's current argument, not a copy of
-  the raw dump. This is the one place synthesis is allowed at this stage; keep it brief. If an edit
-  doesn't change the substance of a section's argument (e.g., a reference added to
-  `## Unassigned Literature`), the line needs no matching edit.
 
-**Default Density and Fidelity Rules (always apply unless user says otherwise):**
-- **Maximize extraction:** When processing provided references, extract as much relevant information as possible from each source. Do not summarize sparsely — err on the side of over-inclusion. A thicker scratchbook produces a better manuscript.
-- **Preserve all numbers:** Every specific numerical value in a reference (yields, efficiencies, potentials, concentrations, temperatures, particle sizes, band gaps, percentages, TON values, rate constants, etc.) must be recorded verbatim in the Scratchbook entry. Never replace a number with a qualitative description.
-- **Duplicate across sections deliberately:** If a piece of information is relevant to more than one manuscript section, place it in all relevant sections — even if this creates apparent repetition. Duplication across sections is intentional and desirable; it ensures each section has the supporting material it needs when drafting begins.
-- **Cross-source duplication strengthens arguments:** When multiple references report similar facts or values, record each source's version separately under the same section. Do not collapse them into one entry. Redundancy from multiple sources is evidence of consensus and should be preserved.
-
-**Plagiarism Prevention at this stage:**
-- Every entry must carry a source tag: `[OWN]` for the user's own data/observations, or `[LIT: Author, Year]` for literature
-- If the user pastes text that appears copied verbatim from a source, flag it immediately and ask them to paraphrase it before it enters the Scratchbook
-- Entries without source tags must be flagged as `[SOURCE NEEDED]` and resolved before drafting begins
-- Remind the user: paraphrase literature at the point of entry — not at the drafting stage
-
-**Claude's Own Extraction Rule (applies when Claude reads reference files directly):**
-When Claude reads a source file and writes Scratchbook entries itself, it must NOT copy sentences from the source. Every Scratchbook entry written by Claude must be:
-- **Rewritten in Claude's own words** — analyze the meaning, then express it independently
-- **Faithful to all details** — rewriting does not mean omitting; numbers, conditions, units, and specific findings must all be preserved exactly
-- **Structurally distinct from the original** — do not mirror the sentence structure of the source even if the words differ; true paraphrasing means independent reconstruction of the idea
-- The test: if a Scratchbook entry could be found by a plagiarism checker as matching the source text, it must be rewritten before it enters the Scratchbook
-
-**Hallucination Prevention at this stage:**
-- Claude must never add citations, references, or factual claims to the Scratchbook that were not explicitly provided by the user
-- If the user asks Claude to suggest supporting literature, Claude may search the web but must clearly label any suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and instruct the user to verify the actual source before accepting it
-
-**Literature Feed Protocol:**
-Literature can enter two ways: already ingested into `literature\library.md` (the normal path once
-the Reference System above is in use — Claude runs `arti-lit library get --key KEY` to fetch the
-row, no re-typing), or hand-typed in the standard input format below (the fallback, for a one-off
-note that hasn't gone through the library yet). Either way:
-
-1. **Receive** the literature entry — from a `library.md` row, or in the standard input format (see below)
-2. **Identify** which Scratchbook section(s) the entry is relevant to
-3. **Place** the relevant points under each identified section, tagged `[LIT: Author, Year]`
-   - If relevant to multiple sections, place in all of them
-4. **Check** for contradictions with existing Scratchbook entries in those sections
-   - If a contradiction is found, add `[⚠️ CONTRADICTION: Author, Year vs. Author, Year — brief description]` inline, immediately below both conflicting entries
-5. **Add** a `[CONNECTION: Author, Year → note]` tag inline, near the placed entry, explaining how this reference connects to the research
-6. **Add** the full bibliographic details to `## Reference List` if not already present
-7. **Update** the `**Argumen saat ini:**` line of each affected section if this entry changes that section's current argument or finding
-8. **Report** to the user: which sections were updated, any contradictions found, and any fields missing from the input
-
-**Standard Literature Input Format:**
-```
----
-LITERATURE ENTRY
-
-Title: [Full paper title]
-Authors: [Last name, First initial. et al. if many]
-Journal: [Journal name]
-Year: [YYYY]
-DOI: [if available]
-
-Key Findings:
-- [Summary of finding 1]
-- [Summary of finding 2]
-
-Methods Used:
-- [Relevant methods, materials, conditions]
-
-Relevant Data/Values:
-- [Specific numbers, peaks, efficiencies, conditions]
-
-My Interpretation / Why This is Relevant:
-- [Optional — your own thought on how this connects to your work]
-
-Suggested Section: [Optional — your guess of where this belongs]
----
-```
-
-**Minimum viable input:** Authors, Year, Journal, DOI + bullet point notes.
-Entries missing full bibliographic details get `export-only` or `abstract` read-status in
-`literature\library.md` until completed — that column is the tracker now, not a free-text tag.
+Owned by **`ARTi-scratchbook`** — invoke it once Stage 2's Manuscript Blueprint exists. That skill
+covers the dump-not-synthesize workflow, the `Argumen saat ini` discipline, the full tagging
+system, plagiarism/hallucination prevention, the Literature Feed Protocol, and large-corpus
+session-chunking. Return here for Stage 4 once the sections needed for drafting are populated.
 
 ---
 
@@ -1004,6 +882,8 @@ cross-project and lives in `~/.arti/`.
 17. **A cover letter argues fit, not summary** — if it would be equally valid sent to any journal in the field, it has failed its one job.
 18. **The loop doesn't end at acceptance** — the Publication Growth Log's job is to make sure what a paper's Limitations section left on the table doesn't just get forgotten; it becomes the next Research Idea Bank entry.
 19. **Concise and evidence-dense is the default register, not an on-request pass** — trim elaboration, meta-commentary, and content already restated by an adjacent table or figure; never touch citations or evidence to shorten a section. Don't elaborate without strong support (literature or evidence) — extra sentences are earned by a citation, statistic, or Scratchbook data, not by sounding plausible. Apply this to every draft and every revision by default; elaborate only when the user explicitly asks, and only for the scope asked.
+20. **A `[LIT: key]` tag is never left dangling** — the source row is created the moment the tag is, not discovered missing later.
+21. **Naming a reference is a retrieval trigger** — when the researcher asks about a paper by key or informal name, query `library get`/`search` before answering; never answer from pretrained memory of what a paper "probably" says.
 
 ---
 
@@ -1013,8 +893,6 @@ cross-project and lives in `~/.arti/`.
 - `review-checklist.md` — Self-review checklist for manuscript drafts
 - `voice-profile-template.md` — Ready-to-use blank Voice Profile template
 - `manuscript-blueprint-template.md` — Ready-to-use blank Manuscript Blueprint template
-- `scratchbook-template.md` — Ready-to-use blank Scratchbook template (including the
-  `Argumen saat ini` line per section)
 - `journal-profile-template.md` — Ready-to-use blank Journal Profile template (Blocks A, C, D)
 - `iteration-log-template.md` — Iteration Log entry template with scoring and resolution guidance,
   including the optional Reviewer Simulation subsection
@@ -1032,6 +910,16 @@ Read the relevant reference file before starting any stage.
 `{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for the full subcommand
 surface. Never hand-edit `project-index.md` or `research-idea-bank.md` directly — both are
 generated exports, overwritten on every write.
+
+**`arti-jfinder` invocation** — every `journal get`/`search` command in Block A above runs as:
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-jfinder/cli.py" <subcommand> ...` (Mac/Linux:
+`~/.arti/python/bin/python3`; no `--project` flag — it is a cross-project singleton like
+`arti-db`). Each call prints one JSON object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`);
+see `~/.arti/tools/arti-jfinder/README.md` for the full subcommand surface. Backed by a
+researcher-downloaded Scimago snapshot — if `journal search`/`get` returns `{"ok": false}` because
+the database is empty or missing, tell the researcher to download the current-year export from
+Scimago and run `ingest --file PATH --year YYYY`, then fall back to general knowledge for that
+field rather than blocking Journal Profile creation on it.
 
 **Integration with ARTi-idea:**
 If the researcher completed the ARTi-idea workflow before starting here, read the handoff manifest

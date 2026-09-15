@@ -131,4 +131,16 @@ Batch-converts PDFs to `literature\fulltext\` Markdown and registers each conver
 already exist in `library.md` — it never creates new library rows. See
 `~/.arti/tools/arti-pdf-ingest/README.md` for the manifest format.
 
+## `arti-jfinder` invocation
+
+Every `journal`/`scope` command run as: `"~/.arti/python/python.exe"
+"~/.arti/tools/arti-jfinder/cli.py" <subcommand> ...` (Mac/Linux: `~/.arti/python/bin/python3`).
+No `--project` flag — it is a cross-project singleton like `arti-db`. Each call prints one JSON
+object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see
+`~/.arti/tools/arti-jfinder/README.md` for the full subcommand surface. Backed by a
+researcher-downloaded Scimago snapshot — if `journal search`/`get` returns `{"ok": false}` because
+the database is empty or missing, tell the researcher to download the current-year export from
+Scimago and run `ingest --file PATH --year YYYY`, then fall back to general knowledge rather than
+blocking.
+
 <!-- arti: local additions below — preserved on regeneration -->

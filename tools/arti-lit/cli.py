@@ -43,6 +43,8 @@ def build_parser():
     la.add_argument("--local-file")
     la.add_argument("--status", choices=db.READ_STATUSES, default="export-only")
     la.add_argument("--used-in")
+    la.add_argument("--summary")
+    la.add_argument("--abstract")
     la.add_argument("--project")
 
     lu = libsub.add_parser("update")
@@ -52,6 +54,8 @@ def build_parser():
     lu.add_argument("--local-file")
     lu.add_argument("--status", choices=db.READ_STATUSES)
     lu.add_argument("--used-in")
+    lu.add_argument("--summary")
+    lu.add_argument("--abstract")
     lu.add_argument("--project")
 
     lg = libsub.add_parser("get")
@@ -60,6 +64,8 @@ def build_parser():
 
     ll = libsub.add_parser("list")
     ll.add_argument("--status", choices=db.READ_STATUSES)
+    ll.add_argument("--journal", help="substring match on journal_name")
+    ll.add_argument("--article-type", help="substring match on article_type")
     ll.add_argument("--project")
 
     ls = libsub.add_parser("search")
@@ -72,6 +78,10 @@ def build_parser():
 
     le = libsub.add_parser("export")
     le.add_argument("--project")
+
+    lir = libsub.add_parser("import-ris")
+    lir.add_argument("--files", required=True, help="comma-separated RIS file paths")
+    lir.add_argument("--project")
 
     refs = sub.add_parser("refs")
     refssub = refs.add_subparsers(dest="refs_cmd", required=True)
@@ -99,12 +109,14 @@ def main():
                 row = db.library_add(
                     args.project, key=args.key, citation=args.citation, doi=args.doi,
                     local_file=args.local_file, read_status=args.status, used_in=args.used_in,
+                    summary=args.summary, abstract=args.abstract,
                 )
                 _ok(row=row)
             elif args.library_cmd == "update":
                 row = db.library_update(
                     args.project, key=args.key, citation=args.citation, doi=args.doi,
                     local_file=args.local_file, read_status=args.status, used_in=args.used_in,
+                    summary=args.summary, abstract=args.abstract,
                 )
                 _ok(row=row)
             elif args.library_cmd == "get":
@@ -113,7 +125,10 @@ def main():
                     _err(f"no source with key {args.key!r}")
                 _ok(row=row)
             elif args.library_cmd == "list":
-                _ok(rows=db.library_list(args.project, status=args.status))
+                _ok(rows=db.library_list(
+                    args.project, status=args.status, journal=args.journal,
+                    article_type=args.article_type,
+                ))
             elif args.library_cmd == "search":
                 _ok(rows=db.library_search(args.project, args.keywords))
             elif args.library_cmd == "remove":
@@ -124,6 +139,14 @@ def main():
             elif args.library_cmd == "export":
                 db.library_export(args.project)
                 _ok()
+            elif args.library_cmd == "import-ris":
+                files = [f.strip() for f in args.files.split(",") if f.strip()]
+                result = db.library_import_ris(args.project, files)
+                _ok(
+                    imported=len(result["imported"]),
+                    skipped_duplicate=result["skipped_duplicate"],
+                    skipped_invalid=result["skipped_invalid"],
+                )
 
         elif args.command == "refs":
             if args.refs_cmd == "generate":

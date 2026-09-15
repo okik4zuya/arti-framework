@@ -13,7 +13,8 @@ the full subcommand surface. This is the *cross-project* index only — each pro
 <subcommand> ... --project PATH` (Mac/Linux: `~/.arti/python/bin/python3`). Each call prints one
 JSON object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see
 `~/.arti/tools/arti-lit/README.md` for the full subcommand surface. Unlike `arti-db`, this is
-per-project, not a cross-project singleton.
+per-project, not a cross-project singleton. The **`ARTi-ref`** skill is this CLI's sole owner —
+`ARTi-writing` and `ARTi-idea` call into it rather than documenting the mechanics themselves.
 
 **`arti-pdf-ingest` invocation** — batch-converts PDFs to `literature\fulltext\` Markdown and
 registers each conversion in `arti-lit` (status `fulltext`) in one pass, instead of ingesting one
@@ -44,10 +45,18 @@ to already exist in `library.md` — it never creates new library rows. See
      - `literature\search-log.md` — one row per search round: query (bare, copy-ready) · date ·
        hits · export file · target claim/paragraph · status
      - `literature\library.md` — **generated export**, auto-regenerated on every `library
-       add`/`update`/`remove` from `literature\arti-lit.db` (the canonical store) — never hand-edit
-       it directly. Canonical bibliography, one source per line (superset including screened-out
-       sources), columns: key · full citation in the target journal's style · DOI · local file path
-       · read-status · used-in
+       add`/`update`/`remove` from `literature\arti-lit.db` (the canonical store, owned by the
+       `ARTi-ref` skill — see its SKILL.md for the CRUD/fulltext/retrieval mechanics) — never
+       hand-edit it directly. Canonical bibliography, one source per line (superset including
+       screened-out sources), columns: key · full citation in the target journal's style · DOI ·
+       local file path · read-status · used-in
+     - **Legacy hand-maintained citation records** (e.g. a pre-`arti-lit` project's own
+       `citation-map.md`/`references-final.bib` from before this project adopted `arti-lit`): mark
+       them frozen/historical in project memory the moment `arti-lit` is adopted — do not treat them
+       as a live store. `literature\arti-lit.db`/`library.md` are canonical for everything looked up
+       or added after adoption; do not delete the legacy files (they remain the legitimate record of
+       a finalized paper's citation decisions), and do not query them for a reference named after
+       adoption — that goes through `ARTi-ref` (`library get`/`search`) instead.
    - `data/` — raw and processed research data
    - `figures/` — generated plots, images, and diagrams for the manuscript, plus
      `figures/figure-register.md` (one row per figure/table; seeded from `ARTi-figure/references/
