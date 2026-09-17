@@ -171,9 +171,25 @@
   .empty.loading{ animation:pulse 1.1s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{ opacity:0.45; } 50%{ opacity:1; } }
   .tag-pill{
-    display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
-    padding:3px 10px; border-radius:20px; white-space:nowrap; color:var(--slate); background:var(--slate-soft);
+    display:inline-block; max-width:100%; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
+    padding:3px 10px; border-radius:20px; white-space:normal; overflow-wrap:break-word; color:var(--slate); background:var(--slate-soft);
+    margin:2px 4px 2px 0; box-sizing:border-box;
   }
+  #ideasTable{ table-layout:fixed; }
+  #ideasTable th:nth-child(1), #ideasTable td:nth-child(1){ width:300px; max-width:300px; overflow-wrap:break-word; }
+  #ideasTable th:nth-child(3), #ideasTable td:nth-child(3){ width:70px; }
+  #ideasTable th:nth-child(4), #ideasTable td:nth-child(4){ width:200px; max-width:200px; overflow-wrap:break-word; overflow-x:auto; }
+  #ideasTable th:nth-child(5), #ideasTable td:nth-child(5){ width:100px; }
+  #ideasTable th:nth-child(6), #ideasTable td:nth-child(6){ width:160px; overflow-wrap:break-word; }
+  .idea-text-clamp{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .idea-text-clamp.expanded{ -webkit-line-clamp:unset; display:block; overflow:visible; }
+  .idea-more-btn{
+    margin-top:4px; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
+    color:var(--accent); background:none; border:none; padding:0; cursor:pointer;
+  }
+  #ideasTable td:nth-child(5){ white-space:nowrap; }
   .convert-idea-btn{
     margin-top:5px; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
     padding:3px 9px; border-radius:6px; border:1px solid var(--accent); background:var(--surface);
@@ -369,11 +385,6 @@
         <div class="filter-row">
           <input class="search-input" id="projectSearch" placeholder="Search name or path…" />
           <div class="chip-row" id="categoryChips"></div>
-          <select class="sort-select" id="projectSort">
-            <option value="recent">Recently opened</option>
-            <option value="name">Name</option>
-            <option value="added">Date added</option>
-          </select>
           <label class="archived-toggle"><input type="checkbox" id="showArchivedToggle" /> Show archived</label>
         </div>
       </div>
@@ -497,7 +508,6 @@
   var allProjects = [];
   var activeCategory = "All";
   var searchQuery = "";
-  var sortBy = "recent";
   var showArchived = false;
 
   var ICON_FOLDER = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
@@ -588,13 +598,7 @@
       return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
     });
     rows = rows.slice();
-    if (sortBy === "name"){
-      rows.sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
-    } else if (sortBy === "added"){
-      rows.sort(function(a, b){ return (b.addedAt || "").localeCompare(a.addedAt || ""); });
-    } else {
-      rows.sort(function(a, b){ return (b.lastOpenedAt || "").localeCompare(a.lastOpenedAt || ""); });
-    }
+    rows.sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
     return rows;
   }
 
@@ -692,10 +696,6 @@
     searchQuery = e.target.value;
     renderProjects();
   });
-  document.getElementById("projectSort").addEventListener("change", function(e){
-    sortBy = e.target.value;
-    renderProjects();
-  });
   document.getElementById("showArchivedToggle").addEventListener("change", function(e){
     showArchived = e.target.checked;
     renderProjects();
@@ -737,11 +737,13 @@
       return;
     }
     body.innerHTML = rows.map(function(r){
-      var tag = r.tag ? '<span class="tag-pill">' + escapeHtml(r.tag) + '</span>' : '';
+      var tag = r.tag ? r.tag.split(";").map(function(t){ return t.trim(); }).filter(Boolean)
+        .map(function(t){ return '<span class="tag-pill">' + escapeHtml(t) + '</span>'; }).join(" ") : "";
       return '<tr>' +
         '<td><strong>' + escapeHtml(r.label) + '</strong>' +
           '<div><button type="button" class="convert-idea-btn" data-role="convert-idea" data-label="' + escapeHtml(r.label) + '">Convert to Project</button></div></td>' +
-        '<td>' + escapeHtml(r.idea_text || "") + '</td>' +
+        '<td><div class="idea-text-clamp" data-role="idea-text">' + escapeHtml(r.idea_text || "") + '</div>' +
+          '<button type="button" class="idea-more-btn" data-role="idea-more" hidden>More</button></td>' +
         '<td>' + noveltyBadge(r) + '</td>' +
         '<td>' + tag + '</td>' +
         '<td>' + escapeHtml(r.date_parked || "") + '</td>' +
@@ -752,6 +754,19 @@
       btn.addEventListener("click", function(){
         openProjectModal("new");
         projName.value = btn.getAttribute("data-label") || "";
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="idea-text"]'), function(el){
+      var btn = el.nextElementSibling;
+      if (el.scrollHeight > el.clientHeight + 1){
+        btn.hidden = false;
+      }
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="idea-more"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var el = btn.previousElementSibling;
+        var expanded = el.classList.toggle("expanded");
+        btn.textContent = expanded ? "Less" : "More";
       });
     });
   }

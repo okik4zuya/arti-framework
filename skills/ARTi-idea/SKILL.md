@@ -145,11 +145,9 @@ go through Novelty Scoring before a decision is made.
 ---
 
 ### 4. Research Design
-A feasibility-checked experiment design for the confirmed research idea, framed as the guide that
-locks the study *before* data collection begins — finalizing hypotheses, methods, and analysis
-plan early is what keeps major changes and unpredictable problems from surfacing mid-study. Every
-proposed technique and method is cross-referenced against the Researcher Profile. Unfeasible
-elements are flagged and alternatives proposed.
+A feasibility-checked experiment design for the confirmed research idea. See
+`references/stage4-research-design-protocol.md` for the full procedure (purpose, when to create,
+and the closing print step) — this is schema only.
 
 **Structure:**
 ```
@@ -184,83 +182,14 @@ elements are flagged and alternatives proposed.
 [Confirm that the experiment as designed actually delivers the novelty claimed in the Idea Canvas]
 ```
 
-**When to create:** After one idea is confirmed on the Idea Canvas. This is the most
-collaborative stage — Claude proposes, researcher confirms or adjusts based on actual
-lab knowledge.
-
-**Closing step — print it.** Once feasibility flags are resolved and the design is confirmed,
-render `research-design.md` → `research-design.pdf` (A4, via the shared pipeline documented in
-`~/.arti/tools/arti-pdf/README.md`) as the printed reference the researcher keeps at hand during execution.
-See `references/research-design-template.md` for the print-specific requirements.
-
 **File:** `research-design.md`
 
 ---
 
 ### 5. Journal Target Sheet
-A decision record naming the target journal and its fallback. Candidates are ranked first on
-free signals — scope fit, Q-rank, the researcher's or their group's own publication history —
-backed by real Scimago data via `arti-jfinder` rather than general knowledge alone: run
-`journal categories` to get exact category text, then `journal search --category TEXT [--quartile
-Q1] [--keyword TEXT]` for a ranked-by-SJR candidate list, and `journal get --id SOURCEID` for a
-specific candidate's full metrics. Aims-and-scope text is not bulk-fetched — for the top two
-candidates only, WebFetch the journal's own site and cache the result with `scope set --id
-SOURCEID --text TEXT --source-url URL` (check `scope get` first so a re-run doesn't refetch).
-Only the **top two** candidates get a light analysis (2–3 papers each). Journals the researcher or
-their group has already published in at Scopus Q1–Q2 auto-pass the **Predatory Journal Screen**
-with a recorded reason; unfamiliar journals get the full screen. Per-journal light-analysis
-results are cached in `~/.arti/journal-library/` so a journal already targeted before doesn't need
-re-extraction — a separate cache from `arti-jfinder`'s own `journal_scope` table (aims-and-scope
-text only; no novelty/screening data). The final committed journal is handed off to the
-ARTi-writing skill for full Journal Profile construction, where its 2–3 papers count toward that
-skill's 5–8.
-
-**Structure per journal entry:**
-```
-## Journal [N]: [Journal Name]
-**Publisher / Indexing / Q-rank:**
-**Predatory Journal Screen:** ✅ Pass / ❌ Fail → [reason] (see references/predatory-journal-screen.md)
-**Aims & Scope fit:** ✅ Strong / ⚠️ Partial / ❌ Poor
-**Typical article types published:** [Research article / Communication / Review]
-**Novelty threshold (from example papers):**
-  - Conceptual novelty typical: [1–5]
-  - Methodological novelty typical: [1–5]
-  - Empirical novelty typical: [1–5]
-  - Minimum composite label: [Incremental / Meaningful / Significant / Paradigm-shifting]
-**Your idea's novelty fit:** ✅ Meets threshold / ⚠️ Borderline / ❌ Below threshold
-**Typical study design:** [What kind of experiments they publish]
-**Estimated time to decision:** [If known]
-**Recommendation:** ✅ Shortlisted / ❌ Not suitable → [reason]
-```
-
-**Journal Comparison Table** — two rows only: the target and its fallback, built from the same
-per-journal fields above (no separate research pass). This is a decision record, not a survey —
-it exists to document *why this journal over that one*, not to compare five candidates:
-```
-## Journal Comparison Table
-
-| Journal | Q-rank | Scope-fit % | Dominant method | Avg. review time | Novelty fit |
-|---|---|---|---|---|---|
-| [Target] | | | | | ✅/⚠️/❌ |
-| [Fallback] | | | | | ✅/⚠️/❌ |
-```
-
-**Final output — ranked shortlist:**
-```
-## Recommended Journal Ranking
-1. [Target] — [one-line rationale]
-2. [Fallback] — [one-line rationale]
-(Candidates ranked below these two are listed by name and free-signal rationale only —
-no papers were read for them.)
-
-## Confirmed Target Journal: [Journal Name]
-[Confirmed after researcher decision. This journal proceeds to full Journal Profile
-in ARTi-writing.]
-```
-
-**When to create:** After the Research Design is stable. Uses 2–3 papers for the top two
-candidates only — enough to assess novelty threshold and scope fit, not a full style
-extraction (that happens in ARTi-writing).
+A decision record naming the target journal and its fallback, built by ranking candidates cheap
+(free signals) and reading narrow (top two only). Full process, decision rules, and schema live in
+`references/stage5-journal-target-protocol.md` and `references/journal-target-sheet-template.md`.
 
 **File:** `journal-target-sheet.md`
 
@@ -390,143 +319,41 @@ question; it isn't anymore). If `~/.arti/memory/researcher-profile.md` doesn't e
 ---
 
 ### Stage 1: Researcher Profile
-- Claude asks the researcher directly for each field
-- Do not infer or assume any capability — ask explicitly
-- Flag any areas where the researcher's answer is vague and probe further
-- Derive Novelty Ceiling for C, M, and E immediately after profile is complete
-- Record ceiling in the profile document
-
-**Novelty Ceiling output format (append to Researcher Profile):**
-```
-## Derived Novelty Ceiling
-- Conceptual (C): max [1–5] — reason: [brief]
-- Methodological (M): max [1–5] — reason: [brief]
-- Empirical (E): max [1–5] — reason: [brief]
-```
+**Trigger:** Stage 0 complete, no existing profile to reuse. **Output:**
+`~/.arti/memory/researcher-profile.md`, including a derived Novelty Ceiling for C/M/E. See
+`references/stage1-researcher-profile-protocol.md` for the full procedure and output format.
 
 ---
 
 ### Stage 2: Gap Map Construction
-- Before generating anything new, Claude runs `idea-bank search <keywords>` (see Reference Files
-  for the `arti-db` invocation) for parked ideas relevant to this topic and surfaces them to the
-  researcher first
-- The researcher feeds literature: papers, summaries, or notes — for a single paper, "summarize
-  paper [title]" (see Paper Extraction, above) produces the `REFERENCE ENTRY` and evidence lines
-  ready to fold in directly
-- Claude identifies which gaps are Conceptual, Methodological, or Empirical
-- Claude flags contradictions between sources with `[⚠️ CONTRADICTION]` tags
-- Claude must NOT suggest gaps beyond what the literature supports — flag as
-  `[SUGGESTED — USER MUST VERIFY]` if speculating
-- After each addition, Claude reports: gaps updated, contradictions found, areas still thin
-
-**Minimum viable Gap Map:** **one** gap carrying at least three supporting references and an
-explicit statement of why it matters. Depth beats count — a single well-evidenced gap is a
-better foundation than three thin ones. More gaps are welcome, but not required to proceed.
+**Trigger:** Researcher Profile complete, literature being fed in. **Output:** `gap-map.md`,
+built iteratively, never all at once. See `references/stage2-gap-map-protocol.md` for the full
+procedure and the minimum-viable-Gap-Map bar.
 
 ---
 
 ### Stage 3: Idea Generation & Novelty Scoring
-- Claude generates 3–5 candidate ideas directly from the Gap Map
-- Researcher may add their own ideas
-- Every idea is scored C/M/E immediately — no idea proceeds without a score
-- Ceiling check is applied to every idea before a decision
-- Ideas that fail the sweet spot rule are redesigned, not discarded
-- Claude must explain *why* each score was assigned — not just the number
-
-**Decision rules:**
-- Composite = Incremental → ❌ Reject (or major redesign required)
-- Composite = Meaningful and within ceiling → ✅ Viable candidate
-- Composite = Significant and within ceiling → ✅ Strong candidate, advance
-- Any dimension exceeds ceiling → ⚠️ Redesign required before advancing
-
-When multiple ideas are viable, rank them and ask the researcher to select one
-before proceeding to Stage 4.
-
-**Research Idea Bank auto-park:** Any idea that clears Meaningful-or-above but is not the one
-selected to advance is automatically recorded via `idea-bank add` — never silently discarded.
-Pass idea text, C/M/E score, composite label, date, source project, and reason parked (lost
-selection vs. explicitly deferred by the researcher); the command regenerates
-`~/.arti/memory/research-idea-bank.md` itself.
-
-**Positioning Line trigger:** The first time a Research Idea Bank entry is ever written (i.e., the first
-time the paragraph above fires for this researcher), Claude also writes a one-sentence
-"Positioning Line" into `~/.arti/memory/researcher-profile.md`, capturing the researcher's standing
-thematic axis from that entry plus the rest of the Researcher Profile. This only happens once
-unless the researcher asks to revise it.
+**Trigger:** Gap Map has at least one well-evidenced gap. **Output:** `idea-canvas.md`, plus two
+possible side effects: an auto-parked Research Idea Bank entry (`~/.arti/memory/research-idea-bank.md`)
+for every viable-but-unselected idea, and — only on the very first such entry ever, for this
+researcher — a Positioning Line written into Stage 1's `researcher-profile.md`. See
+`references/stage3-idea-novelty-protocol.md` for the full procedure, decision rules, and both side
+effects' mechanics.
 
 ---
 
 ### Stage 4: Research Design
-- Claude proposes the experiment design based on the confirmed idea
-- Every technique is checked against the Researcher Profile
-- Feasibility flags are assigned: 🔴 🟡 🟢
-- 🔴 flags must be resolved (via collaboration, alternative technique, or scope change)
-  before the design is finalized
-- Claude must confirm that the experiment as designed actually produces the data
-  needed to support the novelty claim — if not, revise the design or revise the score
-- Once finalized, render `research-design.md` → `research-design.pdf` via the shared
-  `~/.arti/tools/arti-pdf/README.md` pipeline — this is the frozen reference the researcher keeps at hand
-  during execution
+**Trigger:** One idea confirmed on the Idea Canvas. **Output:** `research-design.md`, printed to
+`research-design.pdf` once feasibility flags are resolved. See
+`references/stage4-research-design-protocol.md` for the full procedure.
 
 ---
 
 ### Stage 5: Journal Target Sheet — rank cheap, read narrow
-
-Researchers do not run a five-way comparative study; they have a target and a fallback.
-Ranking happens on free signals first, and papers are read only for the top two.
-
-**Step (i) — Rank on free signals. No papers are read here.**
-- Researcher nominates candidate journals (3–5 is typical)
-- Rank them on signals that cost nothing to obtain:
-  - **Scope fit** — the journal's own aims & scope against the confirmed research question
-  - **Q-rank / indexing** — Scopus, WoS, quartile
-  - **The group's own history** — journals the researcher, their supervisor, or their group
-    has published in before
-- Present the ranking and confirm the top two with the researcher before reading anything
-
-**Step (ii) — Light analysis for the top 2 only.**
-For each of the two, in order:
-- Check `~/.arti/journal-library/<journal-slug>.md` first. If a cached entry exists and its
-  `last verified` date is recent, offer to reuse it instead of re-extracting; otherwise run the
-  analysis below and write/update the cache entry
-- Run the **Predatory Journal Screen** (conditional — see below)
-- Analyze 2–3 example papers (provided by the researcher) for any journal not served from cache
-- For each paper: extract the novelty profile (C/M/E estimate) to establish the journal's
-  typical novelty threshold
-- Compare the research idea's novelty score against that threshold
-
-**Step (iii) — Stop as soon as #1 clears.**
-If the top-ranked journal passes the predatory screen, fits on scope, and clears the novelty
-threshold, it is confirmed — **#2's papers are never opened.** Only fall through to #2 if #1
-fails on one of those three. Candidates ranked below the top two are recorded by name and
-free-signal rationale only; no papers are read for them at all.
-
-**Predatory Journal Screen — conditional, not universal:**
-- **Auto-pass** a journal indexed in Scopus at Q1–Q2 that the researcher or their group has
-  already published in. Record a one-line reason for the auto-pass — the verdict is still
-  written down, only the investigation is skipped
-- **Run the full screen** (`references/predatory-journal-screen.md`) for any journal unfamiliar
-  to the researcher — review-speed plausibility, editorial board verifiability, Scopus/WoS
-  indexing cross-check
-- Either way the verdict + reason is cached in that journal's `journal-library` entry — there
-  is no separate predatory-screen cache file
-- A ❌ Fail still excludes the journal outright; it is not merely down-ranked
-
-**Then:**
-- Reshape the per-journal fields into the two-row Journal Comparison Table (target + fallback)
-  — a decision record documenting why this journal over that one, not a separate research pass
-- Researcher confirms the target journal
-- Confirmed journal is flagged for full Journal Profile construction in ARTi-writing. The 2–3
-  papers read here **count toward** that skill's 5–8, and the light novelty threshold derived
-  here is **extended there, not re-derived from zero**
-
-**Light extraction from example papers (Stage 5 only):**
-- Scope and aims fit: ✅ / ⚠️ / ❌
-- Article type published
-- Novelty level evident in each paper (C/M/E estimate)
-- Typical study design (techniques, sample type)
-- Do NOT extract writing style or technical depth at this stage — that is done
-  in ARTi-writing
+**Trigger:** Research Design stable. **Output:** `journal-target-sheet.md`. Rank on free signals
+(3-5 candidates), light-analyze the top two only, stop as soon as #1 clears. See
+`references/stage5-journal-target-protocol.md` for the full 3-step procedure, the conditional
+Predatory Journal Screen, and light-extraction fields.
 
 ---
 
@@ -651,12 +478,20 @@ session rather than blocking Stage 5 on it.
 - `../ARTi-setup/references/researcher-profile-template.md` — blank Researcher Profile with all
   fields, including the Positioning Line (owned by `ARTi-setup`, which creates this document —
   read from there rather than expecting a duplicate in this skill's own `references/`)
+- `references/stage1-researcher-profile-protocol.md` — Stage 1 procedure and Novelty Ceiling
+  output format
 - `references/gap-map-template.md` — blank Gap Map structure
+- `references/stage2-gap-map-protocol.md` — Stage 2 procedure and minimum-viable bar
 - `../ARTi-ref/references/paper-extraction-template.md` and
   `../ARTi-ref/references/notebooklm-extraction-prompt.md` — Paper Extraction's field shapes,
   owned by `ARTi-ref` (see Paper Extraction above)
 - `references/idea-canvas-template.md` — blank Idea Canvas with scoring table
+- `references/stage3-idea-novelty-protocol.md` — Stage 3 procedure, decision rules, Research Idea
+  Bank auto-park, and Positioning Line trigger
 - `references/novelty-scoring-guide.md` — detailed scoring rubric with examples
+- `references/stage4-research-design-protocol.md` — Stage 4 procedure and closing print step
+- `references/stage5-journal-target-protocol.md` — Stage 5 procedure: 3-step ranking flow,
+  conditional Predatory Journal Screen, light-extraction fields
 - `references/journal-target-sheet-template.md` — blank Journal Target Sheet (target +
   fallback decision record, including the two-row Journal Comparison Table)
 - `references/research-idea-bank-template.md` — blank Research Idea Bank entry shape (`~/.arti/memory/research-idea-bank.md`)
@@ -668,3 +503,10 @@ session rather than blocking Stage 5 on it.
   (`~/.arti/memory/project-index.md`)
 
 Read the relevant reference file before starting any stage.
+
+## Change log
+- 2026-09-17 — Split Stages 1–5's procedural bodies (and the schema-blended process sentences in
+  Core Documents #4/#5) out of this dispatcher into five new `references/stage<N>-*-protocol.md`
+  files, per `skill-modularization.md`'s framing (same skill, same stages — only where the prose
+  for an existing stage lives on disk changed). Stage 0, the Handoff, and Warm Start stay inline
+  unchanged.

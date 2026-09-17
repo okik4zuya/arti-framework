@@ -58,6 +58,7 @@ def main():
         # shrink the window to 50% width on common laptop resolutions (e.g.
         # 1366px wide -> 683px half) instead of clamping to the old 900px floor.
         min_size=(640, 480),
+        text_select=True,
     )
     dashboard_server.set_window(window)
 

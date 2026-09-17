@@ -394,248 +394,31 @@ Publication Growth Log → Idea Bank → next Gap Map (ARTi-idea)
 
 ### Stage 0: Voice Profile (once per researcher, reused across projects)
 
-Run this stage only if the researcher has no Voice Profile yet in `~/.arti/voice-profiles/`, or if
-they explicitly say their writing style has shifted. Otherwise skip straight to Stage 1 — read the
-existing Voice Profile file, don't re-derive it.
-
-**Selection step — run before choosing a path or reusing a profile.** Read (or create, if missing)
-`~/.arti/voice-profiles/00-INDEX.md`, the flat catalog of every existing profile. If it lists more
-than one profile, ask the researcher which one is in effect for this project before proceeding —
-do not guess or default to the most recent. Record the choice in this project's Journal Profile
-Block B pointer line, alongside the existing "which Voice Profile file is in effect" note. If the
-catalog lists none yet, proceed to build one (Path A, B, or C below) and add its row to the catalog
-once written.
-
-**Path A — extracted from the researcher's own papers:**
-
-Ask for 3–5 of the researcher's own first-author papers (any journal — this is about how *they*
-write, not what one journal expects). For each paper, extract, in one reading pass:
-
-*Title analysis:*
-- Word count and structural pattern (record the formula, e.g., "[Material]-enabled [Property] for [Application]")
-- Whether the key finding or novelty is stated explicitly in the title or implied
-- Use of punctuation, colons, or subtitles
-
-*Abstract analysis:*
-- Sentence count per component (background, objective, methods, results, conclusion)
-- Dominant tense per component
-- Active vs. passive voice preference
-- How key results are quantified (specific numbers vs. qualitative statements)
-- Total word count
-
-*Voice and tone:*
-- Overall register (formal vs. semi-formal)
-- Passive vs. active voice ratio across sections
-- Hedging language patterns — list the specific phrases used (e.g., "suggests," "indicates," "demonstrates," "was found to," "it is proposed that")
-- How claims are qualified or strengthened
-
-*Section-level patterns:*
-- Introduction: paragraph count, how the research gap is stated, how the objective is introduced
-- Methods: level of procedural detail, how instruments are cited, tense consistency
-- Results/Discussion: how figures are introduced, how literature comparisons are framed, how contradictory results are handled
-- Conclusion: paragraph count, whether future work is included, how contribution is stated
-
-*Vocabulary and terminology:*
-- Field-specific preferred terms
-- How chemical names, formulas, and units are written
-- When abbreviations are introduced and how frequently used
-
-*In-text citation style:*
-- Narrative vs. parenthetical citation preference
-- Typical number of references per claim
-- Whether recent or seminal papers are favored
-
-Then run one synthesis pass across all papers into a single consensus Voice Profile: note
-dimensions where the researcher is consistent vs. variable, flag any pattern that appears in only
-one paper as a possible one-off rather than a true habit, and write the result to
-`~/.arti/voice-profiles/<voice-slug>.md`.
-
-**Path B — supplied ready-made (e.g. `gtmk-voice`):**
-Record a thin pointer file at the same location instead of re-extracting: which existing style
-skill or profile this points to, and the date the researcher last confirmed it still matches their
-writing. Do not run Path A's extraction over papers that skill was already built from.
-
-**Path C — generalized multi-file corpus, built from a single example article:**
-Use this path when the researcher wants a rich, `gtmk-voice`-style reference corpus — not a single
-flat template file, and not a pointer to somebody else's style skill — built from their own writing
-in whatever field they're in, from just one example article (rather than Path A's 3–5). Modeled
-directly on the `gtmk-voice` skill's own decomposition, generalized so it transfers to any field:
-
-1. Ask the researcher for one example article (their own, or one they want to emulate) and a
-   **descriptive slug** for the resulting profile — prompt for this explicitly; never default to a
-   placeholder like "writing-style-1". The slug becomes the folder name.
-2. From that single article, extract the same registers `gtmk-voice` documents, generalized rather
-   than left field-specific: verb/noun/adjective/adverb registers with a preferred-vs-avoided list
-   (no domain-noun lexicon section, since one article can't establish a stable domain vocabulary —
-   flag this gap explicitly rather than inventing one); verbatim phrase banks by rhetorical
-   function; the commitment/hedging ladder; paragraph-flow move-sequences per section; title/
-   abstract formulas; the non-native-English or other signature fingerprint, if present; and a
-   condensed copy-paste prompt block distilling all of the above.
-3. Write the result to `~/.arti/voice-profiles/<slug>/`, as a folder (not a flat file — the folder
-   structure is the point of "same structure but generalized"), containing:
-   `00-INDEX.md`, `01-lexicon.md`, `02-phrases.md`, `03-hedging.md`, `04-paragraph-flow.md`,
-   `05-abstract-title.md`, `06-signature-notes.md`, `07-PROMPT-BLOCK.md`.
-4. Because this is built from one source article rather than 3–5, `00-INDEX.md` must state the
-   single-source provenance explicitly and flag the whole extraction as **provisional** until
-   reconfirmed against a second sample — do not present it with the same confidence as a Path A or
-   an established Path C profile built from more than one source.
-5. Add a row for the new profile to `~/.arti/voice-profiles/00-INDEX.md` (the catalog read by the
-   selection step above).
-
-**File:** `~/.arti/voice-profiles/<voice-slug>.md` (Path A/B) or `~/.arti/voice-profiles/<slug>/` (Path C)
+**Trigger:** No Voice Profile yet in `~/.arti/voice-profiles/`, or the researcher explicitly says
+their writing style has shifted — otherwise skip straight to Stage 1 and read the existing file
+rather than re-deriving it. **Output:** `~/.arti/voice-profiles/<voice-slug>.md` (Path A/B) or
+`~/.arti/voice-profiles/<slug>/` (Path C). See
+`references/stage0-voice-profile-protocol.md` for the Selection step and the full Path A/B/C
+procedures, including the write-half of the Stage 0 ↔ Stage 1 Journal Profile Block B coupling.
 
 ---
 
 ### Stage 1: Journal Profile
 
-**Block A — Administrative Requirements:**
-- Help the user identify and fill in all journal requirement fields
-- Search for or analyze provided journal guidelines
-- Flag any unusual requirements that will affect manuscript structure
-- **Indexing and ranking (Scopus, WoS, Q-rank, Impact Factor) is sourced from `arti-jfinder`, not
-  hand-typed or recalled from general knowledge.** Call `journal get --id SOURCEID` (resolving the
-  id first via `journal search --keyword TEXT` if only the journal's name is known) to populate
-  this field from the real Scimago snapshot — same pattern `ARTi-idea` Stage 5 already uses for the
-  Journal Target Sheet. Fall back to general-knowledge/user-supplied values only if the lookup
-  misses (empty/missing database), per `ARTi-jfinder`'s own documented fallback.
-
-**Block B — pointer only:**
-Record which Voice Profile file is in effect for this project. While reading the journal's example
-articles for Blocks C and D (below), note only the deltas that actually differ from that Voice
-Profile — e.g., this journal's citation format, or a section-length norm the researcher's own
-papers don't share. Do not re-extract the full style profile here; that work now lives in Stage 0.
-
-**Blocks C, D — Single-Pass Extraction Protocol:**
-
-Example papers are read **once each**. For every paper, Claude extracts technical depth and
-novelty in the same reading pass, then runs **one synthesis pass** across all papers to produce
-Blocks C and D. Do not run separate protocols over the same paper set — the output is identical
-and the reading cost is doubled.
-
-**How many papers:** 5–8, **inclusive of the 2–3 already read in ARTi-idea Stage 5**. Those papers
-count toward the total; do not re-read them from scratch — extend what was already extracted.
-
-#### Pass 1 — Per paper (one reading, two profiles)
-
-*Technical depth (feeds Block C):*
-
-*Characterization panel:*
-- Which techniques are used and in what combination
-- Which techniques serve characterization only vs. mechanistic insight
-- Typical number of characterization techniques per paper
-
-*Data reporting standards:*
-- Whether error bars, standard deviations, or repeatability data are reported
-- How measurements are quantified and reported (significant figures, units)
-- Whether reproducibility experiments are standard
-
-*Analysis depth benchmark:*
-- Whether Discussion is primarily descriptive, interpretive, or mechanistic
-- Whether computational or theoretical support (DFT, modeling, kinetics, thermodynamics) is common or rare
-- Whether control experiments are standard
-
-*Claim strength norms:*
-- How boldly novelty is stated in the Introduction and Conclusion
-- Whether state-of-the-art benchmarking or performance comparison tables are expected
-- How limitations are acknowledged
-
-*Figure construction norms:*
-- Single vs. composite panel figures
-- Typical total figure count per paper
-- Whether schematic diagrams or mechanism illustrations are common
-
-*Novelty (feeds Block D):*
-
-Score the paper's novelty across three dimensions:
-- **C — Conceptual novelty** (1–5): How new is the research question?
-  1=Replication, 2=Extension, 3=Gap-filling, 4=Reframing, 5=Paradigm-shifting
-- **M — Methodological novelty** (1–5): How new is the approach?
-  1=Standard methods, 2=Adaptation, 3=Cross-field application, 4=Method development, 5=New technique
-- **E — Empirical novelty** (1–5): How new are the findings?
-  1=Confirmatory, 2=Incremental data, 3=First-reported, 4=Quantitative revision, 5=Contradictory finding
-
-Claude must justify each score with a specific observation from the paper — not just assign a number.
-Example: "C=3 because the paper asks a question not previously addressed in the literature
-(the authors explicitly state no prior study has examined X in Y context)."
-
-*Section-level outline norms (review-type articles only, feeds Block C):*
-
-For a review-type article, also record each paper's **verbatim top-level (and, where used,
-second-level) section headings**, copied directly from the paper's own fulltext file as Pass 1
-reads it — not reconstructed from memory or a narrative skim afterward. This is what Pass 2 checks
-frequency claims against and what Stage 2's Blueprint later consults instead of defaulting to a
-generic IMRaD heading.
-
-#### Pass 2 — Synthesis across all papers
-
-Run once, after every paper has been through Pass 1:
-
-*For Block C:*
-1. Synthesize a consensus Technical Depth Profile across all articles
-2. Note where papers vary in technical rigor
-3. Flag any technique or analysis type appearing in most papers that the user has not yet addressed
-4. **Verify frequency claims before stating them.** Any claim about how many papers follow a
-   structural or content convention ("N/5 examples do X") must be checked against the literal
-   per-paper text, not asserted from a single earlier reading pass's impression. For a convention
-   whose presence or absence isn't obvious from the section-heading list alone (e.g., whether a
-   search methodology is explicitly stated, or which of several papers actually pair Conclusions
-   with a separate Future Research Directions section), re-open the paper's fulltext and search for
-   it directly rather than relying on recall. (Illustrative, not exhaustive — this project's own
-   Block C once wrongly reported 3/5 examples stating an explicit search methodology when the true
-   count was 1/5, and 4/5 pairing Conclusions with Future Research Directions when the true split
-   was 1/5 clean pair, 1/5 merged heading, 1/5 nested elsewhere, 2/5 absent.)
-5. For review-type articles, synthesize the per-paper verbatim headings from Pass 1 into the
-   **Section-Level Outline Norms** table (see the Block C template) — what's universal across all
-   examples, what's common but not universal, and what's genuinely variable/minority-pattern
-6. Produce a completed Block C ready to paste into the Journal Profile
-
-*For Block D:*
-1. Complete the Novelty Scores of Example Articles table
-2. Derive the Journal Novelty Threshold: record the range and typical minimum for each dimension,
-   identify which dimension(s) the journal weights most heavily, state the minimum composite label
-   the journal accepts, and note whether any dimension can be low if compensated by another
-3. Note which novelty dimension is most critical for this journal
-4. Produce a completed Block D (threshold section only) ready to paste into the Journal Profile
-
-*Manuscript novelty fit (filled per draft, not at creation):*
-When producing an Iteration Log entry, Claude must also update Block D's
-"Your Manuscript's Novelty Fit" section by scoring the current draft's C/M/E
-against the journal's threshold. If any dimension falls below the threshold,
-flag it as 🔴 Critical in the Iteration Log Priority Action List.
-
-**If ARTi-idea was used:**
-- The Stage 5 light novelty threshold for this journal is **extended, not re-derived from zero**.
-  Start from the recorded light threshold and deepen it with the additional papers.
-- The 2–3 papers already read in Stage 5 **count toward the 5–8**. Only the remaining papers need
-  a fresh Pass 1.
-- Import the confirmed C/M/E scores from the Idea Canvas directly into Block D's
-  "Your Manuscript's Novelty Fit" table. Use these as the starting scores for Draft 1.
-  Update the scores if the manuscript content changes the novelty profile during drafting.
+**Trigger:** Start of the project (or target journal change). **Output:** Journal Profile Blocks
+A, B, C, D, built from journal guidelines (Block A), the Stage 0 Voice Profile pointer (Block B),
+and a single-pass read of 5–8 example papers (Blocks C, D — inclusive of the 2–3 already read in
+ARTi-idea Stage 5, if used). See `references/stage1-journal-profile-protocol.md` for the full
+extraction protocol (Block A's `arti-jfinder` lookups, Block B's read/extend-half of the Stage 0
+coupling, the Pass 1/Pass 2 single-pass procedure, and the ARTi-idea integration notes).
 
 ---
 
 ### Stage 2: Manuscript Blueprint
 
-Run once Journal Profile Blocks A, C, D and the Voice Profile are all in place, before Scratchbook
-population starts.
-
-- **Precondition for review-type articles.** Before finalizing top-level section titles, check
-  Journal Profile Block C's Section-Level Outline Norms table for what heading convention the
-  target journal's own reviews actually use. Do not default to a generic IMRaD-style heading (e.g.,
-  "Results and Discussion") unless the verbatim check shows that convention is genuinely used —
-  match the Blueprint's section titles to the table's universal/common pattern instead.
-- From Journal Profile Block C and the Voice Profile's section-level patterns, derive a
-  paragraph-level outline: how many paragraphs before the Introduction's gap statement, where the
-  objective sentence sits, how many paragraphs per characterization technique in
-  Results/Discussion, whether Conclusion future-work gets its own paragraph
-- If ARTi-idea was used, pull the confirmed C/M/E contribution score from the Idea Canvas (via the
-  handoff manifest) and mark which paragraph is responsible for carrying the novelty claim — the
-  Introduction paragraph that frames the conceptual contribution, the Results/Discussion
-  subsection that carries the empirical claim
-- Output a paragraph-level outline per section — not prose, not a generic IMRaD skeleton. Write it
-  to `writing\manuscript-blueprint.md`
-- Revisit only if the target journal changes, or if Scratchbook population reveals the manuscript
-  needs a structurally different shape than planned
+**Trigger:** Journal Profile Blocks A, C, D and the Voice Profile all in place, before Scratchbook
+population starts. **Output:** `writing\manuscript-blueprint.md`, a paragraph-level outline per
+section. See `references/stage2-manuscript-blueprint-protocol.md` for the full procedure.
 
 ---
 
@@ -650,71 +433,16 @@ session-chunking. Return here for Stage 4 once the sections needed for drafting 
 
 ### Stage 4: Manuscript Drafting
 
+**Trigger:** Scratchbook has sufficient content for a section. **Output:**
+`writing\manuscript_draft[N]_[date].md`. See `references/stage4-drafting-protocol.md` for the full
+procedure, the concision-as-default-register rules, and the plagiarism/hallucination prevention
+rules.
+
 **Project index cadence:** the first time this stage produces "Draft 1" content (not on later
 revisions of the same draft), run `project upsert --stage "Drafting" --status "writing started"`
 for this project's row. This is the phase boundary ARTi-idea's handoff row left open; skipping it
 is why the dashboard can show a project stuck at "Handed off" indefinitely. Consider whether
 `--summary` needs updating too (e.g. a voice-implementation pass or new section added).
-
-- Skim the `**Argumen saat ini:**` lines first for a quick orientation on each section's current
-  argument, then go to the full dumps beneath them for the supporting material
-- Transform Scratchbook content into formal academic prose, following the Manuscript Blueprint's
-  paragraph-level shape for this journal
-- Strictly follow Journal Profile Block A (structure and formatting)
-- Mirror the project's Voice Profile, adjusted for any journal-specific delta noted in Journal
-  Profile Block B
-- Match technical depth consistent with Journal Profile Block C (Technical Depth Profile)
-- Flag any content in the Scratchbook that is unclear or insufficient
-- Label each output clearly as "Draft N"
-- Before drafting, scan all `[⚠️ CONTRADICTION]` tags in the relevant section — note them for the Discussion
-- Before drafting, check Block C — flag any characterization technique or analysis type that typical journal papers include but the Scratchbook does not yet address
-- Update the drafting progress tracker (status, draft #, word count, open-flag count) in the same
-  turn a section is drafted or revised, before moving to the next section — never deferred to
-  session end
-
-**Concision is the default register, not a special pass.** Draft every section, and revise every
-existing one, as dense and literature/evidence-rich as it can be while remaining correct: trim
-elaboration, meta-commentary, and content already restated by an adjacent table or figure; never
-touch citations or evidence. Concretely, on both a first draft and any later revision:
-- Cut signposting sentences that only announce what a paragraph is about to do or just did
-  ("Note that…", "It is worth noting…", "Firstly / secondly / thirdly" scaffolding, "This
-  demonstrates that…" restated after the demonstration already reads that way).
-- Cut parenthetical glosses and restrictive clauses that repeat a claim already made in the
-  sentence, or that a cited source's name alone already implies.
-- When a table or figure states something in full (a mapping, a list of properties, a set of
-  values), do not also restate it prose-form nearby — point to the display item instead.
-- **Don't elaborate without strong support (literature or evidence).** A claim, interpretation, or
-  aside earns extra sentences only if it is carrying a citation, a statistic, or data from the
-  Scratchbook — not because it sounds plausible or adds color. If a sentence would need to be
-  written from general reasoning rather than a sourced claim, it is a candidate to cut, not expand;
-  when the point genuinely needs saying and has no source, flag it (`[SOURCE NEEDED]` or
-  `[CITATION NEEDED]`) rather than writing it up unsupported at length.
-- Never cut a citation, a statistic, a `[DATA NEEDED]`/`[CITATION NEEDED]`/`[SOURCE NEEDED]` flag,
-  or a substantive claim (a distinct piece of evidence, reasoning, or a stated limitation/trade-off)
-  purely to shorten. If a sentence carries a citation or a number, treat everything in it as load-
-  bearing by default and cut around it, not through it.
-- After any concision pass, verify nothing evidentiary was lost: diff the citation set (author-year
-  keys) between the before and after text and confirm it is unchanged, the way
-  `references/review-checklist.md` Section J already requires for citation integrity generally.
-- This is the default weighting for every draft and revision, independent of whether the user asks
-  for a "compression pass" by name — write tight the first time rather than padding now and cutting
-  later. **The one override:** if the user explicitly asks for elaboration, more detail, or a longer
-  treatment of something, honor that request for the scope asked — it does not reopen the default
-  elsewhere in the same draft.
-
-**Plagiarism Prevention at this stage:**
-- Write exclusively from the Scratchbook — never draft by rephrasing the original source text directly
-- All literature from the Scratchbook must be fully paraphrased into original prose; do not reproduce sentence structures from the original paper even if the words differ
-- Direct quotes are not acceptable in scientific manuscripts — if a Scratchbook entry contains a direct quote, rewrite it before including it in the draft
-- Cite as you write — every claim derived from literature must carry its citation inline; never plan to add citations later
-- Flag any Methods section content that appears reused from a prior paper — self-plagiarism is a violation
-- Add a note at the end of each drafted section: *"Please review this section for unintended similarity to source texts before proceeding."*
-
-**Hallucination Prevention at this stage:**
-- Only cite references explicitly listed in the Scratchbook `## Reference List` — never generate or infer citations from memory
-- If a claim requires a citation but no source is in the Scratchbook, insert `[CITATION NEEDED]` and notify the user
-- Never invent numerical data, experimental results, or author names — flag missing values as `[DATA NEEDED — VERIFY FROM SOURCE]`
-- Do not expand on a reference's content beyond what the user has provided in the Scratchbook
 
 ---
 
@@ -750,132 +478,38 @@ Methods are drafted and everything downstream is execution rather than re-planni
 
 ### Stage 5: Iteration Log
 
-**Trigger rule — IMPORTANT:**
-Claude must NEVER create an Iteration Log entry automatically.
-- Claude creates an Iteration Log entry ONLY when the user explicitly requests it (e.g., "evaluate my draft", "create an iteration log entry", "run an evaluation")
-- At the end of each drafting or revision session, Claude must ask: *"Would you like me to create an Iteration Log entry for this draft?"*
-- If the user says no, proceed without creating one
-- Never assume an evaluation is wanted — always ask first
-
-When an entry is requested, Claude must read `iteration-log-template.md` for the full report
-structure and scoring guidance, then produce a structured entry.
-
-**Feedback source (recorded at the top of every entry):**
-State where the input for this iteration came from: self-review, the previous Iteration Log entry,
-supervisor, co-author, peer reviewer, or Reviewer Simulation. External feedback enters the loop
-through this field — an entry can be opened to record a supervisor's, reviewer's, or simulated
-review's comments even when no fresh evaluation was run.
-
-**Section 1 — Compliance Evaluation (objective):**
-Check every field from Journal Profile Block A:
-- Status: ✅ Met / ⚠️ Partial / ❌ Not Met
-- Add a specific note for any non-Met item
-- Report overall compliance score: X of Y requirements met
-
-**Section 2 — Style Alignment Assessment (qualitative):**
-Compare the manuscript against every dimension in the project's Voice Profile, plus any
-journal-specific delta noted in Journal Profile Block B:
-- Rating: ✅ Aligned / ⚠️ Partial / ❌ Misaligned
-- Provide specific examples from the manuscript text to support each rating
-- Note which style dimensions need the most attention
-
-**Section 3 — Technical Depth Evaluation (judgmental):**
-Compare the manuscript against every dimension in Journal Profile Block C:
-- Rating: ✅ Sufficient / ⚠️ Needs strengthening / ❌ Missing
-- For each gap, specify what is missing and why it matters for this journal
-- Flag overclaimed results — claims not sufficiently supported by the data presented
-- Flag underutilized data — results collected but not fully discussed or interpreted
-
-**Section 3b — Novelty Fit Evaluation (against Block D):**
-Compare the manuscript's actual novelty against the journal's threshold from Block D:
-- Score the current draft on C, M, and E using the same rubric applied to example papers
-- Compare each score against the journal's minimum threshold
-- Rating per dimension: ✅ Meets threshold / ⚠️ Borderline / ❌ Below threshold
-- If any dimension is ❌ Below threshold: this is automatically a 🔴 Critical item
-- If borderline (⚠️): specify exactly how the framing or scope could be strengthened
-  within the existing data — do not recommend collecting new data unless unavoidable
-- Update Block D's "Your Manuscript's Novelty Fit" section with the scores from this evaluation
-
-**Section 4 — Priority Action List:**
-Synthesize all findings into a ranked action list:
-- 🔴 Critical — must fix before advancing to next draft
-- 🟡 Important — should fix before co-author review
-- 🟢 Minor — polish before submission
-
-**Section 5 — Actions Taken / Deliberately Deferred:**
-Filled as the revision work happens, in this same entry:
-- Record which Priority Actions were addressed and how
-- Record which were deliberately deferred, and why
-- Summarize what changed between this draft and the next
-- Carry forward unresolved items to the next iteration's Priority Action List
-
-**Section 6 — Readiness Summary:**
-Honest one-paragraph assessment of the draft's current state and whether it is ready to advance to the next stage.
-
-Evaluation still precedes revision: Sections 1–4 are completed before any revision begins, and
-Section 5 is only filled once the revisions are actually made. Merging the two logs into one entry
-does not merge the two acts.
-
-**Reviewer Simulation (optional, run only after a passing Iteration Log entry):**
-- Only after the current draft's Iteration Log entry shows no 🔴 Critical items, ask whether the
-  researcher wants a Reviewer Simulation pass
-- Produce 3–6 simulated reviewer comments, each tagged Technical / Methodological / Conceptual /
-  Strategic, written as a reviewer would phrase a criticism — not as a checklist restatement of
-  Sections 1–3b
-- Deliberately look for at least one Strategic-category comment (positioning, significance, fit) —
-  the category a Journal-Profile-benchmarked evaluation cannot generate on its own
-- Append the result as a subsection of the current entry's Section 4, tagged with feedback source
-  "Reviewer Simulation"
+**Trigger:** Only when the user explicitly requests it — never automatically (see the trigger rule
+in the protocol file). **Output:** one entry appended to `writing\iteration-log.md`, covering both
+the evaluation and, once revision work happens, its resolution. See
+`references/stage5-iteration-log-protocol.md` for the trigger rule, the feedback-source field, the
+evaluation-precedes-revision ordering, the Block D re-verify step (touch point 3 of 4 — see Key
+Principles below), and the Reviewer Simulation policy. See `references/iteration-log-template.md`
+for the full Section 1–6 (+4b) structure itself.
 
 ---
 
 ### Stage 6: Cover Letter
 
-Run once the manuscript is submission-ready — the latest Iteration Log entry shows no 🔴 Critical
-items outstanding.
-
-- Pull Journal Profile Block A (editor name if known, scope statement to address) and Block D (the
-  novelty threshold this manuscript clears, stated as a fit claim, not restated as a C/M/E number)
-- If ARTi-idea was used, pull the Idea Canvas's contribution statement via the handoff manifest
-  rather than re-deriving a summary of the abstract
-- Verify the letter argues fit, not summary: check that a specific sentence connects this
-  manuscript to something this journal specifically publishes or has stated it wants
-- Write to `submission\cover-letter_[journal-abbreviation].md`
-
-**Project index cadence:** once the researcher confirms the package was actually submitted to the
-journal (not merely that the cover letter draft is done), run
-`project upsert --stage "Submitted" --status "Under review"` (or the journal name if not already
-set) for this project's row. Consider whether `--summary` needs updating too.
+**Trigger:** Manuscript submission-ready — latest Iteration Log entry shows no 🔴 Critical items
+outstanding. **Output:** `submission\cover-letter_[journal-abbreviation].md`. See
+`references/stage678-post-drafting-protocol.md` for the full procedure and project-index cadence.
 
 ---
 
 ### Stage 7: Rebuttal / Response to Reviewers
 
-Triggered when reviewer comments arrive after peer review — never speculatively before that.
-
-- Open one entry per individual reviewer comment, not per reviewer and not per round as a whole
-- Tag each entry with exactly one category: Technical / Methodological / Conceptual / Strategic
-- As each comment is addressed, cross-link the entry to the Iteration Log entry that made the
-  resolving manuscript change
-- If a subsequent review round arrives, append new entries to the same document rather than
-  starting a new one for the same journal submission
-- Write to `submission\rebuttal_[journal-abbreviation]_round[N].md`
+**Trigger:** Reviewer comments arrive after peer review — never speculatively before that.
+**Output:** `submission\rebuttal_[journal-abbreviation]_round[N].md`. See
+`references/stage678-post-drafting-protocol.md` for the full procedure.
 
 ---
 
 ### Stage 8: Publication Growth Log
 
-Triggered by the researcher confirming acceptance — never speculatively before that. This is the
-only stage that runs after the paper is done, and the one that closes the loop back to ARTi-idea.
-
-- Walk the post-acceptance visibility checklist: DOI registered, ORCID linked, repository archiving
-  done where the publisher allows it
-- Ask directly: *"What did this paper's Limitations section leave on the table?"* — review the
-  Manuscript's own Limitations paragraph, plus any Strategic-category comments from Reviewer
-  Simulation or real reviewers that were deliberately deferred rather than resolved, for concrete
-  follow-up directions
-- Record the answer in `submission\growth-log.md`, and in the same turn run `idea-bank add` so it
-  surfaces automatically the next time a Gap Map is started
+**Trigger:** Researcher confirms acceptance — never speculatively before that. This is the only
+stage that runs after the paper is done, and the one that closes the loop back to ARTi-idea.
+**Output:** `submission\growth-log.md`, plus a `idea-bank add` write in the same turn. See
+`references/stage678-post-drafting-protocol.md` for the full procedure.
 
 ---
 
@@ -914,7 +548,14 @@ cross-project and lives in `~/.arti/`.
 10. **Contradictions are assets** — flagged contradictions between sources are material for Discussion synthesis, not problems to hide.
 11. **Technical gaps are early warnings** — if the Scratchbook lacks data that the Technical Depth Profile shows is expected, flag it before drafting — not after.
 12. **Read each example paper once** — technical depth and novelty come out of the same reading pass. Separate passes over one paper produce the same profile at double the cost.
-13. **Novelty below threshold is a desk-rejection risk** — if the manuscript's C/M/E score on any dimension falls below the journal's threshold (Block D), flag it as 🔴 Critical immediately. A well-written paper with insufficient novelty will be rejected before peer review. Novelty fit must be verified at Journal Profile creation and at every Iteration Log entry.
+13. **Novelty below threshold is a desk-rejection risk** — if the manuscript's C/M/E score on any dimension falls below the journal's threshold (Block D), flag it as 🔴 Critical immediately. A well-written paper with insufficient novelty will be rejected before peer review. Novelty fit must be verified at Journal Profile creation and at every Iteration Log entry. Block D is touched at four points across the workflow — since no two of these reference files are guaranteed to be loaded in the same turn, here is the full set:
+
+    | # | Touch point | Stage | File |
+    |---|---|---|---|
+    | 1 | Threshold-set (import confirmed C/M/E from Idea Canvas as Draft 1's starting scores) | Stage 1 | `references/stage1-journal-profile-protocol.md` |
+    | 2 | Per-draft note (update "Your Manuscript's Novelty Fit" when producing an Iteration Log entry) | Stage 1 | `references/stage1-journal-profile-protocol.md` |
+    | 3 | Re-verify (score current draft's C/M/E against threshold at every entry, not just Draft 1) | Stage 5 | `references/stage5-iteration-log-protocol.md` |
+    | 4 | Cite (state the threshold this manuscript clears as a fit claim) | Stage 6 | `references/stage678-post-drafting-protocol.md` |
 14. **Novelty fit problems are often framing problems** — before concluding that the research itself is insufficiently novel, check whether the Introduction and Discussion are framing the contribution strongly enough. A C3 finding written as a C2 contribution is a writing problem, not a research problem.
 15. **Voice is the researcher's, style delta is the journal's** — a Voice Profile is built once per researcher and reused; only the journal-specific delta gets re-derived per project. Do not re-run full style extraction on a researcher who already has a Voice Profile.
 16. **Blueprint before dumping** — the Manuscript Blueprint's paragraph-level shape exists so Scratchbook population has a target to fill, not so drafting invents structure from a blank page.
@@ -928,16 +569,25 @@ cross-project and lives in `~/.arti/`.
 
 ## Reference Files
 
-- `section-guide.md` — Writing guidance for each manuscript section
-- `review-checklist.md` — Self-review checklist for manuscript drafts
+- `stage0-voice-profile-protocol.md` — Stage 0 Selection step and full Path A/B/C procedures
 - `voice-profile-template.md` — Ready-to-use blank Voice Profile template
-- `manuscript-blueprint-template.md` — Ready-to-use blank Manuscript Blueprint template
-- `drafting-progress-tracker-template.md` — blank per-section drafting-progress column structure
+- `stage1-journal-profile-protocol.md` — Stage 1 Block A/B/C/D extraction protocol
 - `journal-profile-template.md` — Ready-to-use blank Journal Profile template (Blocks A, C, D)
-- `iteration-log-template.md` — Iteration Log entry template with scoring and resolution guidance,
-  including the optional Reviewer Simulation subsection
+- `stage2-manuscript-blueprint-protocol.md` — Stage 2 procedure
+- `manuscript-blueprint-template.md` — Ready-to-use blank Manuscript Blueprint template
+- `section-guide.md` — Writing guidance for each manuscript section
+- `stage4-drafting-protocol.md` — Stage 4 procedure: concision rules, plagiarism/hallucination
+  prevention
+- `drafting-progress-tracker-template.md` — blank per-section drafting-progress column structure
+- `review-checklist.md` — Self-review checklist for manuscript drafts
 - `completion-plan-template.md` — Stage 4b's `writing\completion-plan.md` Markdown structure and
   Blueprint-completeness precondition
+- `stage5-iteration-log-protocol.md` — Stage 5 process wrapping: trigger rule, feedback source,
+  Block D re-verify, Reviewer Simulation policy
+- `iteration-log-template.md` — Iteration Log entry template with scoring and resolution guidance,
+  including the optional Reviewer Simulation subsection
+- `stage678-post-drafting-protocol.md` — Stages 6–8 procedure (Cover Letter, Rebuttal, Publication
+  Growth Log)
 - `cover-letter-template.md` — Ready-to-use blank Cover Letter template
 - `rebuttal-template.md` — Ready-to-use blank Rebuttal / Response to Reviewers template
 - `publication-growth-log-template.md` — Ready-to-use blank Publication Growth Log template
@@ -981,3 +631,13 @@ which stage:
 - `~/.arti/voice-profiles/<voice-slug>.md` (or `<slug>/` for a Path C multi-file corpus) → Stage 0 Voice Profile, if the researcher already has one
 - `~/.arti/voice-profiles/00-INDEX.md` → catalog of every existing Voice Profile, read by Stage 0's selection step when more than one exists
 - `~/.arti/memory/research-idea-bank.md` → destination for the Publication Growth Log's closing entry, at Stage 8
+
+---
+
+## Change log
+- 2026-09-17 — Split Stages 0, 1, 2, 4, 5, 6, 7, 8's procedural bodies out of this dispatcher into
+  seven new `references/stage<N>-*-protocol.md` files (Stages 6/7/8 merged into one), per
+  `skill-modularization.md`'s framing (same skill, same stages — only where the prose for an
+  existing stage lives on disk changed). Deleted (not moved) Stage 5's inline 6-section
+  restatement, a byte-for-byte duplicate of `iteration-log-template.md`. Added the Block D
+  four-touch-point table to Key Principles #13. Stage 3 and Stage 4b stay inline unchanged.
