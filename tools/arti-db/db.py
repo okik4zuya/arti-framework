@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS idea_bank (
   source_project TEXT,
   reason_parked  TEXT,
   notes          TEXT,
+  tag            TEXT,
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL
 );
@@ -129,6 +130,10 @@ def init_db():
                 conn.execute("UPDATE project_index SET added_at = created_at WHERE added_at IS NULL")
                 conn.commit()
                 _migrate_launcher_db(conn)
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(idea_bank)").fetchall()}
+            if "tag" not in cols:
+                conn.execute("ALTER TABLE idea_bank ADD COLUMN tag TEXT")
                 conn.commit()
             if is_new:
                 _migrate_legacy(conn)
@@ -475,7 +480,7 @@ def project_export():
 # ---------------------------------------------------------------------------
 
 def idea_bank_add(label, idea_text, c=None, m=None, e=None, novelty_label=None,
-                   date_parked=None, source_project=None, reason_parked=None, notes=None):
+                   date_parked=None, source_project=None, reason_parked=None, notes=None, tag=None):
     date_parked = date_parked or _today()
     now = _now()
     with _lock:
@@ -483,10 +488,10 @@ def idea_bank_add(label, idea_text, c=None, m=None, e=None, novelty_label=None,
         try:
             cur = conn.execute(
                 "INSERT INTO idea_bank (label, idea_text, novelty_c, novelty_m, novelty_e, "
-                "novelty_label, date_parked, source_project, reason_parked, notes, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "novelty_label, date_parked, source_project, reason_parked, notes, tag, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (label, idea_text, c, m, e, novelty_label, date_parked, source_project,
-                 reason_parked, notes, now, now),
+                 reason_parked, notes, tag, now, now),
             )
             conn.commit()
             row = _row_to_dict(
@@ -543,10 +548,10 @@ def idea_bank_remove(id_):
             row = conn.execute("SELECT * FROM idea_bank WHERE id = ?", (id_,)).fetchone()
             conn.execute("DELETE FROM idea_bank WHERE id = ?", (id_,))
             conn.commit()
-            return _row_to_dict(row)
         finally:
             conn.close()
     idea_bank_export()
+    return _row_to_dict(row)
 
 
 def idea_bank_export():
@@ -592,6 +597,8 @@ def idea_bank_export():
             lines.append(f"**Reason parked:** {r['reason_parked']}")
         if r["notes"]:
             lines.append(f"**Notes:** {r['notes']}")
+        if r.get("tag"):
+            lines.append(f"**Tag:** {r['tag']}")
         lines.append("")
     LEGACY_IDEA_BANK_PATH.parent.mkdir(parents=True, exist_ok=True)
     LEGACY_IDEA_BANK_PATH.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")

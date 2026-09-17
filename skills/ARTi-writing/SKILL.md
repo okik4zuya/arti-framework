@@ -226,6 +226,13 @@ The evolving manuscript file where scratchbook content is synthesized, structure
 
 **When to create/update:** Once the Scratchbook has sufficient content for a section. Iterate repeatedly based on Iteration Log findings.
 
+**Drafting progress tracker (companion artifact):** a per-section checkpoint tracker so "which
+sections are drafted, at what word count, with what still open" never requires re-deriving status
+from this file's own header or from `memory\todo-list.md`. Blank column structure:
+`references/drafting-progress-tracker-template.md`; a filled instance is project-specific (e.g.
+`memory\memories\manuscript-drafting-progress.md` in a project using this project's memory
+convention). Read it first when resuming drafting.
+
 ---
 
 ### 6. Iteration Log
@@ -551,6 +558,14 @@ Claude must justify each score with a specific observation from the paper — no
 Example: "C=3 because the paper asks a question not previously addressed in the literature
 (the authors explicitly state no prior study has examined X in Y context)."
 
+*Section-level outline norms (review-type articles only, feeds Block C):*
+
+For a review-type article, also record each paper's **verbatim top-level (and, where used,
+second-level) section headings**, copied directly from the paper's own fulltext file as Pass 1
+reads it — not reconstructed from memory or a narrative skim afterward. This is what Pass 2 checks
+frequency claims against and what Stage 2's Blueprint later consults instead of defaulting to a
+generic IMRaD heading.
+
 #### Pass 2 — Synthesis across all papers
 
 Run once, after every paper has been through Pass 1:
@@ -559,7 +574,20 @@ Run once, after every paper has been through Pass 1:
 1. Synthesize a consensus Technical Depth Profile across all articles
 2. Note where papers vary in technical rigor
 3. Flag any technique or analysis type appearing in most papers that the user has not yet addressed
-4. Produce a completed Block C ready to paste into the Journal Profile
+4. **Verify frequency claims before stating them.** Any claim about how many papers follow a
+   structural or content convention ("N/5 examples do X") must be checked against the literal
+   per-paper text, not asserted from a single earlier reading pass's impression. For a convention
+   whose presence or absence isn't obvious from the section-heading list alone (e.g., whether a
+   search methodology is explicitly stated, or which of several papers actually pair Conclusions
+   with a separate Future Research Directions section), re-open the paper's fulltext and search for
+   it directly rather than relying on recall. (Illustrative, not exhaustive — this project's own
+   Block C once wrongly reported 3/5 examples stating an explicit search methodology when the true
+   count was 1/5, and 4/5 pairing Conclusions with Future Research Directions when the true split
+   was 1/5 clean pair, 1/5 merged heading, 1/5 nested elsewhere, 2/5 absent.)
+5. For review-type articles, synthesize the per-paper verbatim headings from Pass 1 into the
+   **Section-Level Outline Norms** table (see the Block C template) — what's universal across all
+   examples, what's common but not universal, and what's genuinely variable/minority-pattern
+6. Produce a completed Block C ready to paste into the Journal Profile
 
 *For Block D:*
 1. Complete the Novelty Scores of Example Articles table
@@ -591,6 +619,11 @@ flag it as 🔴 Critical in the Iteration Log Priority Action List.
 Run once Journal Profile Blocks A, C, D and the Voice Profile are all in place, before Scratchbook
 population starts.
 
+- **Precondition for review-type articles.** Before finalizing top-level section titles, check
+  Journal Profile Block C's Section-Level Outline Norms table for what heading convention the
+  target journal's own reviews actually use. Do not default to a generic IMRaD-style heading (e.g.,
+  "Results and Discussion") unless the verbatim check shows that convention is genuinely used —
+  match the Blueprint's section titles to the table's universal/common pattern instead.
 - From Journal Profile Block C and the Voice Profile's section-level patterns, derive a
   paragraph-level outline: how many paragraphs before the Introduction's gap statement, where the
   objective sentence sits, how many paragraphs per characterization technique in
@@ -635,6 +668,9 @@ is why the dashboard can show a project stuck at "Handed off" indefinitely. Cons
 - Label each output clearly as "Draft N"
 - Before drafting, scan all `[⚠️ CONTRADICTION]` tags in the relevant section — note them for the Discussion
 - Before drafting, check Block C — flag any characterization technique or analysis type that typical journal papers include but the Scratchbook does not yet address
+- Update the drafting progress tracker (status, draft #, word count, open-flag count) in the same
+  turn a section is drafted or revised, before moving to the next section — never deferred to
+  session end
 
 **Concision is the default register, not a special pass.** Draft every section, and revise every
 existing one, as dense and literature/evidence-rich as it can be while remaining correct: trim
@@ -698,7 +734,10 @@ Methods are drafted and everything downstream is execution rather than re-planni
   Blocks A/B, and the open `- [ ]` items in `memory\todo-list.md`.
 - Content: data-collection schedule · analysis plan per hypothesis · full figure/table inventory
   (create / redraw / verify) · remaining manuscript sections · pre-submission checks (journal
-  allowances, reference verification, IRB) · submission-package items.
+  allowances, reference verification, IRB) · submission-package items. Fill "remaining manuscript
+  sections" by reading the drafting progress tracker rather than re-deriving it — the two documents
+  serve different purposes (frozen scope vs. live status) but must agree at the moment the
+  Completion Plan is compiled.
 - Write to `writing\completion-plan.md`, then render to `writing\completion-plan.pdf` via the
   shared Markdown→A4-PDF pipeline in `~/.arti/tools/arti-pdf/README.md` (no self-contained-HTML step —
   that pipeline already handles the print CSS).
@@ -893,6 +932,7 @@ cross-project and lives in `~/.arti/`.
 - `review-checklist.md` — Self-review checklist for manuscript drafts
 - `voice-profile-template.md` — Ready-to-use blank Voice Profile template
 - `manuscript-blueprint-template.md` — Ready-to-use blank Manuscript Blueprint template
+- `drafting-progress-tracker-template.md` — blank per-section drafting-progress column structure
 - `journal-profile-template.md` — Ready-to-use blank Journal Profile template (Blocks A, C, D)
 - `iteration-log-template.md` — Iteration Log entry template with scoring and resolution guidance,
   including the optional Reviewer Simulation subsection

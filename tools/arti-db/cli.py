@@ -70,6 +70,7 @@ def build_parser():
     iba.add_argument("--source-project")
     iba.add_argument("--reason")
     iba.add_argument("--notes")
+    iba.add_argument("--tag")
 
     ibs = ibsub.add_parser("search")
     ibs.add_argument("keywords", nargs="+")
@@ -145,6 +146,7 @@ def main():
                     label=args.label, idea_text=args.idea_text, c=args.c, m=args.m, e=args.e,
                     novelty_label=args.novelty_label, date_parked=args.date_parked,
                     source_project=args.source_project, reason_parked=args.reason, notes=args.notes,
+                    tag=args.tag,
                 )
                 _ok(row=row)
             elif args.idea_bank_cmd == "search":

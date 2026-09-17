@@ -25,6 +25,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
 import db
+import db_ideas
 import journals
 import lit
 import platform_ops
@@ -202,6 +203,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if pathname == "/api/data" and method == "GET":
             return self._send_json(200, build_data())
+
+        if pathname == "/api/ideas" and method == "GET":
+            return self._send_json(200, {"ideas": db_ideas.list_ideas()})
 
         if pathname == "/api/browse-folder" and method == "POST":
             try:

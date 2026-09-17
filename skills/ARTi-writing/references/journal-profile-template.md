@@ -99,6 +99,26 @@ leave the rest blank; a mostly-empty table here is the expected, healthy result)
 - **Schematic diagrams / mechanism illustrations:** [Common / Occasional / Rare]
 - **Scheme figures (synthesis route, etc.):** [Common / Occasional / Rare]
 
+### Section-Level Outline Norms
+> Review-type articles only. Verbatim per-paper section headings, copied directly from each
+> paper's own fulltext file during Pass 1 — not reconstructed from memory or a narrative skim.
+> This is the structural analog of the rest of Block C, and the record Stage 2's Manuscript
+> Blueprint consults before finalizing top-level section titles.
+
+| Section # | [Author, Year 1] | [Author, Year 2] | [Author, Year 3] | [Author, Year 4] | [Author, Year 5] |
+|---|---|---|---|---|---|
+| 1 | | | | | |
+| 2 | | | | | |
+| 3 | | | | | |
+| [N] | | | | | |
+
+**Universal** (present, same role, in every example): [heading(s)]
+
+**Common but not universal:** [heading(s) — note which papers omit or merge it]
+
+**Variable / minority pattern:** [heading(s) — note the split, e.g. "Future Research Directions:
+1/5 clean pair with Conclusions, 1/5 merged into one heading, 1/5 nested elsewhere, 2/5 absent"]
+
 ### Technical Gaps to Watch
 > Filled by Claude after Block C analysis — techniques or analyses typical for this journal
 > that the user's current Scratchbook does not yet address.

@@ -1,20 +1,23 @@
 ---
 name: ARTi-figure
 description: >
-  Generate manuscript figures and tables (plot lane is still a stub — no plot data exists yet in
-  any active project) from a JSON spec, via the vendored ~/.arti Python interpreter. Use this
-  skill when a researcher wants a study-design diagram, flowchart, or other box-and-arrow figure,
-  or a manuscript table, or asks to regenerate/edit one from its spec. Triggers include: "make a
-  figure for this", "draw a diagram of the study design", "regenerate Fig_N", "edit the flowchart
-  spec", "turn this into a .drawio file", "make a table of this", "convert this table image to
-  Markdown". Diagrams produce an editable `.drawio` file, not a final image — draw.io itself is
-  where wrapping, sizing, and export to PNG/PDF get fixed by hand. Tables produce editable
-  Markdown table syntax, ready to paste into the manuscript source.
+  Generate manuscript figures and tables via the vendored ~/.arti Python interpreter: diagrams and
+  tables from a JSON spec, plots from a per-project matplotlib script (interim pattern, no shared
+  renderer yet — see arti-plot/README.md). Use this skill when a researcher wants a study-design
+  diagram, flowchart, or other box-and-arrow figure, a manuscript table, a data-driven chart
+  (bar/line/trend/bibliometric plot), or asks to regenerate/edit one from its spec. Triggers
+  include: "make a figure for this", "draw a diagram of the study design", "regenerate Fig_N",
+  "edit the flowchart spec", "turn this into a .drawio file", "make a table of this", "convert this
+  table image to Markdown", "plot X per year", "chart the trend of X vs Y", "classify these papers
+  and show the trend". Diagrams produce an editable `.drawio` file, not a final image — draw.io
+  itself is where wrapping, sizing, and export to PNG/PDF get fixed by hand. Tables produce
+  editable Markdown table syntax, ready to paste into the manuscript source. Plots produce a final
+  PNG directly plus the aggregated data file it was built from.
 ---
 
 # ARTi-figure Skill
 
-v1 scope: **two lanes — diagram and table.**
+v1 scope: **three lanes — diagram, table, and plot.**
 
 **Diagram lane.** A figure is authored as a JSON spec (nodes, edges, styles) and rendered to an
 editable `.drawio` file by `arti-render`. There is no auto-layout, no auto-fix loop, and no direct
@@ -31,9 +34,23 @@ into something I can edit" — back-derive the spec from the image's visible str
 then diff the rendered table against the source image by eye (column order, cell content, header
 row) before treating it as done.
 
-Plot lane (`arti-plot`) is a stub — not implemented, no scope here. Don't attempt to build it under
-this skill without the researcher explicitly asking to extend scope; it's deferred on purpose (no
-plot data exists yet in any active project).
+**Plot lane.** For a data-driven chart (bar/line/trend/bibliometric figure, anything whose content
+comes from aggregating project data rather than hand-placed geometry or a simple rows-and-columns
+table), there is no shared JSON-spec renderer the way diagrams and tables have — see
+`~/.arti/tools/arti-plot/README.md` for why (each plot's data pull and aggregation logic is too
+project-specific to fit one generic spec) and the interim pattern instead: write a standalone,
+per-figure Python script at `figures/scripts/build_<Fig_N>_<slug>.py` in the paper project that
+pulls its own data (query the project's `arti-lit.db`, or read a `data/*.csv`/`.json` already in
+the project), does whatever classification/binning the chart needs, and renders straight to
+`figures/Fig_N_<slug>.png` at `dpi=300` with `matplotlib` (available in the vendored interpreter;
+listed in `~/.arti/tools/requirements.txt`). Emit the aggregated numbers behind the chart to a
+sibling file under `data/` as well, not just the image — the point is a re-runnable, checkable
+script, not a one-off render. Keep the script as a committed file once the figure is finalized;
+it is this lane's reproducibility record, the way a JSON spec is for diagram/table. Register the
+resulting figure in `figures/figure-register.md` exactly as for the other two lanes, and run the
+same read-back verification loop (below) before calling it done. If a second project ever needs a
+plot with a genuinely reusable shape, that's the signal to extract a real shared `render.py` into
+`arti-plot` — not before.
 
 ## Tooling location
 

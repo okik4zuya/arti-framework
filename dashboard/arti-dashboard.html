@@ -19,28 +19,46 @@
     color-scheme: light;
   }
   *{box-sizing:border-box;}
+  html, body{ height:100%; }
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:"Inter",system-ui,sans-serif;
     font-size:15.5px; line-height:1.55;
+    display:flex; align-items:stretch;
   }
   ::selection{ background:var(--accent-soft); }
-  .wrap{ max-width:1240px; margin:0 auto; padding:32px 36px 48px; }
 
-  header{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:16px; flex-wrap:wrap; margin-bottom:28px;
+  .sidebar{
+    flex:none; width:232px; min-height:100vh; background:var(--surface);
+    border-right:1px solid var(--border); display:flex; flex-direction:column;
+    padding:28px 18px 18px;
   }
-  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand{ display:flex; flex-direction:row; align-items:center; gap:10px; margin-bottom:26px; }
   .brand .mark{
     display:inline-block; width:34px; height:34px; border-radius:8px;
     background:var(--surface-2); flex:none;
   }
   h1{
-    font-family:"Inter",system-ui,sans-serif; font-size:26px; font-weight:700;
+    font-family:"Inter",system-ui,sans-serif; font-size:20px; font-weight:700;
     letter-spacing:-0.01em; margin:0;
   }
-  .tag{ color:var(--text-muted); font-size:14px; }
+  .tag{ color:var(--text-muted); font-size:13px; line-height:1.4; }
+
+  .side-nav{ display:flex; flex-direction:column; gap:2px; }
+  .nav-item{
+    display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+    font-family:"Inter",system-ui,sans-serif; font-size:14px; font-weight:500;
+    padding:9px 12px; border-radius:8px; border:1px solid transparent; background:none;
+    color:var(--text-muted); cursor:pointer;
+    transition:background-color .1s ease, color .1s ease;
+  }
+  .nav-item:hover{ background:var(--accent-soft); color:var(--accent); }
+  .nav-item.active{ background:var(--accent-soft); color:var(--accent); font-weight:600; }
+
+  .side-spacer{ flex:1; }
+  .side-note{ font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:14px; }
+
+  main{ flex:1; min-width:0; padding:32px 36px 48px; overflow-y:auto; }
 
   .cat-badge{
     display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
@@ -114,9 +132,16 @@
   }
   td{ padding:8px 20px; border-top:1px solid var(--border); vertical-align:top; }
   .substage{ font-size:12.5px; color:var(--text-muted); margin-top:3px; }
-  .proj-path{ font-size:12px; color:var(--text-muted); margin-top:2px; font-family:"SFMono-Regular",Consolas,monospace; }
+  .proj-path{
+    font-size:12px; color:var(--text-muted); margin-top:2px; font-family:"SFMono-Regular",Consolas,monospace;
+    max-width:520px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  td.name-cell{ max-width:560px; }
+  td.name-cell strong{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   tr:first-child td{ border-top:none; }
-  .row-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  tbody tr{ transition:background-color .1s ease; }
+  tbody tr:hover td{ background:var(--surface-2); }
+  .row-actions{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .icon-btn{
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:500; padding:6px 12px;
     border-radius:6px; border:1px solid var(--border); background:var(--surface);
@@ -128,15 +153,36 @@
   .icon-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .icon-btn.primary{
     background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;
+    display:inline-flex; align-items:center; gap:7px;
   }
   .icon-btn.primary:hover{ background:var(--accent); color:#fff; opacity:0.88; }
+  .icon-btn.primary svg{ width:15px; height:15px; flex:none; }
   .icon-btn.info{
     background:var(--slate); border-color:var(--slate); color:#fff; font-weight:600;
   }
   .icon-btn.info:hover{ background:var(--slate); color:#fff; opacity:0.88; }
+  .icon-btn.icon-only{
+    width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;
+    background:var(--surface); border-color:var(--border); color:var(--text-muted);
+  }
+  .icon-btn.icon-only:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .icon-btn.icon-only svg{ width:16px; height:16px; }
   .empty{ padding:36px 20px; text-align:center; color:var(--text-muted); font-size:14px; }
+  .empty.loading{ animation:pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:0.45; } 50%{ opacity:1; } }
+  .tag-pill{
+    display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
+    padding:3px 10px; border-radius:20px; white-space:nowrap; color:var(--slate); background:var(--slate-soft);
+  }
+  .convert-idea-btn{
+    margin-top:5px; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
+    padding:3px 9px; border-radius:6px; border:1px solid var(--accent); background:var(--surface);
+    color:var(--accent); cursor:pointer; white-space:nowrap;
+    transition:background-color .1s ease, color .1s ease;
+  }
+  .convert-idea-btn:hover{ background:var(--accent); color:#fff; }
 
-  .proj-list{ max-height:360px; overflow-y:auto; }
+  .proj-list{ max-height:500px; overflow-y:auto; overflow-x:auto; }
   .proj-list thead th{ position:sticky; top:0; background:var(--surface); z-index:1; }
 
   .ref-list{ display:flex; flex-direction:column; gap:10px; }
@@ -223,8 +269,8 @@
   }
   .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
 
-  footer{ margin-top:28px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-  footer .note{ font-size:13px; color:var(--text-muted); font-family:"Inter",system-ui,sans-serif; }
+  .panel[hidden]{ display:none; }
+
   .btn{
     font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600;
     background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px;
@@ -243,12 +289,16 @@
   .modal-overlay{
     position:fixed; inset:0; background:rgba(16,24,40,0.4); display:flex;
     align-items:center; justify-content:center; z-index:100; padding:20px;
+    opacity:0; transition:opacity .14s ease;
   }
   .modal-overlay[hidden]{ display:none; }
+  .modal-overlay.open{ opacity:1; }
   .modal{
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
     box-shadow:0 12px 32px rgba(16,24,40,0.16); width:100%; max-width:460px; overflow:hidden;
+    transform:scale(0.96); transition:transform .14s ease;
   }
+  .modal-overlay.open .modal{ transform:scale(1); }
   .modal.fullsize{
     max-width:none; width:95vw; height:90vh;
     display:flex; flex-direction:column;
@@ -288,23 +338,28 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">
-      <svg class="mark" viewBox="0 0 160 160" aria-hidden="true">
-        <rect width="160" height="160" rx="36" fill="var(--surface-2)" />
-        <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
-              fill="none" stroke="var(--slate)" stroke-width="19"
-              stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="103" cy="34" r="16" fill="var(--accent)" />
-      </svg>
-      <h1>ARTi Framework</h1>
-      <span class="tag">— project launcher &amp; research state (local only)</span>
-    </div>
-  </header>
+<div class="sidebar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 160 160" aria-hidden="true">
+      <rect width="160" height="160" rx="36" fill="var(--surface-2)" />
+      <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+            fill="none" stroke="var(--slate)" stroke-width="19"
+            stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="103" cy="34" r="16" fill="var(--accent)" />
+    </svg>
+    <h1>ARTi</h1>
+  </div>
+  <nav class="side-nav">
+    <button type="button" class="nav-item active" data-view="projects">Projects</button>
+    <button type="button" class="nav-item" data-view="ideas">Ideas</button>
+  </nav>
+  <div class="side-spacer"></div>
+  <button class="btn danger" id="quitBtn">Quit Dashboard</button>
+</div>
 
+<main>
   <div class="col">
-    <div class="panel">
+    <div class="panel" id="projectsPanel">
       <div class="panel-head">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <div class="panel-title">Projects <span class="count-badge" id="projectsCount">0</span></div>
@@ -331,13 +386,25 @@
         </table>
       </div>
     </div>
-  </div>
 
-  <footer>
-    <span class="note">served locally by <code>server/server.py</code> — nothing leaves this machine.</span>
-    <button class="btn danger" id="quitBtn">Quit Dashboard</button>
-  </footer>
-</div>
+    <div class="panel" id="ideasPanel" hidden>
+      <div class="panel-head">
+        <div class="panel-title">Ideas <span class="count-badge" id="ideasCount">0</span></div>
+        <div class="filter-row">
+          <input class="search-input" id="ideaSearch" placeholder="Search label, idea text, or tag…" />
+        </div>
+      </div>
+      <div class="proj-list">
+        <table id="ideasTable">
+          <thead>
+            <tr><th>Label</th><th>Idea</th><th>Novelty</th><th>Tag</th><th>Date parked</th><th>Source project</th></tr>
+          </thead>
+          <tbody id="ideasBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
 
 <div class="modal-overlay" id="projectOverlay" hidden>
   <div class="modal">
@@ -433,10 +500,27 @@
   var sortBy = "recent";
   var showArchived = false;
 
+  var ICON_FOLDER = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path fill="#FFA000" d="M2 6a2 2 0 0 1 2-2h4.17a2 2 0 0 1 1.41.59L11 6h9a2 2 0 0 1 2 2v1H2z"/>' +
+    '<path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>';
+  var ICON_VSCODE = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>';
+  var ICON_REFERENCES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/></svg>';
+
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
+  }
+
+  function openModal(overlay){
+    overlay.hidden = false;
+    requestAnimationFrame(function(){ overlay.classList.add("open"); });
+  }
+  function closeModal(overlay){
+    overlay.classList.remove("open");
+    overlay.hidden = true;
   }
 
   function api(path, opts){
@@ -546,12 +630,12 @@
       }
       return '<tr>' +
         '<td>' + badge + '</td>' +
-        '<td title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag +
+        '<td class="name-cell" title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag +
           '<div class="proj-path">' + escapeHtml(r.path) + '</div></td>' +
         '<td><div class="row-actions">' +
-          '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">Open folder</button>' +
-          '<button class="icon-btn info" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '">Open VS Code</button>' +
-          '<button class="icon-btn info" data-role="references" data-path="' + escapeHtml(r.path) + '">References</button>' +
+          '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">' + ICON_FOLDER + '<span>Open folder</span></button>' +
+          '<button class="icon-btn icon-only" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '" title="Open VS Code">' + ICON_VSCODE + '</button>' +
+          '<button class="icon-btn icon-only" data-role="references" data-path="' + escapeHtml(r.path) + '" title="References">' + ICON_REFERENCES + '</button>' +
           '<div class="row-menu">' +
             '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
             '<div class="menu-dropdown" hidden>' + lifecycleBtns + '</div>' +
@@ -617,6 +701,89 @@
     renderProjects();
   });
 
+  // ---- Sidebar nav / Ideas view ----
+
+  var allIdeas = [];
+  var ideasLoaded = false;
+  var ideaSearchQuery = "";
+
+  function noveltyBadge(r){
+    if (r.novelty_c == null) return '<span style="color:var(--text-muted);">—</span>';
+    return '<span title="' + escapeHtml(r.novelty_label || "") + '">C' + r.novelty_c +
+      ' / M' + r.novelty_m + ' / E' + r.novelty_e + '</span>' +
+      (r.novelty_label ? '<div class="substage">' + escapeHtml(r.novelty_label) + '</div>' : '');
+  }
+
+  function filteredIdeas(){
+    var q = ideaSearchQuery.trim().toLowerCase();
+    if (!q) return allIdeas;
+    return allIdeas.filter(function(r){
+      return [r.label, r.idea_text, r.tag].some(function(v){
+        return v && String(v).toLowerCase().indexOf(q) !== -1;
+      });
+    });
+  }
+
+  function renderIdeas(){
+    var rows = filteredIdeas();
+    document.getElementById("ideasCount").textContent = rows.length;
+    var body = document.getElementById("ideasBody");
+    if (!allIdeas.length){
+      body.innerHTML = '<tr><td colspan="6"><div class="empty">No parked ideas yet.</div></td></tr>';
+      return;
+    }
+    if (!rows.length){
+      body.innerHTML = '<tr><td colspan="6"><div class="empty">No ideas match this search.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(r){
+      var tag = r.tag ? '<span class="tag-pill">' + escapeHtml(r.tag) + '</span>' : '';
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(r.label) + '</strong>' +
+          '<div><button type="button" class="convert-idea-btn" data-role="convert-idea" data-label="' + escapeHtml(r.label) + '">Convert to Project</button></div></td>' +
+        '<td>' + escapeHtml(r.idea_text || "") + '</td>' +
+        '<td>' + noveltyBadge(r) + '</td>' +
+        '<td>' + tag + '</td>' +
+        '<td>' + escapeHtml(r.date_parked || "") + '</td>' +
+        '<td>' + escapeHtml(r.source_project || "") + '</td>' +
+      '</tr>';
+    }).join("");
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="convert-idea"]'), function(btn){
+      btn.addEventListener("click", function(){
+        openProjectModal("new");
+        projName.value = btn.getAttribute("data-label") || "";
+      });
+    });
+  }
+
+  function loadIdeas(){
+    return api("/ideas").then(function(data){
+      allIdeas = data.ideas || [];
+      ideasLoaded = true;
+      renderIdeas();
+    });
+  }
+
+  document.getElementById("ideaSearch").addEventListener("input", function(e){
+    ideaSearchQuery = e.target.value;
+    renderIdeas();
+  });
+
+  var projectsPanel = document.getElementById("projectsPanel");
+  var ideasPanel = document.getElementById("ideasPanel");
+
+  Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(btn){
+    btn.addEventListener("click", function(){
+      var view = btn.getAttribute("data-view");
+      Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
+        b.classList.toggle("active", b === btn);
+      });
+      projectsPanel.hidden = view !== "projects";
+      ideasPanel.hidden = view !== "ideas";
+      if (view === "ideas" && !ideasLoaded) loadIdeas();
+    });
+  });
+
   // ---- New Project / Open Existing Folder modal ----
 
   var overlay = document.getElementById("projectOverlay");
@@ -666,13 +833,13 @@
       document.getElementById("projectHint").textContent = "Browse opens a native folder picker — pick the folder itself. Nothing inside it is created or touched; this just adds it to the dashboard's project list and opens it in VS Code.";
       document.getElementById("projectConfirmBtn").textContent = "Add & Open";
     }
-    overlay.hidden = false;
+    openModal(overlay);
   }
 
   document.getElementById("openNewProject").addEventListener("click", function(){ openProjectModal("new"); });
   document.getElementById("openExistingFolder").addEventListener("click", function(){ openProjectModal("existing"); });
-  document.getElementById("closeProjectModal").addEventListener("click", function(){ overlay.hidden = true; });
-  overlay.addEventListener("click", function(e){ if (e.target === overlay) overlay.hidden = true; });
+  document.getElementById("closeProjectModal").addEventListener("click", function(){ closeModal(overlay); });
+  overlay.addEventListener("click", function(e){ if (e.target === overlay) closeModal(overlay); });
 
   document.getElementById("browseFolderBtn").addEventListener("click", function(){
     var btn = this;
@@ -707,7 +874,7 @@
         body.tags = parseTags(projTags.value);
       }
       api("/new-project", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) }).then(function(){
-        overlay.hidden = true;
+        closeModal(overlay);
         loadAll();
       }).catch(function(err){
         projectErr.textContent = err.message;
@@ -716,7 +883,7 @@
     } else {
       var label = projName.value.trim();
       api("/projects/register", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: label, category: projCategory.value.trim() || "Other", tags: parseTags(projTags.value) }) }).then(function(){
-        overlay.hidden = true;
+        closeModal(overlay);
         loadAll();
       }).catch(function(err){
         projectErr.textContent = err.message;
@@ -740,10 +907,10 @@
     editProjName.value = r.name || "";
     populateCategorySelect(editProjCategory, r.category || "Other");
     editProjectErr.hidden = true;
-    editOverlay.hidden = false;
+    openModal(editOverlay);
   }
-  document.getElementById("closeEditProjectModal").addEventListener("click", function(){ editOverlay.hidden = true; });
-  editOverlay.addEventListener("click", function(e){ if (e.target === editOverlay) editOverlay.hidden = true; });
+  document.getElementById("closeEditProjectModal").addEventListener("click", function(){ closeModal(editOverlay); });
+  editOverlay.addEventListener("click", function(e){ if (e.target === editOverlay) closeModal(editOverlay); });
 
   document.getElementById("editProjectConfirmBtn").addEventListener("click", function(){
     var name = editProjName.value.trim();
@@ -755,7 +922,7 @@
     }
     editProjectErr.hidden = true;
     api("/projects/update", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: editProjectPath, name: name, category: category }) }).then(function(){
-      editOverlay.hidden = true;
+      closeModal(editOverlay);
       loadAll();
     }).catch(function(err){
       editProjectErr.textContent = err.message;
@@ -919,15 +1086,15 @@
     var proj = allProjects.filter(function(p){ return p.path === path; })[0];
     referencesProjectName.textContent = proj ? ("· " + proj.name) : "";
     referencesProjectName.title = proj ? proj.name : "";
-    referencesBody.innerHTML = '<div class="empty">Loading…</div>';
-    referencesOverlay.hidden = false;
+    referencesBody.innerHTML = '<div class="empty loading">Loading…</div>';
+    openModal(referencesOverlay);
     loadReferences().catch(function(err){
       referencesErr.textContent = err.message;
       referencesErr.hidden = false;
     });
   }
-  document.getElementById("closeReferencesModal").addEventListener("click", function(){ referencesOverlay.hidden = true; });
-  referencesOverlay.addEventListener("click", function(e){ if (e.target === referencesOverlay) referencesOverlay.hidden = true; });
+  document.getElementById("closeReferencesModal").addEventListener("click", function(){ closeModal(referencesOverlay); });
+  referencesOverlay.addEventListener("click", function(e){ if (e.target === referencesOverlay) closeModal(referencesOverlay); });
 
   document.getElementById("addReferencesBtn").addEventListener("click", function(){
     var btn = this;
@@ -957,10 +1124,10 @@
   // ---- Quit Dashboard ----
 
   var quitOverlay = document.getElementById("quitOverlay");
-  document.getElementById("quitBtn").addEventListener("click", function(){ quitOverlay.hidden = false; });
-  document.getElementById("closeQuitModal").addEventListener("click", function(){ quitOverlay.hidden = true; });
-  document.getElementById("cancelQuitBtn").addEventListener("click", function(){ quitOverlay.hidden = true; });
-  quitOverlay.addEventListener("click", function(e){ if (e.target === quitOverlay) quitOverlay.hidden = true; });
+  document.getElementById("quitBtn").addEventListener("click", function(){ openModal(quitOverlay); });
+  document.getElementById("closeQuitModal").addEventListener("click", function(){ closeModal(quitOverlay); });
+  document.getElementById("cancelQuitBtn").addEventListener("click", function(){ closeModal(quitOverlay); });
+  quitOverlay.addEventListener("click", function(e){ if (e.target === quitOverlay) closeModal(quitOverlay); });
   document.getElementById("confirmQuitBtn").addEventListener("click", function(){
     api("/shutdown", { method:"POST" }).finally(function(){
       document.body.innerHTML = '<div style="padding:40px; text-align:center; font-family:\'IBM Plex Mono\',monospace; color:var(--text-muted);">Dashboard stopped. You can close this tab.</div>';

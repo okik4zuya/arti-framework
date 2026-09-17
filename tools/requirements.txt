@@ -1,7 +1,10 @@
 # Dependencies for ~/.arti tools, installed into the vendored interpreter.
-# arti-render needs only stdlib. Add matplotlib here once arti-plot is
-# actually built (deferred, no plot data yet).
+# arti-render needs only stdlib.
 python-docx
+
+# arti-plot: per-project plot scripts (see arti-plot/README.md) render with
+# matplotlib. No shared render.py yet -- each script imports this directly.
+matplotlib
 
 # arti-pdf-ingest: PDF text extraction + OCR fallback (pairs with the
 # poppler/tesseract binaries vendored into ~/.arti/bin by the NSIS installer).

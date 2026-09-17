@@ -28,6 +28,10 @@
 
 ## Results & Discussion
 
+> **Review-type articles:** top-level section titles here must match Journal Profile Block C's
+> Section-Level Outline Norms table (Universal/Common bucket), not a generic IMRaD default like
+> "Results and Discussion" — see SKILL.md Stage 2's precondition.
+
 > One row per characterization technique or result group, in the order this journal typically
 > presents them (from Journal Profile Block C).
 
