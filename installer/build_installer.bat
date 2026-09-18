@@ -2,7 +2,9 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
-set "ARTIPDF_DIR=C:\python_tools\artipdf"
+REM Override by setting ARTIPDF_DIR in the environment before running this script, e.g.:
+REM   set ARTIPDF_DIR=D:\tools\artipdf && build_installer.bat
+if not defined ARTIPDF_DIR set "ARTIPDF_DIR=C:\python_tools\artipdf"
 set "PAYLOAD_BIN=%SCRIPT_DIR%payload\bin"
 
 REM makensis's OutFile ("dist\...") and File /r ("payload\bin\...", "..\tools", etc.) in
@@ -18,17 +20,19 @@ REM silently producing an installer with a missing bin\ payload.
 if not exist "%ARTIPDF_DIR%\poppler" (
     echo.
     echo ERROR: %ARTIPDF_DIR%\poppler not found.
-    echo This build step copies poppler/tesseract from a local artipdf checkout -
-    echo it is not downloaded. Build on a machine that has %ARTIPDF_DIR%, or update
-    echo ARTIPDF_DIR in this script.
+    echo This build step copies poppler/tesseract from a local folder - it is not
+    echo downloaded. Set ARTIPDF_DIR to a folder containing poppler\ and tesseract\
+    echo subfolders with those binaries, e.g.:
+    echo     set ARTIPDF_DIR=D:\tools\artipdf ^&^& build_installer.bat
     exit /b 1
 )
 if not exist "%ARTIPDF_DIR%\tesseract" (
     echo.
     echo ERROR: %ARTIPDF_DIR%\tesseract not found.
-    echo This build step copies poppler/tesseract from a local artipdf checkout -
-    echo it is not downloaded. Build on a machine that has %ARTIPDF_DIR%, or update
-    echo ARTIPDF_DIR in this script.
+    echo This build step copies poppler/tesseract from a local folder - it is not
+    echo downloaded. Set ARTIPDF_DIR to a folder containing poppler\ and tesseract\
+    echo subfolders with those binaries, e.g.:
+    echo     set ARTIPDF_DIR=D:\tools\artipdf ^&^& build_installer.bat
     exit /b 1
 )
 
@@ -61,15 +65,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM ── Read FRAMEWORK_VERSION from ..\VERSION so the installer can never drift from it ──
+set "APP_VERSION="
+for /f "tokens=2 delims==" %%V in ('findstr /b "FRAMEWORK_VERSION=" "%SCRIPT_DIR%..\VERSION"') do set "APP_VERSION=%%V"
+if not defined APP_VERSION (
+    echo.
+    echo ERROR: FRAMEWORK_VERSION not found in %SCRIPT_DIR%..\VERSION
+    exit /b 1
+)
+
 echo.
-echo Building installer...
+echo Building installer v%APP_VERSION%...
 echo.
 
 REM makensis's OutFile won't create dist\ itself - it fails with "Can't open output file"
 REM if the directory doesn't exist yet.
 if not exist "%SCRIPT_DIR%dist" mkdir "%SCRIPT_DIR%dist"
 
-makensis "%SCRIPT_DIR%arti-installer.nsi"
+makensis "/DAPP_VERSION=%APP_VERSION%" "%SCRIPT_DIR%arti-installer.nsi"
 
 echo.
 echo Done. Setup exe is in %SCRIPT_DIR%dist\

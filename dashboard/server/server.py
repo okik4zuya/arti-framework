@@ -168,8 +168,19 @@ def _claude_md(name):
     return tmpl.replace("{{PROJECT_NAME}}", name)
 
 
+def _read_framework_version():
+    version_file = ARTI_HOME / "VERSION"
+    try:
+        for line in version_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith("FRAMEWORK_VERSION="):
+                return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return None
+
+
 def build_data():
-    return {"projects": db.list_projects()}
+    return {"projects": db.list_projects(), "frameworkVersion": _read_framework_version()}
 
 
 class Handler(BaseHTTPRequestHandler):

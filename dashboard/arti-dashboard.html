@@ -370,6 +370,7 @@
     <button type="button" class="nav-item" data-view="ideas">Ideas</button>
   </nav>
   <div class="side-spacer"></div>
+  <div class="side-version" id="frameworkVersion" style="opacity:0.5; font-size:11px; padding:4px 0;"></div>
   <button class="btn danger" id="quitBtn">Quit Dashboard</button>
 </div>
 
@@ -547,6 +548,9 @@
       allProjects = data.projects;
       renderCategoryChips();
       renderProjects();
+      if (data.frameworkVersion) {
+        document.getElementById("frameworkVersion").textContent = "v" + data.frameworkVersion;
+      }
     });
   }
 

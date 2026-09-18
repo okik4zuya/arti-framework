@@ -23,7 +23,7 @@ REPO_URL=""
 
 ARTI_HOME="$HOME/.arti"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md install.ps1 install.sh install.bat VERSION .gitignore)
+TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md UPDATING.md prompt-templates.md install.ps1 install.sh install.bat VERSION .gitignore)
 
 # Copy one tracked item into $ARTI_HOME under its own name.
 #
@@ -42,6 +42,14 @@ copy_tracked_item() {
 
 echo "=== ARTi installer ==="
 echo "Target: $ARTI_HOME"
+
+# Read the framework version already installed (if any) before it gets overwritten below,
+# so we can tell the user whether this run is a fresh install or an update, and to what.
+OLD_VERSION_FILE="$ARTI_HOME/VERSION"
+OLD_FRAMEWORK_VERSION=""
+if [ -f "$OLD_VERSION_FILE" ]; then
+  OLD_FRAMEWORK_VERSION="$(grep '^FRAMEWORK_VERSION=' "$OLD_VERSION_FILE" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')"
+fi
 
 # --- 1. sync tracked repo content into ~/.arti --------------------------------
 
@@ -82,6 +90,20 @@ elif [ -n "$SCRIPT_DIR" ] && [ "$SCRIPT_DIR" != "$ARTI_HOME" ]; then
   done
 else
   echo "Running in place at ~/.arti with no REPO_URL configured - nothing to sync."
+fi
+
+NEW_FRAMEWORK_VERSION=""
+if [ -f "$OLD_VERSION_FILE" ]; then
+  NEW_FRAMEWORK_VERSION="$(grep '^FRAMEWORK_VERSION=' "$OLD_VERSION_FILE" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')"
+fi
+if [ -n "$NEW_FRAMEWORK_VERSION" ]; then
+  if [ -n "$OLD_FRAMEWORK_VERSION" ] && [ "$OLD_FRAMEWORK_VERSION" != "$NEW_FRAMEWORK_VERSION" ]; then
+    echo "Updating ARTi Framework v$OLD_FRAMEWORK_VERSION -> v$NEW_FRAMEWORK_VERSION"
+  elif [ -n "$OLD_FRAMEWORK_VERSION" ]; then
+    echo "ARTi Framework v$NEW_FRAMEWORK_VERSION (already up to date)"
+  else
+    echo "Installing ARTi Framework v$NEW_FRAMEWORK_VERSION"
+  fi
 fi
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --

@@ -37,7 +37,7 @@ $RepoUrl = ''
 
 $ArtiHome  = Join-Path $HOME '.arti'
 $ScriptDir = $PSScriptRoot
-$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore')
+$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'UPDATING.md', 'prompt-templates.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore')
 
 function Write-StubFile {
   # Set-Content -Encoding UTF8 emits a BOM in Windows PowerShell 5.1, which then
@@ -69,6 +69,16 @@ function Copy-TrackedItem {
 
 Write-Host "=== ARTi installer ==="
 Write-Host "Target: $ArtiHome"
+
+# Read the framework version already installed (if any) before it gets overwritten below,
+# so we can tell the user whether this run is a fresh install or an update, and to what.
+$oldVersionFile = Join-Path $ArtiHome 'VERSION'
+$oldFrameworkVersion = $null
+if (Test-Path $oldVersionFile) {
+  foreach ($line in Get-Content $oldVersionFile) {
+    if ($line -match '^FRAMEWORK_VERSION=(.+)$') { $oldFrameworkVersion = $Matches[1].Trim() }
+  }
+}
 
 # --- 1. sync tracked repo content into ~/.arti --------------------------------
 
@@ -115,6 +125,22 @@ if ($RepoUrl) {
   }
 } else {
   Write-Host "Running in place at ~/.arti with no RepoUrl configured - nothing to sync."
+}
+
+$newFrameworkVersion = $null
+if (Test-Path $oldVersionFile) {
+  foreach ($line in Get-Content $oldVersionFile) {
+    if ($line -match '^FRAMEWORK_VERSION=(.+)$') { $newFrameworkVersion = $Matches[1].Trim() }
+  }
+}
+if ($newFrameworkVersion) {
+  if ($oldFrameworkVersion -and ($oldFrameworkVersion -ne $newFrameworkVersion)) {
+    Write-Host "Updating ARTi Framework v$oldFrameworkVersion -> v$newFrameworkVersion"
+  } elseif ($oldFrameworkVersion) {
+    Write-Host "ARTi Framework v$newFrameworkVersion (already up to date)"
+  } else {
+    Write-Host "Installing ARTi Framework v$newFrameworkVersion"
+  }
 }
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --

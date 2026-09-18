@@ -9,8 +9,9 @@ directly.
 
 ## What lives here
 
-- `skills/` — the four live skills (`ARTi-idea`, `ARTi-writing`, `ARTi-setup`, `ARTi-figure`),
-  junction-linked into `~/.claude/skills/` by the installer. A paper project's root
+- `skills/` — the live skills (`ARTi-crosscite`, `ARTi-figure`, `ARTi-idea`, `ARTi-jfinder`,
+  `ARTi-ref`, `ARTi-scratchbook`, `ARTi-setup`, `ARTi-writing`), junction-linked into
+  `~/.claude/skills/` by the installer. A paper project's root
   `CLAUDE.md` is generated from `skills/ARTi-setup/references/project-claude-template.md` —
   the one canonical copy, rendered by both ARTi-setup and the dashboard scaffolder
 - `tools/` — standalone export/render tools (`arti-render`, `arti-plot`, `arti-table`,

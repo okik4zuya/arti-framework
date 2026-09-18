@@ -25,6 +25,10 @@
 # never enter git history.
 /inbox/
 
+# maintainer's personal literature database (arti-lit.db, library.md) - not a distributable,
+# never shipped by the installer. Same rule as /memory/.
+/literature/
+
 # misc
 # PowerShell drops this here if HOME is ever redirected at ~/.arti while a child
 # powershell.exe starts up - never part of the framework.

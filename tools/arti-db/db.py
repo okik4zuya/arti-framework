@@ -9,12 +9,25 @@ without a separate export step.
 import json
 import re
 import sqlite3
+import sys
 import threading
 from datetime import datetime
 from pathlib import Path
 
 ARTI_HOME = Path(__file__).resolve().parent.parent.parent
+if str(ARTI_HOME) not in sys.path:
+    sys.path.insert(0, str(ARTI_HOME))
+from tools._shared.db_migrate import migrate as _run_migrations  # noqa: E402
+
 DB_PATH = ARTI_HOME / "memory" / "arti.db"
+
+# Bump when adding a migration step below. Purely additive changes (new table/column) don't need
+# a bump -- they're still handled unconditionally further down in init_db(), same as before this
+# existed. Bump + add a MIGRATIONS entry only for renames/drops/type changes/backfills.
+SCHEMA_VERSION = 1
+MIGRATIONS = {
+    # 0: lambda conn: conn.execute("ALTER TABLE ..."),  # example: step from version 0 -> 1
+}
 
 LEGACY_PROJECT_INDEX_PATH = ARTI_HOME / "memory" / "project-index.md"
 LEGACY_IDEA_BANK_PATH = ARTI_HOME / "memory" / "research-idea-bank.md"
@@ -138,6 +151,7 @@ def init_db():
             if is_new:
                 _migrate_legacy(conn)
                 conn.commit()
+            _run_migrations(conn, MIGRATIONS, SCHEMA_VERSION)
         finally:
             conn.close()
     if is_new:

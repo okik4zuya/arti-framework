@@ -14,10 +14,15 @@
 !include "FileFunc.nsh"
 
 ; ---------------------------------------------------------------------------
-; Constants — bump APP_VERSION alongside ~/.arti/VERSION
+; Constants — APP_VERSION is passed in by build_installer.bat via /DAPP_VERSION=,
+; read from ..\VERSION's FRAMEWORK_VERSION line, so this file never needs to be
+; hand-edited to bump the version. Falls back to a placeholder if invoked directly
+; with plain makensis (not the normal build path).
 ; ---------------------------------------------------------------------------
+!ifndef APP_VERSION
+  !define APP_VERSION "0.0.0-dev"
+!endif
 !define APP_NAME        "ARTi Framework"
-!define APP_VERSION      "0.1.0"
 !define APP_PUBLISHER    "okik4zuya"
 !define UNINSTALL_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
@@ -70,6 +75,8 @@ Section "Install" SEC01
     File /r "..\logo"
     File "..\CLAUDE.md"
     File "..\README.md"
+    File "..\UPDATING.md"
+    File "..\prompt-templates.md"
     File "..\install.ps1"
     File "..\install.sh"
     File "..\install.bat"

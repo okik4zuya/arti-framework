@@ -1,10 +1,34 @@
 # `tools/_shared/`
 
 A deliberate, narrow exception — every other tool under `tools/` (`arti-lit`, `arti-pdf`,
-`arti-db`, ...) is fully standalone with no shared code. This folder exists only because
-poppler/tesseract are OS binaries vendored once into `~/.arti/bin/` rather than something each
-tool would sensibly re-vendor itself. It is not the start of a shared-framework layer; don't add
-to it without a similarly binary-shaped reason.
+`arti-db`, ...) is fully standalone with no shared code. This folder exists only for cases where
+duplicating the code a second time would be tolerable but a third time is not: poppler/tesseract
+are OS binaries vendored once into `~/.arti/bin/` rather than something each tool would sensibly
+re-vendor itself (`paths.py`), and the `PRAGMA user_version` migration runner both `arti-db` and
+`arti-lit` need is identical in shape between the two (`db_migrate.py`). It is not the start of a
+general shared-framework layer; don't add to it without a similarly narrow, load-bearing reason.
+
+## `db_migrate.py`
+
+Runs ordered, versioned schema migrations against a `sqlite3.Connection`, tracked via
+`PRAGMA user_version`:
+
+```python
+from tools._shared.db_migrate import migrate
+
+SCHEMA_VERSION = 1
+MIGRATIONS = {
+    # 0: lambda conn: conn.execute("ALTER TABLE ... "),  # step from version 0 -> 1
+}
+migrate(conn, MIGRATIONS, SCHEMA_VERSION)
+```
+
+Purely additive changes (new `CREATE TABLE IF NOT EXISTS`, new nullable `ALTER TABLE ... ADD
+COLUMN`) don't need an entry here — both `arti-db/db.py` and `arti-lit/db.py` keep running those
+unconditionally in `init_db()`, same as before this module existed. `db_migrate.py` exists for
+what that pattern can't handle: renamed/dropped columns, type changes, backfills — anything that
+must run exactly once, in order, against a db that could be sitting at any older version after a
+client updates their install. See `init_db()` in either `db.py` for the current call site.
 
 ## `paths.py`
 
