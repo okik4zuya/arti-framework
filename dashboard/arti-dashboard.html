@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ARTi Framework</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23f7f8fa'/%3E%3Cpath d='M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50' fill='none' stroke='%23475569' stroke-width='19' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='103' cy='34' r='16' fill='%232563eb'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/lib/inter.css">
 <style>
   :root{
     --bg:#f7f8fa; --surface:#ffffff; --surface-2:#f1f3f6; --border:#e3e6eb;
@@ -45,8 +45,8 @@
   }
   .sidebar-toggle-btn:hover{ background:var(--surface-2); color:var(--text); }
   #mainSidebarExpandBtn{
-    position:fixed; top:18px; left:14px; z-index:50; display:none;
-    box-shadow:var(--shadow);
+    position:fixed; top:0; left:0; z-index:50; display:none;
+    width:26px; height:26px; border-radius:0;
   }
   body.sidebar-collapsed #mainSidebarExpandBtn{ display:flex; }
   .brand{ display:flex; flex-direction:row; align-items:center; gap:10px; margin-bottom:26px; }
@@ -184,6 +184,7 @@
     background:var(--surface); border-color:var(--border); color:var(--text-muted);
   }
   .icon-btn.icon-only:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .icon-btn.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
   .icon-btn.icon-only svg{ width:16px; height:16px; }
   .empty{ padding:36px 20px; text-align:center; color:var(--text-muted); font-size:14px; }
   .empty.loading{ animation:pulse 1.1s ease-in-out infinite; }
@@ -379,32 +380,54 @@
     height:100vh; border:none; border-radius:0; box-shadow:none; background:transparent;
   }
   /* files-main = everything right of the file-list resizer but left of the
-     Fine AI column: a topbar (project picker + button group) stacked above
-     the project-files / preview content row. */
-  .files-main{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; }
+     Fine AI column: a topbar (Workspace toggle [narrow-only] + project
+     picker) stacked above the project-files / preview content row. */
+  .files-main{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; background:var(--surface); }
   .files-topbar{
     flex:none; display:flex; align-items:center; gap:12px;
     padding:10px 14px; border-bottom:1px solid var(--border); background:var(--surface);
   }
   /* Files view is full-bleed (main.files-full has no padding), so when the
-     main app sidebar is collapsed its fixed-position expand button (top:18
-     left:14) sits directly over the project picker -- reserve room for it. */
-  body.sidebar-collapsed .files-topbar{ padding-left:56px; }
+     main app sidebar is collapsed its fixed-position expand button (top:0
+     left:0, 26px square) sits directly over the project picker -- reserve
+     room for it. */
+  body.sidebar-collapsed .files-topbar{ padding-left:30px; }
   .files-content-row{ flex:1; display:flex; min-height:0; }
-  .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles,
-  .files-narrow .files-project-picker-wrap{ display:none; }
+  .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles{ display:none; }
   .files-narrow.menu-open #chatProjectFiles, .files-narrow.menu-open #chatResizerFiles{ display:flex; }
   #filesMenuToggleBtn{
-    display:none; position:absolute; top:12px; left:12px; z-index:6;
-    align-items:center; gap:5px; height:32px;
+    display:none; align-items:center; gap:4px; height:26px; padding:0 8px;
+    border-radius:0; font-size:11.5px; flex:none;
   }
-  #filesMenuToggleBtn svg{ width:14px; height:14px; transition:transform .12s ease; }
+  #filesMenuToggleBtn svg{ width:12px; height:12px; transition:transform .12s ease; }
   #filesMenuToggleBtn.menu-open-icon svg{ transform:rotate(180deg); }
   .files-narrow #filesMenuToggleBtn{ display:inline-flex; }
-  /* Same overlap as the topbar padding-left rule above, but for this
-     separately-positioned toggle: narrow Files view + collapsed main sidebar
-     both anchor a button to the same top-left corner. */
-  body.sidebar-collapsed #filesMenuToggleBtn{ left:56px; }
+  /* Narrow Files view: the topbar shrinks into a small flush corner strip
+     (Workspace toggle + project picker, both borderless-radius rectangles
+     stuck together, no padding) pinned over the top-left of the now
+     full-bleed content, instead of the normal full-width padded bar. */
+  .files-narrow .files-topbar{
+    position:absolute; top:0; left:0; z-index:6; width:auto;
+    padding:0; border-bottom:none; background:var(--surface); gap:0; align-items:stretch;
+  }
+  /* Flush against #mainSidebarExpandBtn's 26px-square corner button (no gap,
+     no overlap) when narrow Files view + collapsed main sidebar coincide --
+     together they read as small rectangles stuck to the top-left corner
+     instead of floating rounded pills. */
+  body.sidebar-collapsed .files-narrow .files-topbar{ left:26px; padding-left:0; }
+  .files-narrow .files-project-picker-wrap{ flex:0 0 150px; max-width:150px; }
+  .files-narrow .files-picker-btn{
+    height:26px; padding:0 8px; border-radius:0; font-size:11.5px; gap:5px;
+  }
+  .files-narrow .files-picker-chevron{ width:11px; height:11px; }
+  .files-narrow #fineAiToggleBtn{ height:26px; padding:0 8px; border-radius:0; font-size:11.5px; flex:none; }
+  /* The corner strip is position:absolute, so it no longer occupies flow
+     height above .files-content-row (unlike the normal in-flow topbar) --
+     without this, its content starts right under the strip and gets covered
+     by it. Reserve room here once, for both the file-list column ("Project
+     files" label row) and the preview panel (file-name heading) at once,
+     rather than patching each column separately. */
+  .files-narrow .files-content-row{ padding-top:34px; }
   .files-project-picker-wrap{ position:relative; flex:1; min-width:0; max-width:320px; }
   .files-picker-btn{
     width:100%; display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border);
@@ -562,6 +585,15 @@
   }
   .fine-ai-section.fine-ai-collapsed{ display:none; }
   #filesPanel.fine-ai-collapsed #chatResizerFineAi{ display:none; }
+  /* "Enable Fine AI" Settings toggle -- fully hides the Fine AI column (and
+     its drag resizer) and the "Summarize PDF(s)" file action, regardless of
+     the per-project collapse state above, for researchers who don't use it. */
+  body.fine-ai-disabled #fineAiSection,
+  body.fine-ai-disabled #chatResizerFineAi,
+  body.fine-ai-disabled #fineAiToggleBtn,
+  body.fine-ai-disabled #chatSummarizePdfBtn,
+  body.fine-ai-disabled #chatModelsSection,
+  body.fine-ai-disabled #pdfSummaryPromptSection{ display:none !important; }
   .fine-ai-header{
     flex:none; display:flex; align-items:center; gap:8px; padding:12px 16px; cursor:pointer;
     font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600; color:var(--text);
@@ -798,12 +830,23 @@
     --pdfViewer-padding-bottom: 56px;
   }
   .pdf-viewer-container .pdfViewer .page{ margin:12px auto; box-shadow:0 1px 6px rgba(0,0,0,0.35); }
-  .file-preview-edit{ height:100%; display:flex; flex-direction:column; }
-  .file-preview-edit textarea{
-    flex:1; width:100%; font-family:"SFMono-Regular",Consolas,monospace; font-size:13.5px; line-height:1.6;
-    padding:0; margin:0; border:none; outline:none; resize:none; background:transparent; color:var(--text);
-  }
+  /* File edit mode is a CodeMirror 6 EditorView mounted into this container
+     (see createFileEditor()) -- CM6 supplies its own line-number gutter,
+     search-match highlighting, and scrolling, so this is just sizing for the
+     mount point. Editor-specific styling (font, colors, gutter, search-match
+     colors) lives in the fileEditorTheme EditorView.theme() extension, not
+     here, since CM6 renders its own DOM structure inside this div. */
+  .file-preview-edit{ height:100%; width:100%; position:relative; }
   .modal-actions .chat-msg-edit-hint{ font-size:12px; }
+  .chat-preview-external-change{
+    display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600;
+    color:var(--amber); background:var(--amber-soft); padding:4px 6px 4px 10px; border-radius:7px;
+  }
+  .chat-preview-external-change button{
+    font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:700; padding:3px 9px;
+    border-radius:6px; border:1px solid var(--amber); background:var(--surface); color:var(--amber);
+    cursor:pointer;
+  }
 
   .chat-preview-search-bar{
     display:flex; align-items:center; gap:6px; padding:8px 14px; border-bottom:1px solid var(--border);
@@ -1021,7 +1064,7 @@
         <circle cx="103" cy="34" r="16" fill="var(--accent)" />
       </svg>
       <h1>ARTi</h1>
-      <button type="button" class="sidebar-toggle-btn" id="mainSidebarCollapseBtn" title="Hide sidebar">&#9776;</button>
+      <button type="button" class="sidebar-toggle-btn" id="mainSidebarCollapseBtn" title="Hide sidebar (Ctrl+B)">&#9776;</button>
     </div>
     <nav class="side-nav">
       <button type="button" class="nav-item active" data-view="projects">Projects</button>
@@ -1035,7 +1078,7 @@
     <button class="btn danger" id="quitBtn">Quit Dashboard</button>
   </div>
 </div>
-<button type="button" class="sidebar-toggle-btn" id="mainSidebarExpandBtn" title="Show sidebar">&#9776;</button>
+<button type="button" class="sidebar-toggle-btn" id="mainSidebarExpandBtn" title="Show sidebar (Ctrl+B)">&#9776;</button>
 
 <main id="mainEl">
   <div class="col">
@@ -1081,16 +1124,10 @@
   </div>
 
   <div class="panel fine-ai-collapsed" id="filesPanel" hidden>
-    <button type="button" id="filesMenuToggleBtn" class="icon-btn" title="Show project / file list">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-        <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span>Workspace</span>
-    </button>
     <div class="files-main" id="filesMain">
       <div class="files-topbar">
         <div class="files-project-picker-wrap" id="filesProjectPickerWrap">
-          <button type="button" class="files-picker-btn" id="filesProjectPickerBtn">
+          <button type="button" class="files-picker-btn" id="filesProjectPickerBtn" title="Switch project (Shift+P)">
             <span id="filesProjectPickerLabel" class="placeholder">Select a project…</span>
             <svg class="files-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -1099,6 +1136,15 @@
             <div class="files-picker-options" id="filesProjectPickerOptions"></div>
           </div>
         </div>
+        <button type="button" id="filesMenuToggleBtn" class="icon-btn" title="Show project / file list (Ctrl+P)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Workspace</span>
+        </button>
+        <button type="button" id="fineAiToggleBtn" class="icon-btn" title="Toggle Fine AI (Ctrl+Alt+I)">
+          <span>Fine AI</span>
+        </button>
       </div>
       <div class="files-content-row">
     <div class="chat-project-files" id="chatProjectFiles">
@@ -1164,6 +1210,7 @@
               <button type="button" id="chatAddToContextBtn">Add to chat context</button>
               <button type="button" id="chatCopySelectedBtn">Copy as MD</button>
               <button type="button" id="chatExtractPdfBtn">Extract PDF(s)</button>
+              <button type="button" id="chatSummarizePdfBtn">Summarize PDF(s)</button>
             </div>
           </span>
         </div>
@@ -1341,6 +1388,11 @@
     </div>
     <div class="settings-panel-body">
       <div class="settings-section">
+        <h3>Fine AI</h3>
+        <div class="hint">Fine AI is the per-project chat panel in Workspace. Turning it off hides the Fine AI column and the "Summarize PDF(s)" file action for anyone who doesn't use it.</div>
+        <label class="archived-toggle"><input type="checkbox" id="fineAiEnabledToggle" /> Enable Fine AI</label>
+      </div>
+      <div class="settings-section" id="chatModelsSection">
         <h3>Chat models</h3>
         <div class="hint">OpenAI-compatible models (name, API key, optional base URL override for Gemini/Grok/etc). The default model is used for chat and PDF summarization.</div>
         <div id="modelsList"></div>
@@ -1352,7 +1404,7 @@
         </div>
         <div class="err" id="modelsErr" hidden></div>
       </div>
-      <div class="settings-section">
+      <div class="settings-section" id="pdfSummaryPromptSection">
         <h3>PDF summarizer prompt</h3>
         <div class="hint">Used by ArtiPDF's "Summarize with AI" context-menu action, sent as the system prompt against the default model above.</div>
         <textarea id="pdfSummaryPrompt"></textarea>
@@ -1669,6 +1721,22 @@
   if (typeof pdfjsLib !== "undefined") {
     pdfjsLib.GlobalWorkerOptions.workerSrc = "/lib/pdf.worker.min.js";
   }
+</script>
+<!-- CodeMirror 6 (see dashboard/lib/codemirror/README.md) is ES-module-only,
+     so it's loaded via a small module script that puts what the main
+     (classic) script below needs onto window.__CM, instead of converting the
+     whole ~6000-line script to a module. -->
+<script type="module">
+  import { EditorView, keymap, lineNumbers, highlightActiveLineGutter,
+           drawSelection, placeholder } from "/lib/codemirror/view.mjs";
+  import { EditorState, EditorSelection, Prec } from "/lib/codemirror/state.mjs";
+  import { defaultKeymap, history, historyKeymap } from "/lib/codemirror/commands.mjs";
+  import { search, setSearchQuery, SearchQuery, findNext, findPrevious, SearchCursor } from "/lib/codemirror/search.mjs";
+  window.__CM = { EditorView, EditorState, EditorSelection, Prec, keymap, lineNumbers,
+                  highlightActiveLineGutter, drawSelection, placeholder,
+                  defaultKeymap, history, historyKeymap,
+                  search, setSearchQuery, SearchQuery, findNext, findPrevious, SearchCursor };
+  window.dispatchEvent(new Event("cm-ready"));
 </script>
 <script>
 (function(){
@@ -3454,11 +3522,17 @@
     hint.textContent = existing ? "" : "Not started";
   }
 
+  function updateFineAiToggleBtnState(collapsed){
+    var btn = document.getElementById("fineAiToggleBtn");
+    if (btn) btn.classList.toggle("active", !collapsed);
+  }
+
   function setFineAiCollapsed(projectPath, collapsed, opts){
     opts = opts || {};
     var section = document.getElementById("fineAiSection");
     section.classList.toggle("fine-ai-collapsed", collapsed);
     document.getElementById("filesPanel").classList.toggle("fine-ai-collapsed", collapsed);
+    updateFineAiToggleBtnState(collapsed);
     if (!opts.auto && projectPath) saveFineAiCollapsedForProject(projectPath, collapsed);
     updateFineAiStatusHint(projectPath);
   }
@@ -3468,6 +3542,7 @@
     var section = document.getElementById("fineAiSection");
     section.classList.toggle("fine-ai-collapsed", collapsed);
     document.getElementById("filesPanel").classList.toggle("fine-ai-collapsed", collapsed);
+    updateFineAiToggleBtnState(collapsed);
     updateFineAiStatusHint(projectPath);
     if (!collapsed && projectPath){
       ensureFineAiSession(projectPath, filesProjectNameForPath(projectPath)).then(function(sessionId){
@@ -3479,9 +3554,10 @@
     }
   }
 
-  document.getElementById("fineAiHeader").addEventListener("click", function(){
-    var panel = document.getElementById("filesPanel");
-    if (panel.classList.contains("files-narrow") && !panel.classList.contains("menu-open")) return;
+  // Shared by the Fine AI header, the always-visible topbar "Fine AI" toggle
+  // button, and the Ctrl+Alt+I keybinding -- expands/collapses Fine AI for
+  // whichever project the Workspace tab currently has open.
+  function toggleFineAiForCurrentProject(){
     if (!filesCurrentProjectPath) return;
     var section = document.getElementById("fineAiSection");
     var collapsed = !section.classList.contains("fine-ai-collapsed");
@@ -3493,6 +3569,14 @@
         else renderChatSidebar();
       });
     }
+  }
+
+  document.getElementById("fineAiToggleBtn").addEventListener("click", toggleFineAiForCurrentProject);
+
+  document.getElementById("fineAiHeader").addEventListener("click", function(){
+    var panel = document.getElementById("filesPanel");
+    if (panel.classList.contains("files-narrow") && !panel.classList.contains("menu-open")) return;
+    toggleFineAiForCurrentProject();
   });
   document.getElementById("fineAiHeader").addEventListener("keydown", function(e){
     if (e.key === "Enter" || e.key === " "){ e.preventDefault(); this.click(); }
@@ -3547,13 +3631,79 @@
     }
   }
 
-  document.getElementById("filesMenuToggleBtn").addEventListener("click", function(){
+  function toggleFilesMenu(){
     filesMenuOpenState = !filesMenuOpenState;
     var panel = document.getElementById("filesPanel");
     panel.classList.toggle("menu-open", filesMenuOpenState);
-    this.classList.toggle("menu-open-icon", filesMenuOpenState);
+    document.getElementById("filesMenuToggleBtn").classList.toggle("menu-open-icon", filesMenuOpenState);
     var header = document.getElementById("fineAiHeader");
     if (header) header.classList.toggle("disabled", panel.classList.contains("files-narrow") && !filesMenuOpenState);
+    if (filesMenuOpenState){
+      var search = document.getElementById("chatFileSearch");
+      if (search) search.focus();
+    }
+  }
+
+  document.getElementById("filesMenuToggleBtn").addEventListener("click", toggleFilesMenu);
+
+  // Is the keydown target somewhere the key should just be typed normally
+  // (a text field, a contenteditable, or the CodeMirror editor)? Guards the
+  // no-modifier Shift+P project-picker shortcut below from hijacking a
+  // capital "P" typed anywhere in the app.
+  function isTypingTarget(e){
+    var el = e.target;
+    if (!el) return false;
+    var tag = el.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+    if (el.isContentEditable) return true;
+    return !!(el.closest && el.closest(".cm-editor"));
+  }
+
+  document.addEventListener("keydown", function(e){
+    var noMods = !e.altKey && !e.shiftKey;
+    var ctrlOnly = (e.ctrlKey || e.metaKey) && noMods;
+
+    // Ctrl+B -- toggle the main app sidebar, from anywhere.
+    if (ctrlOnly && (e.key === "b" || e.key === "B")){
+      e.preventDefault();
+      setMainSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+      return;
+    }
+
+    // Ctrl+P -- toggle the Workspace panel's project-files list (narrow
+    // layout only, matching when its own toggle button is visible).
+    if (ctrlOnly && (e.key === "p" || e.key === "P")){
+      var filesPanel = document.getElementById("filesPanel");
+      if (filesPanel && !filesPanel.hidden && filesPanel.classList.contains("files-narrow")){
+        e.preventDefault();
+        toggleFilesMenu();
+      }
+      return;
+    }
+
+    // Ctrl+Alt+I -- toggle Fine AI for whichever project the Workspace tab
+    // has open, from anywhere (skipped entirely when Fine AI is disabled in
+    // Settings).
+    if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey && (e.key === "i" || e.key === "I" || e.code === "KeyI")){
+      var fineAiPanel = document.getElementById("filesPanel");
+      if (fineAiPanel && !fineAiPanel.hidden && !document.body.classList.contains("fine-ai-disabled")){
+        e.preventDefault();
+        toggleFineAiForCurrentProject();
+      }
+      return;
+    }
+
+    // Shift+P (no Ctrl) -- open the Workspace project picker, focused and
+    // ready to type. Only while the Workspace panel is open and the user
+    // isn't already typing somewhere else.
+    if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "p" || e.key === "P")){
+      if (isTypingTarget(e)) return;
+      var panel = document.getElementById("filesPanel");
+      if (panel && !panel.hidden){
+        e.preventDefault();
+        openFilesProjectPickerDropdown();
+      }
+    }
   });
 
   if (typeof ResizeObserver !== "undefined"){
@@ -3604,12 +3754,6 @@
     renderFileList();
   });
 
-  var TEXT_PREVIEWABLE_EXTS = [".md", ".txt", ".ris", ".bib", ".csv", ".tsv", ".json"];
-  function _isTextPreviewableFile(relPath){
-    var lower = relPath.toLowerCase();
-    return TEXT_PREVIEWABLE_EXTS.some(function(ext){ return lower.endsWith(ext); });
-  }
-
   var IMAGE_PREVIEWABLE_EXTS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
   function _isImagePreviewableFile(relPath){
     var lower = relPath.toLowerCase();
@@ -3623,7 +3767,9 @@
   }
 
   function _isPreviewableFile(relPath){
-    return _isTextPreviewableFile(relPath) || _isImagePreviewableFile(relPath) || _isPdfPreviewableFile(relPath);
+    // Any file gets a preview click handler; the server sniffs content at
+    // open time to decide whether it's actually text (see previewProjectFile).
+    return true;
   }
 
   function _fileTypeIcon(relPath){
@@ -3682,6 +3828,7 @@
           '<div class="menu-dropdown" hidden>' +
             '<button type="button" data-role="open-file">Open</button>' +
             '<button type="button" data-role="open-file-with">Open with&hellip;</button>' +
+            '<button type="button" data-role="reveal-file">Open file location</button>' +
           '</div>' +
         '</span>' +
       '</div>';
@@ -3722,6 +3869,12 @@
         openProjectFileExternally(btn.closest("[data-abs]").getAttribute("data-abs"), "/chat/project-files/open-with");
       });
     });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="reveal-file"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        openProjectFileExternally(btn.closest("[data-abs]").getAttribute("data-abs"), "/chat/project-files/reveal");
+      });
+    });
   }
 
   function openProjectFileExternally(absPath, endpoint){
@@ -3748,6 +3901,10 @@
 
     var attached = getAttachedFilesByRelPath();
     var hasPdf = selectedPaths.some(function(p){ return p.toLowerCase().endsWith(".pdf"); });
+    var hasSummarizable = selectedPaths.some(function(p){
+      var lower = p.toLowerCase();
+      return lower.endsWith(".pdf") || lower.endsWith(".md");
+    });
     var hasAddableToContext = selectedPaths.some(function(p){
       return !p.toLowerCase().endsWith(".pdf") && !attached[p];
     });
@@ -3756,6 +3913,8 @@
     document.getElementById("chatAddToContextBtn").disabled = !hasAddableToContext;
     document.getElementById("chatCopySelectedBtn").disabled = totalSelected === 0;
     document.getElementById("chatExtractPdfBtn").disabled = !hasPdf;
+    var summarizeBtn = document.getElementById("chatSummarizePdfBtn");
+    if (summarizeBtn) summarizeBtn.disabled = !hasSummarizable;
   }
 
   function currentFilteredFiles(){
@@ -3964,6 +4123,18 @@
     });
   });
 
+  document.getElementById("chatSummarizePdfBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    var relPaths = Object.keys(chatFileSelection).filter(function(p){
+      var lower = p.toLowerCase();
+      return lower.endsWith(".pdf") || lower.endsWith(".md");
+    }).sort();
+    if (!relPaths.length) return;
+    runBulkFileJob("Summarizing file(s)…", "/chat/bulk-summarize", relPaths, function(evt){
+      return "✓ Summarized: " + evt.output;
+    });
+  });
+
   // ---- attached-file tracking (a "# File: <rel path>" system message with
   // is_context=1 counts as attached; hidden from the normal thread view and
   // summarized instead as an "N files attached" pill in the context row) ----
@@ -4081,6 +4252,96 @@
   var chatPreviewAbsPath = "";
   var chatPreviewMatches = [];
   var chatPreviewMatchIndex = -1;
+  var chatPreviewEditorView = null;
+  var chatPreviewMtime = null;
+  var chatPreviewPollTimer = null;
+  var chatPreviewExternalChangePending = false;
+
+  // Runs `cb` once CodeMirror is loaded (see the module <script> that sets
+  // window.__CM, near the /lib/*.min.js tags). In practice this resolves
+  // immediately -- that script sits near the top of the page and evaluates
+  // long before the file-edit panel can be opened -- but this guards the
+  // narrow race instead of assuming it.
+  function whenCMReady(cb){
+    if (window.__CM){ cb(); return; }
+    window.addEventListener("cm-ready", cb, { once: true });
+  }
+
+  var fileEditorTheme = null;
+  function getFileEditorTheme(){
+    if (fileEditorTheme) return fileEditorTheme;
+    var CM = window.__CM;
+    // CM6's built-in baseTheme() ships its own light-mode look (e.g.
+    // "&light .cm-gutters{background:#f5f5f5;color:#6c6c6c}",
+    // ".cm-lineNumbers .cm-gutterElement{padding:0 3px 0 5px}") scoped under
+    // compound selectors more specific than a plain ".cm-gutters"/
+    // ".cm-gutterElement" rule here, so those base rules silently win over an
+    // unqualified override. Rather than chase baseTheme's exact selectors,
+    // every property that must reliably override it is marked !important --
+    // that beats specificity outright regardless of how baseTheme scopes it.
+    fileEditorTheme = CM.EditorView.theme({
+      "&": { height: "100%", width: "100% !important", fontSize: "13.5px",
+             backgroundColor: "var(--surface)", color: "var(--text)" },
+      ".cm-scroller": { width: "100%" },
+      ".cm-content": { fontFamily: '"SFMono-Regular", Consolas, monospace', lineHeight: "1.6", padding: "0" },
+      ".cm-line": { padding: "0" },
+      ".cm-gutters": {
+        backgroundColor: "var(--surface-2) !important",
+        color: "var(--text-muted) !important",
+        border: "none !important"
+      },
+      ".cm-lineNumbers .cm-gutterElement": { padding: "0 12px 0 14px !important" },
+      ".cm-activeLineGutter": { backgroundColor: "var(--border) !important" },
+      ".cm-searchMatch": { backgroundColor: "var(--amber-soft)" },
+      ".cm-searchMatch-selected": { backgroundColor: "var(--amber)" },
+      "&.cm-focused": { outline: "none" }
+    });
+    return fileEditorTheme;
+  }
+
+  // Mounts a CodeMirror EditorView into `container` for the file-edit /
+  // create-file panels. `opts.onEscape`/`opts.onSave` back the same
+  // Esc-to-cancel / Shift+Enter-to-save shortcuts the old plain textarea had;
+  // Ctrl/Cmd+F is deliberately left out of the editor's own keymap so it
+  // keeps triggering the dashboard's own #chatPreviewSearchBar (global
+  // handler below) instead of CM6's built-in search panel -- search() is
+  // still included for its match-highlighting decorations and query state,
+  // driven programmatically by runPreviewSearchInEditor()/gotoPreviewMatch().
+  function createFileEditor(container, opts){
+    var CM = window.__CM;
+    var content = opts.content || "";
+    var extensions = [
+      CM.lineNumbers(),
+      CM.highlightActiveLineGutter(),
+      CM.history(),
+      CM.drawSelection(),
+      CM.EditorView.lineWrapping,
+      CM.search({ top: false }),
+      getFileEditorTheme(),
+      CM.Prec.highest(CM.keymap.of([
+        { key: "Escape", run: function(){ opts.onEscape(); return true; } },
+        { key: "Shift-Enter", run: function(){ opts.onSave(); return true; } }
+      ])),
+      CM.keymap.of(CM.defaultKeymap.concat(CM.historyKeymap))
+    ];
+    if (opts.placeholder) extensions.push(CM.placeholder(opts.placeholder));
+    if (opts.onDocChanged){
+      extensions.push(CM.EditorView.updateListener.of(function(update){
+        if (update.docChanged) opts.onDocChanged();
+      }));
+    }
+    var view = new CM.EditorView({
+      state: CM.EditorState.create({
+        doc: content,
+        selection: CM.EditorSelection.cursor(content.length),
+        extensions: extensions
+      }),
+      parent: container
+    });
+    view.focus();
+    return view;
+  }
+
   var MARKDOWN_PREVIEW_EXTENSIONS = [".md"];
   function isMarkdownPreview(relPath){
     var m = /\.[^./]+$/.exec(relPath || "");
@@ -4094,10 +4355,102 @@
     if (content) content.hidden = true;
     var panel = document.getElementById("filesPreviewPanel");
     if (panel) panel.classList.remove("editing");
+    // The close ("x") button can fire mid-edit without going through
+    // enterPreviewEditMode/enterPreviewCreateMode's own cancel() -- always
+    // destroy a live CodeMirror view here too, or it leaks.
+    if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
+    stopPreviewFilePolling();
     chatPreviewRawText = "";
     chatPreviewRelPath = "";
     chatPreviewRawUrl = "";
+    chatPreviewMtime = null;
     closePreviewSearchBar();
+  }
+
+  // ---- external-change detection: poll the open file's mtime so edits made
+  // outside the dashboard (e.g. Claude Code editing the same file) show up
+  // without the user having to manually re-open it. ----
+
+  function stopPreviewFilePolling(){
+    if (chatPreviewPollTimer){ clearInterval(chatPreviewPollTimer); chatPreviewPollTimer = null; }
+    chatPreviewExternalChangePending = false;
+    hideExternalChangeNotice();
+  }
+
+  function startPreviewFilePolling(projectPath, absPath){
+    stopPreviewFilePolling();
+    chatPreviewPollTimer = setInterval(function(){
+      if (document.hidden) return;
+      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      if (saveBtn && saveBtn.disabled) return; // a save is in flight
+      if (chatPreviewExternalChangePending) return; // already surfaced; wait for the user
+      var url = "/chat/project-files/stat?path=" + encodeURIComponent(projectPath) +
+        "&file=" + encodeURIComponent(absPath);
+      apiRaw(url).then(function(d){
+        if (chatPreviewMtime != null && d.mtime === chatPreviewMtime) return;
+        handleExternalFileChange(projectPath, absPath);
+      }).catch(function(){
+        // File may have been deleted/renamed mid-poll -- ignore; the next
+        // successful load (or the user closing the panel) resets state.
+      });
+    }, 3000);
+  }
+
+  function handleExternalFileChange(projectPath, absPath){
+    var panel = document.getElementById("filesPreviewPanel");
+    var editing = panel && panel.classList.contains("editing");
+    if (!editing){
+      // Nothing unsaved to lose -- just reload the read-only preview.
+      previewProjectFile(projectPath, absPath, chatPreviewRelPath);
+      return;
+    }
+    if (!chatPreviewEditorView) return;
+    var currentDoc = chatPreviewEditorView.state.doc.toString();
+    if (currentDoc === chatPreviewRawText){
+      // No local edits since this was loaded/last saved -- safe to reload.
+      reloadEditorContentFromDisk(projectPath, absPath);
+    } else {
+      // Don't clobber an in-progress edit; let the user choose.
+      chatPreviewExternalChangePending = true;
+      showExternalChangeNotice(projectPath, absPath);
+    }
+  }
+
+  function reloadEditorContentFromDisk(projectPath, absPath){
+    var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
+      "&file=" + encodeURIComponent(absPath);
+    apiRaw(url).then(function(d){
+      if (!chatPreviewEditorView) return; // edit ended while this was in flight
+      chatPreviewEditorView.dispatch({
+        changes: { from: 0, to: chatPreviewEditorView.state.doc.length, insert: d.content }
+      });
+      chatPreviewRawText = d.content;
+      chatPreviewMtime = d.mtime;
+      chatPreviewExternalChangePending = false;
+      hideExternalChangeNotice();
+    }).catch(function(){
+      // Transient read error -- leave the notice/pending state as-is, the
+      // next poll tick (or the user's own Reload click) will retry.
+    });
+  }
+
+  function showExternalChangeNotice(projectPath, absPath){
+    if (document.getElementById("chatPreviewExternalChangeNotice")) return;
+    var actions = document.getElementById("chatPreviewActions");
+    if (!actions) return;
+    actions.insertAdjacentHTML("beforeend",
+      '<span class="chat-preview-external-change" id="chatPreviewExternalChangeNotice">' +
+        'File changed on disk' +
+        '<button type="button" class="btn" id="chatPreviewReloadBtn">Reload</button>' +
+      '</span>');
+    document.getElementById("chatPreviewReloadBtn").addEventListener("click", function(){
+      reloadEditorContentFromDisk(projectPath, absPath);
+    });
+  }
+
+  function hideExternalChangeNotice(){
+    var el = document.getElementById("chatPreviewExternalChangeNotice");
+    if (el) el.remove();
   }
 
   function _applyPreviewSearchTerm(searchTerm){
@@ -4109,6 +4462,11 @@
   }
 
   function previewProjectFile(projectPath, absPath, relPath, searchTerm){
+    // Guards the same way closePreviewInline() does: this can be called to
+    // switch the preview to a different file while the current one is still
+    // mid-edit (e.g. clicking another file in the list instead of Cancel).
+    if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
+    stopPreviewFilePolling();
     chatPreviewProjectPath = projectPath;
     chatPreviewAbsPath = absPath;
     if (_isImagePreviewableFile(relPath) || _isPdfPreviewableFile(relPath)){
@@ -4116,6 +4474,7 @@
       chatPreviewRelPath = relPath;
       chatPreviewRawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
         "&file=" + encodeURIComponent(absPath);
+      chatPreviewMtime = null; // no live-refresh polling for image/PDF previews yet
       document.getElementById("chatPreviewFileName").textContent = relPath;
       document.getElementById("filesPreviewPanel").classList.remove("editing");
       closePreviewSearchBar();
@@ -4132,14 +4491,26 @@
       chatPreviewRawText = d.content;
       chatPreviewRelPath = relPath;
       chatPreviewRawUrl = "";
+      chatPreviewMtime = d.mtime;
       document.getElementById("chatPreviewFileName").textContent = relPath;
       document.getElementById("filesPreviewPanel").classList.remove("editing");
       closePreviewSearchBar();
       renderPreviewView();
       restorePreviewViewActions(projectPath, absPath);
+      document.getElementById("filesPreviewEmpty").textContent = "No file selected.";
       document.getElementById("filesPreviewEmpty").hidden = true;
       document.getElementById("filesPreviewContent").hidden = false;
       _applyPreviewSearchTerm(searchTerm);
+      startPreviewFilePolling(projectPath, absPath);
+    }).catch(function(err){
+      chatPreviewRawText = "";
+      chatPreviewRelPath = "";
+      chatPreviewRawUrl = "";
+      chatPreviewMtime = null;
+      var empty = document.getElementById("filesPreviewEmpty");
+      empty.textContent = (err && err.message) || "This file can't be previewed. Use Open or Open with… instead.";
+      empty.hidden = false;
+      document.getElementById("filesPreviewContent").hidden = true;
     });
   }
 
@@ -4505,8 +4876,6 @@
   // ---- in-file search (highlight + prev/next), scoped to the preview drawer ----
 
   function openPreviewSearchBar(){
-    var panel = document.getElementById("filesPreviewPanel");
-    if (panel.classList.contains("editing")) return;
     var bar = document.getElementById("chatPreviewSearchBar");
     bar.hidden = false;
     var input = document.getElementById("chatPreviewSearchInput");
@@ -4521,6 +4890,12 @@
     document.getElementById("chatPreviewSearchInput").value = "";
     if (_isPdfPreviewableFile(chatPreviewRelPath)){
       pdfFindBarClose();
+    } else if (document.getElementById("filesPreviewPanel").classList.contains("editing")){
+      if (chatPreviewEditorView){
+        chatPreviewEditorView.dispatch({
+          effects: window.__CM.setSearchQuery.of(new window.__CM.SearchQuery({ search: "" }))
+        });
+      }
     } else {
       clearPreviewSearchHighlights();
     }
@@ -4531,17 +4906,20 @@
 
   function clearPreviewSearchHighlights(){
     var body = document.getElementById("chatPreviewBody");
-    if (!body) return;
-    Array.prototype.forEach.call(body.querySelectorAll("mark.search-hit"), function(mark){
-      var parent = mark.parentNode;
-      if (!parent) return;
-      parent.replaceChild(document.createTextNode(mark.textContent), mark);
-      parent.normalize();
-    });
+    if (body){
+      Array.prototype.forEach.call(body.querySelectorAll("mark.search-hit"), function(mark){
+        var parent = mark.parentNode;
+        if (!parent) return;
+        parent.replaceChild(document.createTextNode(mark.textContent), mark);
+        parent.normalize();
+      });
+    }
   }
 
   function runPreviewSearch(query){
     if (_isPdfPreviewableFile(chatPreviewRelPath)) return runPdfPreviewSearch(query);
+    var panel = document.getElementById("filesPreviewPanel");
+    if (panel && panel.classList.contains("editing")) return runPreviewSearchInEditor(query);
     clearPreviewSearchHighlights();
     chatPreviewMatches = [];
     chatPreviewMatchIndex = -1;
@@ -4587,8 +4965,58 @@
       : "0 / 0";
   }
 
+  // Edit-mode search: matches are {from,to} offsets into the CodeMirror
+  // document (found via @codemirror/search's SearchCursor); highlighting and
+  // scrolling are CM6's own job (the search() extension + scrollIntoView),
+  // not hand-rolled DOM like the old mirror-<pre> approach.
+  function runPreviewSearchInEditor(query){
+    chatPreviewMatches = [];
+    chatPreviewMatchIndex = -1;
+    var CM = window.__CM;
+    var view = chatPreviewEditorView;
+    var q = (query || "").trim();
+    if (!view || !CM || !q){
+      if (view && CM) view.dispatch({ effects: CM.setSearchQuery.of(new CM.SearchQuery({ search: "" })) });
+      updatePreviewSearchCount();
+      return;
+    }
+    // SearchCursor's 5th arg is a normalize(string) function applied to each
+    // candidate slice AND the query before comparing them -- not a two-arg
+    // comparator -- so this must return a normalized string, not a boolean.
+    var cursor = new CM.SearchCursor(view.state.doc, q, 0, view.state.doc.length,
+      function(s){ return s.toLowerCase(); });
+    while (!cursor.next().done){
+      chatPreviewMatches.push({ from: cursor.value.from, to: cursor.value.to });
+    }
+    view.dispatch({ effects: CM.setSearchQuery.of(new CM.SearchQuery({ search: q, caseSensitive: false })) });
+    updatePreviewSearchCount();
+    if (chatPreviewMatches.length) gotoPreviewMatch(0);
+  }
+
   function gotoPreviewMatch(index){
     if (!chatPreviewMatches.length) return;
+    var panel = document.getElementById("filesPreviewPanel");
+    if (panel && panel.classList.contains("editing")){
+      chatPreviewMatchIndex = ((index % chatPreviewMatches.length) + chatPreviewMatches.length) % chatPreviewMatches.length;
+      var m = chatPreviewMatches[chatPreviewMatchIndex];
+      var view = chatPreviewEditorView;
+      if (view){
+        // Deliberately not .focus()-ing here: this runs on every keystroke in
+        // the search input (see runPreviewSearchInEditor), and stealing focus
+        // back to the editor mid-typing would route the next keystroke into
+        // the (now-selected) match text instead of the search box --
+        // corrupting the file. CM6's search() extension paints the match
+        // highlight from the dispatched search query regardless of focus, so
+        // it stays visible; the selection itself is still set for when the
+        // user does click/tab into the editor directly.
+        view.dispatch({
+          selection: window.__CM.EditorSelection.single(m.from, m.to),
+          effects: window.__CM.EditorView.scrollIntoView(m.from, { y: "center" })
+        });
+      }
+      updatePreviewSearchCount();
+      return;
+    }
     if (chatPreviewMatchIndex >= 0 && chatPreviewMatches[chatPreviewMatchIndex]){
       chatPreviewMatches[chatPreviewMatchIndex].classList.remove("active");
     }
@@ -4638,10 +5066,14 @@
       openPreviewSearchBar();
       return;
     }
+    // Escape only closes the search bar (handled here) or cancels an
+    // in-progress edit (handled by the textarea's own keydown listener in
+    // enterPreviewEditMode/enterPreviewCreateMode) -- it must never close the
+    // whole preview panel, which is deliberately reserved for the "x" button
+    // (chatPreviewCloseBtn) alone.
     if (e.key === "Escape" && document.activeElement !== document.getElementById("chatPreviewSearchInput")){
       var bar = document.getElementById("chatPreviewSearchBar");
       if (!bar.hidden) closePreviewSearchBar();
-      else closePreviewInline();
     }
   });
 
@@ -4664,44 +5096,66 @@
     var panel = document.getElementById("filesPreviewPanel");
     panel.classList.add("editing");
     document.getElementById("chatPreviewBodyWrap").innerHTML =
-      '<div class="file-preview-edit"><textarea id="chatPreviewEditInput">' + escapeHtml(chatPreviewRawText) + '</textarea></div>';
+      '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
     var actions = document.getElementById("chatPreviewActions");
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">Editing</span>' +
       '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
       '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
       '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Save</button>';
-    var textarea = document.getElementById("chatPreviewEditInput");
-    textarea.focus();
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    var searchBar = document.getElementById("chatPreviewSearchBar");
 
     function cancel(){
+      chatPreviewEditorView.destroy();
+      chatPreviewEditorView = null;
       panel.classList.remove("editing");
       renderPreviewView();
       restorePreviewViewActions(projectPath, absPath);
+      if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
     }
     function save(){
-      var next = textarea.value;
+      var next = chatPreviewEditorView.state.doc.toString();
       var saveBtn = document.getElementById("chatPreviewSaveBtn");
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving…";
       apiRaw("/chat/project-files/write", {
         method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ path: projectPath, file: absPath, content: next })
-      }).then(function(){
+      }).then(function(d){
         chatPreviewRawText = next;
+        chatPreviewMtime = d.mtime;
+        chatPreviewExternalChangePending = false;
+        hideExternalChangeNotice();
+        chatPreviewEditorView.destroy();
+        chatPreviewEditorView = null;
         panel.classList.remove("editing");
         renderPreviewView();
         restorePreviewViewActions(projectPath, absPath);
+        if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
       }).catch(function(err){
         alert("Failed to save file: " + (err && err.message ? err.message : "unknown error"));
         saveBtn.disabled = false;
         saveBtn.textContent = "Save";
       });
     }
-    textarea.addEventListener("keydown", function(e){
-      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
-      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+
+    whenCMReady(function(){
+      var container = document.getElementById("chatPreviewEditContainer");
+      if (!container) return; // panel was closed/re-rendered before CM finished loading
+      chatPreviewEditorView = createFileEditor(container, {
+        content: chatPreviewRawText,
+        onEscape: function(){
+          if (searchBar && !searchBar.hidden){ closePreviewSearchBar(); return; }
+          cancel();
+        },
+        onSave: save,
+        onDocChanged: function(){
+          if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
+        }
+      });
+      // If search was already open while viewing the rendered file, re-run it
+      // against the editor now that #chatPreviewBody is gone from the DOM.
+      if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
     });
     document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
     document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
@@ -4723,7 +5177,7 @@
       '<input type="text" id="chatPreviewNewFileName" class="preview-filename-input" placeholder="filename.md" />';
     document.getElementById("chatPreviewBodyWrap").classList.remove("flush");
     document.getElementById("chatPreviewBodyWrap").innerHTML =
-      '<div class="file-preview-edit"><textarea id="chatPreviewEditInput" placeholder="Start typing…"></textarea></div>';
+      '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
     var actions = document.getElementById("chatPreviewActions");
     actions.style.display = "";
     actions.innerHTML =
@@ -4731,10 +5185,10 @@
       '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
       '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Create</button>';
     var nameInput = document.getElementById("chatPreviewNewFileName");
-    var textarea = document.getElementById("chatPreviewEditInput");
     nameInput.focus();
 
     function cancel(){
+      if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
       panel.classList.remove("editing");
       closePreviewInline();
     }
@@ -4746,10 +5200,12 @@
       saveBtn.textContent = "Creating…";
       apiRaw("/chat/project-files/create", {
         method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ path: projectPath, file: name, content: textarea.value })
+        body: JSON.stringify({ path: projectPath, file: name, content: chatPreviewEditorView.state.doc.toString() })
       }).then(function(result){
         return refreshProjectFiles(projectPath).then(function(){ return result; });
       }).then(function(result){
+        chatPreviewEditorView.destroy();
+        chatPreviewEditorView = null;
         panel.classList.remove("editing");
         previewProjectFile(projectPath, result.abs_path, result.rel_path);
       }).catch(function(err){
@@ -4758,13 +5214,22 @@
         saveBtn.textContent = "Create";
       });
     }
-    textarea.addEventListener("keydown", function(e){
-      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
-      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+    whenCMReady(function(){
+      var container = document.getElementById("chatPreviewEditContainer");
+      if (!container) return; // panel was closed/re-rendered before CM finished loading
+      chatPreviewEditorView = createFileEditor(container, {
+        content: "",
+        placeholder: "Start typing…",
+        onEscape: cancel,
+        onSave: save
+      });
+      // createFileEditor() focuses the editor on construction; the filename
+      // field should keep initial focus in create mode instead, so reclaim it.
+      nameInput.focus();
     });
     nameInput.addEventListener("keydown", function(e){
       if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
-      else if (e.key === "Enter"){ e.preventDefault(); textarea.focus(); }
+      else if (e.key === "Enter"){ e.preventDefault(); if (chatPreviewEditorView) chatPreviewEditorView.focus(); }
     });
     document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
     document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
@@ -5826,8 +6291,20 @@
       defaultChatModelId = results[1].chat_model_id ? parseInt(results[1].chat_model_id, 10) : null;
       renderModelsList();
       document.getElementById("pdfSummaryPrompt").value = results[1].pdf_summary_prompt || "";
+      document.getElementById("fineAiEnabledToggle").checked = results[1].fine_ai_enabled !== "0";
     });
   }
+
+  document.getElementById("fineAiEnabledToggle").addEventListener("change", function(e){
+    var enabled = e.target.checked;
+    applyFineAiEnabled(enabled);
+    apiRaw("/chat/settings", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ fine_ai_enabled: enabled ? "1" : "0" }) })
+      .catch(function(err){
+        applyFineAiEnabled(!enabled);
+        e.target.checked = !enabled;
+        alert(err.message);
+      });
+  });
 
   function renderModelsList(){
     var el = document.getElementById("modelsList");
@@ -5892,6 +6369,14 @@
         setTimeout(function(){ btn.textContent = prev; }, 1200);
       });
   });
+
+  function applyFineAiEnabled(enabled){
+    document.body.classList.toggle("fine-ai-disabled", !enabled);
+  }
+
+  apiRaw("/chat/settings").then(function(s){
+    applyFineAiEnabled(s.fine_ai_enabled !== "0");
+  }).catch(function(){});
 
   window.addEventListener("focus", loadAll);
 

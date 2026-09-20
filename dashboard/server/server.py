@@ -697,12 +697,26 @@ class Handler(BaseHTTPRequestHandler):
             if not project_path or not file_path:
                 return self._send_json(400, {"error": "path and file required"})
             try:
-                content = chat.read_project_file(project_path, file_path)
+                content, mtime = chat.read_project_file(project_path, file_path)
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
                 return self._send_json(404, {"error": str(e)})
-            return self._send_json(200, {"content": content})
+            return self._send_json(200, {"content": content, "mtime": mtime})
+
+        if pathname == "/api/chat/project-files/stat" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            project_path = (query.get("path") or [None])[0]
+            file_path = (query.get("file") or [None])[0]
+            if not project_path or not file_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                mtime = chat.stat_project_file(project_path, file_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, {"mtime": mtime})
 
         if pathname == "/api/chat/project-files/raw" and method == "GET":
             query = parse_qs(urlsplit(self.path).query)
@@ -751,6 +765,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(404, {"error": str(e)})
             return self._send_json(200, {"ok": True})
 
+        if pathname == "/api/chat/project-files/reveal" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            file_path = body.get("file")
+            if not project_path or not file_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                chat.reveal_project_file(project_path, file_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, {"ok": True})
+
         if pathname == "/api/chat/project-files/write" and method == "POST":
             body = self._read_body()
             project_path = body.get("path")
@@ -759,12 +787,12 @@ class Handler(BaseHTTPRequestHandler):
             if not project_path or not file_path or content is None:
                 return self._send_json(400, {"error": "path, file, and content required"})
             try:
-                chat.write_project_file(project_path, file_path, content)
+                mtime = chat.write_project_file(project_path, file_path, content)
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
                 return self._send_json(404, {"error": str(e)})
-            return self._send_json(200, {"success": True})
+            return self._send_json(200, {"success": True, "mtime": mtime})
 
         if pathname == "/api/chat/project-files/create" and method == "POST":
             body = self._read_body()
@@ -978,6 +1006,7 @@ class Handler(BaseHTTPRequestHandler):
             content_type = {
                 ".css": "text/css",
                 ".js": "application/javascript",
+                ".mjs": "application/javascript",
                 ".woff2": "font/woff2",
                 ".woff": "font/woff",
                 ".ttf": "font/ttf",

@@ -227,6 +227,7 @@ def create_session(name=None, project_id=None, linked_project_path=None, model_i
 
 PROJECT_FILE_EXTENSIONS = (".md", ".txt", ".ris", ".bib", ".csv", ".tsv", ".json")
 PROJECT_FILE_SKIP_DIRS = {".git", "node_modules", "__pycache__"}
+PROJECT_FILE_PREVIEW_MAX_BYTES = 2 * 1024 * 1024
 
 BINARY_PREVIEWABLE_EXTENSIONS = {
     ".png": "image/png",
@@ -330,6 +331,30 @@ def _resolve_under_project(project_path, abs_path):
     return target
 
 
+def _sniff_is_text(path, sample_size=8192):
+    """Content-based text/binary detection, same heuristic class as Notepad++
+    or `file(1)`: no NUL bytes, and either a clean UTF-8 decode or a low
+    enough ratio of non-printable bytes. Lets any text-based file be opened
+    regardless of extension, instead of maintaining an allowlist."""
+    try:
+        with open(path, "rb") as f:
+            chunk = f.read(sample_size)
+    except OSError:
+        return False
+    if not chunk:
+        return True
+    if b"\x00" in chunk:
+        return False
+    try:
+        chunk.decode("utf-8")
+        return True
+    except UnicodeDecodeError:
+        pass
+    text_bytes = set(b"\t\n\r\x0c\x1b") | set(range(0x20, 0x100))
+    nontext = sum(1 for b in chunk if b not in text_bytes)
+    return (nontext / len(chunk)) < 0.30
+
+
 def read_project_file(project_path, abs_path):
     with arti_db._lock:
         conn = arti_db._connect()
@@ -338,7 +363,26 @@ def read_project_file(project_path, abs_path):
         finally:
             conn.close()
     target = _resolve_under_project(project_path, abs_path)
-    return target.read_text(encoding="utf-8", errors="replace")
+    stat = target.stat()
+    if stat.st_size > PROJECT_FILE_PREVIEW_MAX_BYTES:
+        raise ValueError("File is too large to preview")
+    if not _sniff_is_text(target):
+        raise ValueError("File does not appear to be text")
+    return target.read_text(encoding="utf-8", errors="replace"), stat.st_mtime
+
+
+def stat_project_file(project_path, abs_path):
+    """Cheap mtime-only check for the preview panel's change-detection poll --
+    no content is read, just a stat() call, so this stays fast even hit every
+    few seconds while a file is open."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    return target.stat().st_mtime
 
 
 def read_project_file_raw(project_path, abs_path):
@@ -383,6 +427,19 @@ def open_project_file_with_dialog(project_path, abs_path):
     platform_ops.open_file_with_dialog(target)
 
 
+def reveal_project_file(project_path, abs_path):
+    """Opens abs_path's containing folder with it selected -- the Files
+    panel's three-dot "Open file location" action."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    platform_ops.reveal_file_in_file_manager(target)
+
+
 def write_project_file(project_path, abs_path, content):
     with arti_db._lock:
         conn = arti_db._connect()
@@ -392,6 +449,7 @@ def write_project_file(project_path, abs_path, content):
             conn.close()
     target = _resolve_under_project(project_path, abs_path)
     target.write_text(content, encoding="utf-8")
+    return target.stat().st_mtime
 
 
 def create_project_file(project_path, rel_path, content, encoding=None):

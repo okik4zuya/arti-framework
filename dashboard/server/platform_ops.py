@@ -70,6 +70,32 @@ def open_file_default(path):
         subprocess.Popen(["xdg-open", path])
 
 
+def reveal_file_in_file_manager(path):
+    """Opens path's containing folder with the file itself selected/highlighted
+    -- the Files panel's three-dot "Open file location" action. Linux has no
+    universal select-and-highlight command, so it falls back to just opening
+    the parent folder (same graceful-degradation precedent as
+    open_file_with_dialog())."""
+    system = platform.system()
+    path = str(path)
+    if system == "Windows":
+        # "/select," and the path must be two separate arguments, not one
+        # combined string. launch-focused.ps1 only quotes an argument that
+        # contains whitespace, so a combined "/select,C:\path with
+        # spaces\file.txt" token gets its *entire* text (including the
+        # "/select," prefix) wrapped in one pair of quotes -- a form
+        # explorer.exe fails to parse, silently falling back to the default
+        # Documents view instead of erroring. Kept separate, only the path
+        # element gets quoted, producing the standard working form
+        # `/select, "C:\path with spaces\file.txt"` (same two-argument
+        # pattern as .NET's ProcessStartInfo.ArgumentList.Add convention).
+        _run_powershell_focused("explorer.exe", ["/select,", path])
+    elif system == "Darwin":
+        subprocess.Popen(["open", "-R", path])
+    else:
+        subprocess.Popen(["xdg-open", str(Path(path).parent)])
+
+
 def open_file_with_dialog(path):
     """Shows the OS's native "Open with..." application chooser for path.
     macOS/Linux have no equivalent single command for this, so they fall back
