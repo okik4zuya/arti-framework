@@ -41,11 +41,14 @@ $owner.Activate()
 $quotedArgs = @($payload.args) | ForEach-Object {
     if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
 }
-if ($payload.hidden) {
-    Start-Process -FilePath $payload.exe -ArgumentList $quotedArgs -WindowStyle Hidden
-} else {
-    Start-Process -FilePath $payload.exe -ArgumentList $quotedArgs
-}
+
+# -ArgumentList rejects a null/empty array (e.g. opening a document path
+# directly, with no extra args), so only splat it in when there's something
+# to pass.
+$startParams = @{ FilePath = $payload.exe }
+if ($quotedArgs.Count -gt 0) { $startParams.ArgumentList = $quotedArgs }
+if ($payload.hidden) { $startParams.WindowStyle = 'Hidden' }
+Start-Process @startParams
 
 Start-Sleep -Milliseconds 300
 $owner.Close()

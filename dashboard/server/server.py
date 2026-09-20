@@ -16,6 +16,7 @@ fields -- kept as two calls rather than one merged signature to minimize
 churn on either call site.
 """
 import json
+import re
 import subprocess
 import sys
 import threading
@@ -323,6 +324,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": "path required"})
             platform_ops.open_in_vscode(p)
             db.upsert_project(p, touch_opened=True)
+            return self._send_json(200, {"ok": True})
+
+        if pathname == "/api/open-external" and method == "POST":
+            body = self._read_body()
+            url = body.get("url")
+            if not url or not re.match(r"^https?://", url, re.IGNORECASE):
+                return self._send_json(400, {"error": "a valid http(s) url is required"})
+            platform_ops.open_file_default(url)
             return self._send_json(200, {"ok": True})
 
         if pathname == "/api/references/list" and method == "GET":
@@ -704,6 +713,53 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(404, {"error": str(e)})
             return self._send_json(200, {"content": content})
 
+        if pathname == "/api/chat/project-files/raw" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            project_path = (query.get("path") or [None])[0]
+            file_path = (query.get("file") or [None])[0]
+            if not project_path or not file_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                body, mime = chat.read_project_file_raw(project_path, file_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return None
+
+        if pathname == "/api/chat/project-files/open" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            file_path = body.get("file")
+            if not project_path or not file_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                chat.open_project_file(project_path, file_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, {"ok": True})
+
+        if pathname == "/api/chat/project-files/open-with" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            file_path = body.get("file")
+            if not project_path or not file_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                chat.open_project_file_with_dialog(project_path, file_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, {"ok": True})
+
         if pathname == "/api/chat/project-files/write" and method == "POST":
             body = self._read_body()
             project_path = body.get("path")
@@ -733,6 +789,47 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
                 return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, result)
+
+        if pathname == "/api/chat/search" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            project_path = (query.get("path") or [None])[0]
+            q = (query.get("q") or [""])[0]
+            mode = (query.get("mode") or ["and"])[0]
+            mode = mode if mode in ("and", "or") else "and"
+            include_terms = chat._parse_search_terms((query.get("include") or [""])[0])
+            exclude_terms = chat._parse_search_terms((query.get("exclude") or [""])[0])
+            if not project_path:
+                return self._send_json(400, {"error": "path required"})
+            terms = chat._parse_search_terms(q)
+            if not terms:
+                return self._send_json(400, {"error": "q required"})
+            try:
+                result = chat.search_project_text(
+                    project_path, terms, mode, include_terms=include_terms, exclude_terms=exclude_terms
+                )
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            abstracts = chat.search_project_abstracts(
+                project_path, terms, mode, include_terms=include_terms, exclude_terms=exclude_terms
+            )
+            result["abstracts_available"] = abstracts["available"]
+            result["abstracts"] = abstracts["entries"]
+            return self._send_json(200, result)
+
+        if pathname == "/api/chat/search/all" and method == "GET":
+            query = parse_qs(urlsplit(self.path).query)
+            q = (query.get("q") or [""])[0]
+            mode = (query.get("mode") or ["and"])[0]
+            mode = mode if mode in ("and", "or") else "and"
+            include_terms = chat._parse_search_terms((query.get("include") or [""])[0])
+            exclude_terms = chat._parse_search_terms((query.get("exclude") or [""])[0])
+            terms = chat._parse_search_terms(q)
+            if not terms:
+                return self._send_json(400, {"error": "q required"})
+            result = chat.search_all_projects_text(
+                terms, mode, include_terms=include_terms, exclude_terms=exclude_terms
+            )
             return self._send_json(200, result)
 
         if pathname == "/api/chat/attach-file" and method == "POST":

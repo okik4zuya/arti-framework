@@ -15,6 +15,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import platform_ops
+
 ARTI_HOME = Path(__file__).resolve().parent.parent.parent
 if str(ARTI_HOME) not in sys.path:
     sys.path.insert(0, str(ARTI_HOME))
@@ -226,6 +228,16 @@ def create_session(name=None, project_id=None, linked_project_path=None, model_i
 PROJECT_FILE_EXTENSIONS = (".md", ".txt", ".ris", ".bib", ".csv", ".tsv", ".json")
 PROJECT_FILE_SKIP_DIRS = {".git", "node_modules", "__pycache__"}
 
+BINARY_PREVIEWABLE_EXTENSIONS = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+    ".pdf": "application/pdf",
+}
+
 
 def _require_known_project_path(conn, project_path):
     row = conn.execute(
@@ -329,6 +341,48 @@ def read_project_file(project_path, abs_path):
     return target.read_text(encoding="utf-8", errors="replace")
 
 
+def read_project_file_raw(project_path, abs_path):
+    """Binary-safe counterpart to read_project_file, for previewing images and
+    PDFs -- returns raw bytes plus the MIME type instead of decoding as text."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    mime = BINARY_PREVIEWABLE_EXTENSIONS.get(target.suffix.lower())
+    if mime is None:
+        raise ValueError("File type is not previewable")
+    return target.read_bytes(), mime
+
+
+def open_project_file(project_path, abs_path):
+    """Launches abs_path in its OS-default application (the Files panel's
+    three-dot "Open" action) -- for files with no inline preview."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    platform_ops.open_file_default(target)
+
+
+def open_project_file_with_dialog(project_path, abs_path):
+    """Same as open_project_file, but shows the OS's native "Open with..."
+    application chooser instead of launching the default association."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    platform_ops.open_file_with_dialog(target)
+
+
 def write_project_file(project_path, abs_path, content):
     with arti_db._lock:
         conn = arti_db._connect()
@@ -386,6 +440,361 @@ def attach_file_as_context(session_id, project_path, abs_path):
     rel_path = str(target.relative_to(Path(project_path).resolve())).replace("\\", "/")
     content = f"# File: {rel_path}\n\n{text}"
     return add_message(session_id, role="system", content=content, is_context=1)
+
+
+# ---------------------------------------------------------------------------
+# cross-file content search (Search panel) -- greps a project's (or every
+# registered project's) text files on demand, no persistent index
+# ---------------------------------------------------------------------------
+
+SEARCH_TEXT_EXTENSIONS = PROJECT_FILE_EXTENSIONS + (".yaml", ".yml", ".py", ".html", ".css", ".js")
+SEARCH_MAX_FILE_BYTES = 2 * 1024 * 1024
+SEARCH_SNIPPET_WORD_RADIUS = 30  # words kept before/after the first match -- ~60 words total
+
+
+def _parse_search_terms(q):
+    """Splits a raw query string on commas only -- spaces inside a term are
+    literal, so a phrase like 'climate change' typed without a comma stays
+    one term. Shared by the scoped and global search routes so term-parsing
+    can't drift between them."""
+    return [t.strip() for t in (q or "").split(",") if t.strip()]
+
+
+def _iter_searchable_files(project_path, max_files_scanned=None):
+    """Walks project_path directly (same skip-dir/dotfile rules as
+    list_project_files) rather than going through that function's eager,
+    fully-sorted list -- so a max_files_scanned cap can stop the walk itself
+    early on a huge project, instead of only capping after an unbounded
+    os.walk already paid for the full directory tree."""
+    root = Path(project_path)
+    yielded = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            d for d in dirnames if d not in PROJECT_FILE_SKIP_DIRS and not d.startswith(".")
+        ]
+        for fn in filenames:
+            if fn.startswith("."):
+                continue
+            if not fn.lower().endswith(SEARCH_TEXT_EXTENSIONS):
+                continue
+            abs_path = Path(dirpath) / fn
+            try:
+                if os.path.getsize(abs_path) > SEARCH_MAX_FILE_BYTES:
+                    continue
+            except OSError:
+                continue
+            yield {
+                "rel_path": str(abs_path.relative_to(root)).replace("\\", "/"),
+                "abs_path": str(abs_path),
+            }
+            yielded += 1
+            if max_files_scanned is not None and yielded >= max_files_scanned:
+                return
+
+
+def _merge_ranges(ranges):
+    """Merges overlapping/adjacent [start, end) ranges so multi-term matches
+    (e.g. 'cat' and 'category' hitting the same spot) don't produce malformed
+    nested <mark> tags on the frontend."""
+    if not ranges:
+        return []
+    ranges = sorted(ranges)
+    merged = [list(ranges[0])]
+    for start, end in ranges[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [tuple(r) for r in merged]
+
+
+def _find_all(haystack_lower, needle_lower):
+    positions = []
+    if not needle_lower:
+        return positions
+    start = 0
+    while True:
+        idx = haystack_lower.find(needle_lower, start)
+        if idx == -1:
+            break
+        positions.append(idx)
+        start = idx + len(needle_lower)
+    return positions
+
+
+def _build_snippet(line, terms_lower):
+    """Builds one snippet of ~SEARCH_SNIPPET_WORD_RADIUS*2 words centered on
+    the first matched term on this line (word-based, not char-based, so a
+    reader gets enough surrounding sentence to understand the hit), with
+    highlight_ranges as offsets into the *snippet* (not the original line)."""
+    line_lower = line.lower()
+    all_ranges = []
+    first_start = None
+    for term_lower in terms_lower:
+        for pos in _find_all(line_lower, term_lower):
+            all_ranges.append((pos, pos + len(term_lower)))
+            if first_start is None or pos < first_start:
+                first_start = pos
+    if first_start is None:
+        return None
+
+    tokens = list(re.finditer(r"\S+", line))
+    if not tokens:
+        return None
+    match_word_idx = next(
+        (i for i, tok in enumerate(tokens) if tok.end() > first_start), len(tokens) - 1
+    )
+    start_word = max(0, match_word_idx - SEARCH_SNIPPET_WORD_RADIUS)
+    end_word = min(len(tokens), match_word_idx + SEARCH_SNIPPET_WORD_RADIUS + 1)
+    start = tokens[start_word].start()
+    end = tokens[end_word - 1].end()
+
+    prefix = "…" if start > 0 else ""
+    suffix = "…" if end < len(line) else ""
+    snippet = prefix + line[start:end] + suffix
+    offset = start - len(prefix)
+    ranges_in_snippet = []
+    for r_start, r_end in all_ranges:
+        s = r_start - offset
+        e = r_end - offset
+        if e <= 0 or s >= len(snippet):
+            continue
+        ranges_in_snippet.append((max(0, s), min(len(snippet), e)))
+    return snippet, _merge_ranges(ranges_in_snippet)
+
+
+def _passes_refinement(rel_path_lower, text_lower, include_lower, exclude_lower):
+    """The include/exclude refinement fields apply on top of the main query,
+    testing filename (full rel_path, not just the basename -- so excluding
+    'drafts' can drop a whole subfolder) OR content. A file is dropped if any
+    exclude term hits either; if include terms are given, every one of them
+    must hit filename-or-content for the file to survive."""
+    if exclude_lower and any(t in rel_path_lower or t in text_lower for t in exclude_lower):
+        return False
+    if include_lower and not all(t in rel_path_lower or t in text_lower for t in include_lower):
+        return False
+    return True
+
+
+def _read_text_lower_safe(abs_path):
+    try:
+        return Path(abs_path).read_text(encoding="utf-8", errors="replace").lower()
+    except OSError:
+        return ""
+
+
+def _search_filenames(project_path, terms_lower, combine, max_file_results, include_lower, exclude_lower):
+    """Files tab: matches the *filename* only (not content) against the main
+    query terms -- cheap enough to run over every file in the project
+    regardless of scope, no content read needed unless include/exclude terms
+    are set, in which case only the already-name-matched candidates get their
+    content read to test the refinement."""
+    files_out = []
+    files_truncated = False
+    needs_content = bool(include_lower) or bool(exclude_lower)
+    for f in list_project_files(project_path):
+        rel_path_lower = f["rel_path"].lower()
+        name_lower = Path(f["rel_path"]).name.lower()
+        if not combine(term in name_lower for term in terms_lower):
+            continue
+        if needs_content:
+            text_lower = _read_text_lower_safe(f["abs_path"])
+            if not _passes_refinement(rel_path_lower, text_lower, include_lower, exclude_lower):
+                continue
+        if len(files_out) >= max_file_results:
+            files_truncated = True
+            break
+        files_out.append({"rel_path": f["rel_path"], "abs_path": f["abs_path"]})
+    return files_out, files_truncated
+
+
+def search_project_text(project_path, terms, mode="and", max_file_results=200,
+                         max_snippets_per_file=5, max_total_snippets=500, max_files_scanned=None,
+                         include_terms=None, exclude_terms=None):
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    if not terms:
+        return {"files": [], "snippets": [], "files_truncated": False, "snippets_truncated": False}
+
+    terms_lower = [t.lower() for t in terms]
+    combine = all if mode == "and" else any
+    include_lower = [t.lower() for t in (include_terms or [])]
+    exclude_lower = [t.lower() for t in (exclude_terms or [])]
+
+    files_out, files_truncated = _search_filenames(
+        project_path, terms_lower, combine, max_file_results, include_lower, exclude_lower
+    )
+
+    snippets_out = []
+    snippets_truncated = False
+    scanned = 0
+
+    for f in _iter_searchable_files(project_path, max_files_scanned=max_files_scanned):
+        scanned += 1
+        try:
+            text = Path(f["abs_path"]).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        text_lower = text.lower()
+        if not combine(term in text_lower for term in terms_lower):
+            continue
+        if not _passes_refinement(f["rel_path"].lower(), text_lower, include_lower, exclude_lower):
+            continue
+
+        file_snippets = []
+        for line_no, line in enumerate(text.split("\n"), start=1):
+            if len(file_snippets) >= max_snippets_per_file:
+                break
+            built = _build_snippet(line, terms_lower)
+            if built is None:
+                continue
+            snippet, ranges = built
+            file_snippets.append({
+                "rel_path": f["rel_path"],
+                "abs_path": f["abs_path"],
+                "line_number": line_no,
+                "snippet": snippet,
+                "highlight_ranges": [list(r) for r in ranges],
+            })
+
+        if len(snippets_out) < max_total_snippets:
+            remaining = max_total_snippets - len(snippets_out)
+            snippets_out.extend(file_snippets[:remaining])
+            if len(file_snippets) > remaining:
+                snippets_truncated = True
+        else:
+            snippets_truncated = True
+
+    if max_files_scanned is not None and scanned >= max_files_scanned:
+        snippets_truncated = True
+
+    return {
+        "files": files_out,
+        "snippets": snippets_out,
+        "files_truncated": files_truncated,
+        "snippets_truncated": snippets_truncated,
+    }
+
+
+def _load_lit_module():
+    """dashboard/server/lit.py, imported lazily (like search_all_projects_text
+    does for db.py) to avoid a hard import-order dependency between sibling
+    server modules."""
+    import lit as dashboard_lit
+    return dashboard_lit
+
+
+def search_project_abstracts(project_path, terms, mode="and", include_terms=None, exclude_terms=None,
+                              max_results=200):
+    """Abstracts tab: searches a project's arti-lit.db bibliography (title/
+    citation/journal/abstract text) -- but only reads it if the DB already
+    exists. Deliberately does NOT call lit.list_references (which runs
+    init_db() and would create literature/arti-lit.db as a side effect of
+    merely searching) when the project has never used ARTi-ref/arti-lit."""
+    db_path = Path(project_path) / "literature" / "arti-lit.db"
+    if not db_path.exists():
+        return {"available": False, "entries": []}
+
+    terms_lower = [t.lower() for t in terms]
+    combine = all if mode == "and" else any
+    include_lower = [t.lower() for t in (include_terms or [])]
+    exclude_lower = [t.lower() for t in (exclude_terms or [])]
+
+    lit_mod = _load_lit_module()
+    rows = lit_mod.list_references(project_path)
+
+    entries_out = []
+    for r in rows:
+        haystack = " ".join(
+            str(r.get(f) or "") for f in ("citation", "key", "abstract", "journal_name", "used_in")
+        ).lower()
+        if not combine(term in haystack for term in terms_lower):
+            continue
+        if not _passes_refinement(haystack, "", include_lower, exclude_lower):
+            continue
+
+        abstract_flat = " ".join((r.get("abstract") or "").split())
+        built = _build_snippet(abstract_flat, terms_lower) if abstract_flat else None
+        snippet, ranges = built if built else (None, [])
+        entries_out.append({
+            "key": r.get("key"),
+            "citation": r.get("citation"),
+            "doi": r.get("doi"),
+            "journal_name": r.get("journal_name"),
+            "read_status": r.get("read_status"),
+            "local_file": r.get("local_file"),
+            "abstract_snippet": snippet,
+            "highlight_ranges": [list(x) for x in ranges] if ranges else [],
+        })
+        if len(entries_out) >= max_results:
+            break
+
+    return {"available": True, "entries": entries_out}
+
+
+def search_all_projects_text(terms, mode="and", per_project_file_cap=50, per_project_snippet_cap=20,
+                              global_file_cap=300, global_snippet_cap=300, per_project_scan_cap=60,
+                              include_terms=None, exclude_terms=None):
+    db = _load_arti_db_module_for_projects()
+    projects = db.list_projects()
+
+    files_out, snippets_out = [], []
+    files_truncated = snippets_truncated = False
+
+    for p in projects:
+        if len(files_out) >= global_file_cap:
+            files_truncated = True
+            break
+        project_path = p.get("path") or p.get("project_path")
+        project_name = p.get("name") or p.get("topic")
+        if not project_path:
+            continue
+        try:
+            result = search_project_text(
+                project_path, terms, mode,
+                max_file_results=per_project_file_cap,
+                max_snippets_per_file=5,
+                max_total_snippets=per_project_snippet_cap,
+                max_files_scanned=per_project_scan_cap,
+                include_terms=include_terms,
+                exclude_terms=exclude_terms,
+            )
+        except ValueError:
+            continue
+
+        for f in result["files"]:
+            if len(files_out) >= global_file_cap:
+                files_truncated = True
+                break
+            f = dict(f, project_path=project_path, project_name=project_name)
+            files_out.append(f)
+        for s in result["snippets"]:
+            if len(snippets_out) >= global_snippet_cap:
+                snippets_truncated = True
+                break
+            s = dict(s, project_path=project_path, project_name=project_name)
+            snippets_out.append(s)
+        files_truncated = files_truncated or result["files_truncated"]
+        snippets_truncated = snippets_truncated or result["snippets_truncated"]
+
+    return {
+        "files": files_out,
+        "snippets": snippets_out,
+        "files_truncated": files_truncated,
+        "snippets_truncated": snippets_truncated,
+    }
+
+
+def _load_arti_db_module_for_projects():
+    """db.py (dashboard/server/db.py) owns list_projects(); imported lazily
+    here to avoid a hard import-order dependency between the two sibling
+    server modules."""
+    import db as dashboard_db
+    return dashboard_db
 
 
 def update_session(session_id, name=None, system_role=None, temperature=None, project_id=_UNSET, model_id=_UNSET,

@@ -443,7 +443,107 @@
   .files-picker-option:hover .files-picker-option-name{ color:var(--accent); }
   .files-picker-option.active{ background:var(--accent-soft); }
   .files-picker-option.active .files-picker-option-name{ color:var(--accent); font-weight:600; }
+  .files-picker-option.highlighted{ background:var(--accent-soft); }
+  .files-picker-option.highlighted .files-picker-option-name{ color:var(--accent); }
   .files-picker-empty{ padding:8px 9px; font-size:12.5px; color:var(--text-muted); }
+  .search-picker-all{ border-bottom:1px solid var(--border); margin-bottom:4px; padding-bottom:8px; }
+  .search-picker-all .files-picker-option-name{ font-weight:600; }
+
+  /* ---- Search panel ---- */
+  #searchPanel{ height:calc(100vh - 64px); }
+  #searchPanel .panel-head{ align-items:flex-start; }
+  .search-header-top{ display:flex; align-items:flex-start; gap:16px; flex:1 1 100%; flex-wrap:wrap; }
+  .search-header-top > .panel-title{ flex:none; padding-top:6px; }
+  .search-header-fields{ flex:1; min-width:280px; display:flex; flex-direction:column; gap:8px; }
+  .search-field-scope{ min-width:0; max-width:320px; }
+  .search-controls-row, .search-refine-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .search-field{ min-width:0; }
+  .search-field-query{ flex:1 1 240px; }
+  .search-query-input{ width:100%; }
+  .search-field-mode{ flex:none; }
+  .search-field-include, .search-field-exclude{ flex:1 1 220px; }
+  .search-refine-input{ width:100%; font-size:13px; padding:7px 12px; }
+  #searchExcludeInput:not(:placeholder-shown){ border-color:var(--amber); }
+  #searchIncludeInput:not(:placeholder-shown){ border-color:var(--accent); }
+  @media (max-width: 640px){
+    .search-field-scope{ max-width:none; }
+    .search-field-query, .search-field-mode,
+    .search-field-include, .search-field-exclude{ flex-basis:100%; }
+  }
+
+  /* Compact AND/OR pill switch (replaces the old two-button toggle) --
+     AND = knob left / accent track, OR = knob right / amber track. */
+  .and-or-toggle{
+    display:flex; align-items:center; gap:6px; padding:0; border:none; background:none;
+    cursor:pointer; font-family:"Inter",system-ui,sans-serif; user-select:none;
+  }
+  .and-or-toggle-label{
+    font-size:11.5px; font-weight:600; color:var(--text-muted); letter-spacing:.02em;
+    transition:color .15s ease;
+  }
+  .and-or-toggle[aria-checked="false"] .and-or-toggle-and{ color:var(--accent); }
+  .and-or-toggle[aria-checked="true"] .and-or-toggle-or{ color:var(--amber); }
+  .and-or-toggle-track{
+    position:relative; width:34px; height:18px; border-radius:20px; background:var(--accent);
+    transition:background .15s ease; flex:none;
+  }
+  .and-or-toggle[aria-checked="true"] .and-or-toggle-track{ background:var(--amber); }
+  .and-or-toggle-knob{
+    position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 2px rgba(16,24,40,0.35); transition:left .15s ease;
+  }
+  .and-or-toggle[aria-checked="true"] .and-or-toggle-knob{ left:18px; }
+  .and-or-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+  .search-tabs{
+    display:flex; gap:2px; margin:14px -20px -16px; padding:0 12px; border-top:1px solid var(--border);
+    flex-basis:100%; overflow-x:auto;
+  }
+  .search-tab{
+    font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:500; padding:10px 8px;
+    border:none; background:none; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent;
+    display:flex; align-items:center; gap:6px; margin-bottom:-1px; white-space:nowrap;
+  }
+  .search-tab:hover{ color:var(--text); }
+  .search-tab.active{ color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+  .search-tab.disabled{ color:var(--text-muted); opacity:.5; cursor:not-allowed; }
+  .search-tab.disabled:hover{ color:var(--text-muted); }
+  .search-panel-body{ flex:1; overflow-y:auto; padding:14px 20px 20px; }
+  .search-loading, .search-empty-state{
+    padding:32px 12px; text-align:center; color:var(--text-muted); font-size:13.5px;
+  }
+  .search-truncated-note{
+    font-size:12.5px; color:var(--amber); background:var(--amber-soft); border-radius:8px;
+    padding:8px 12px; margin-bottom:10px;
+  }
+  .search-results-list{ display:flex; flex-direction:column; gap:8px; }
+  .search-results-list[hidden]{ display:none; }
+  .search-result-file, .search-result-snippet, .search-result-abstract{
+    border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    background:var(--surface); transition:border-color .1s ease, background .1s ease;
+  }
+  .search-result-file, .search-result-snippet{ cursor:pointer; }
+  .search-result-file{ display:flex; align-items:center; gap:10px; }
+  .search-result-file-path{ flex:1; min-width:0; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .search-result-file:hover, .search-result-snippet:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .search-result-project{
+    font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;
+    letter-spacing:.02em; margin-right:8px;
+  }
+  .search-result-snippet-head{
+    font-size:12.5px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; flex-wrap:wrap;
+  }
+  .search-result-line{ color:var(--text-muted); margin-left:2px; }
+  .search-result-snippet-text{ font-size:13.5px; line-height:1.5; font-family:"SFMono-Regular",Consolas,monospace; }
+  .search-result-abstract-head{
+    font-size:13.5px; font-weight:600; line-height:1.4; margin-bottom:4px; display:flex;
+    align-items:baseline; gap:8px; flex-wrap:wrap;
+  }
+  .search-result-abstract-status{
+    font-family:"Inter",system-ui,sans-serif; font-size:11px; font-weight:600; color:var(--accent);
+    background:var(--accent-soft); padding:2px 8px; border-radius:20px; text-transform:capitalize;
+  }
+  .search-result-abstract-meta{ font-size:12px; color:var(--text-muted); margin-bottom:6px; }
+  .search-result-abstract .search-result-snippet-text{ font-family:inherit; }
   .files-preview-panel{
     flex:1; min-width:280px; display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border);
     background:var(--surface);
@@ -590,23 +690,33 @@
   .files-select-all{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); cursor:pointer; flex:none; }
   .chat-project-files-select-row .btn{ padding:5px 9px; font-size:12px; white-space:nowrap; }
   .chat-project-files-select-row .menu-toggle{ font-family:"Inter",system-ui,sans-serif; }
-  .chat-file-list{ overflow-y:auto; overflow-x:auto; padding:6px; flex:1; min-height:0; }
+  .chat-file-list{ overflow-y:auto; overflow-x:hidden; padding:6px; flex:1; min-height:0; }
   .chat-file-item{
     display:flex; align-items:center; gap:6px;
     padding:7px 8px; border-radius:6px; font-size:12.5px;
-    width:max-content; min-width:100%;
+    width:100%;
   }
   .chat-file-item:hover{ background:var(--surface-2); }
   .chat-file-select{ flex:none; }
   .chat-file-name{
-    cursor:pointer; color:var(--text); white-space:nowrap;
-    font-family:"SFMono-Regular",Consolas,monospace; font-size:12px; flex:none;
+    cursor:pointer; color:var(--text);
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:12px;
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .chat-file-name:hover{ color:var(--accent); }
   .chat-file-name.no-preview{ cursor:default; }
   .chat-file-name.no-preview:hover{ color:var(--text); }
   .chat-file-type-icon{ flex:none; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
   .chat-file-attached-tag{ flex:none; color:var(--accent); font-size:12px; font-weight:700; }
+  .chat-file-item .row-menu{ flex:none; }
+  .chat-file-item .menu-toggle{
+    opacity:0; pointer-events:none; transition:opacity .1s ease;
+  }
+  .chat-file-item:hover .menu-toggle,
+  .chat-file-item:focus-within .menu-toggle,
+  .chat-file-item .row-menu:has(.menu-dropdown:not([hidden])) .menu-toggle{
+    opacity:1; pointer-events:auto;
+  }
   .chat-project-files-select-row .btn:disabled,
   .chat-project-files-select-row .menu-toggle:disabled{ opacity:.5; cursor:default; }
   .chat-bulk-job-modal{ width:480px; max-width:90vw; }
@@ -655,11 +765,47 @@
   }
   .preview-filename-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .files-preview-content .modal-body{ flex:1; overflow-y:auto; padding:20px 22px; }
+  .files-preview-content .modal-body.flush{ display:block; padding:0; overflow:hidden; }
   #chatPreviewBody.markdown-body{ font-size:14px; }
   #chatPreviewBody.plain-text-body{
     font-family:"SFMono-Regular",Consolas,monospace; font-size:13px; line-height:1.6;
     white-space:pre-wrap; word-break:break-word; margin:0; color:var(--text);
   }
+  .image-preview-body{ position:relative; height:100%; }
+  .image-viewer-container{
+    position:absolute; inset:0; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    touch-action:none;
+  }
+  .image-viewer-container.zoomed{ cursor:grab; }
+  .image-viewer-container.dragging{ cursor:grabbing; }
+  .image-viewer-container img{
+    max-width:100%; max-height:100%; object-fit:contain; border-radius:6px;
+    user-select:none; -webkit-user-drag:none;
+  }
+  .pdf-preview-body{ position:relative; height:100%; }
+  .preview-zoom-toolbar{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:2;
+    display:flex; align-items:center; gap:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:999px;
+    padding:6px 14px; box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+  .preview-zoom-controls{ display:flex; align-items:center; gap:6px; }
+  .preview-zoom-controls .btn{
+    width:26px; height:26px; padding:0; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; line-height:1;
+  }
+  .preview-zoom-toolbar .preview-zoom-label{ font-size:12px; color:var(--text-muted); min-width:38px; text-align:center; }
+  .preview-zoom-toolbar .btn.text{ width:auto; border-radius:999px; padding:0 10px; }
+  .pdf-page-indicator{
+    font-size:12px; color:var(--text-muted); border-left:1px solid var(--border); padding-left:12px;
+    white-space:nowrap;
+  }
+  .pdf-viewer-container{
+    position:absolute; inset:0; overflow:auto; background:var(--surface-muted, #525659);
+    --highlight-bg-color: var(--amber-soft); --highlight-selected-bg-color: var(--amber);
+    --pdfViewer-padding-bottom: 56px;
+  }
+  .pdf-viewer-container .pdfViewer .page{ margin:12px auto; box-shadow:0 1px 6px rgba(0,0,0,0.35); }
   .file-preview-edit{ height:100%; display:flex; flex-direction:column; }
   .file-preview-edit textarea{
     flex:1; width:100%; font-family:"SFMono-Regular",Consolas,monospace; font-size:13.5px; line-height:1.6;
@@ -888,7 +1034,8 @@
     <nav class="side-nav">
       <button type="button" class="nav-item active" data-view="projects">Projects</button>
       <button type="button" class="nav-item" data-view="ideas">Ideas</button>
-      <button type="button" class="nav-item" data-view="files">Files</button>
+      <button type="button" class="nav-item" data-view="files">Workspace</button>
+      <button type="button" class="nav-item" data-view="search">Search</button>
       <button type="button" class="nav-item" data-view="settings">Settings</button>
     </nav>
     <div class="side-spacer"></div>
@@ -946,7 +1093,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
         <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span>Files</span>
+      <span>Workspace</span>
     </button>
     <div class="files-main" id="filesMain">
       <div class="files-topbar">
@@ -1130,6 +1277,76 @@
       <span class="chat-bulk-job-pill-spinner" id="chatBulkJobPillSpinner"></span>
       <span id="chatBulkJobPillText">Working…</span>
     </button>
+  </div>
+
+  <div class="panel" id="searchPanel" hidden>
+    <div class="panel-head">
+    <div class="search-header-top">
+      <div class="panel-title">Search</div>
+      <div class="search-header-fields">
+      <div class="search-field search-field-scope">
+        <div class="files-project-picker-wrap" id="searchProjectPickerWrap">
+          <button type="button" class="files-picker-btn" id="searchProjectPickerBtn">
+            <span id="searchProjectPickerLabel">All projects</span>
+            <svg class="files-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="files-picker-dropdown" id="searchProjectPickerDropdown" hidden>
+            <input type="text" class="search-input" id="searchProjectPickerSearch" placeholder="Search projects…" autocomplete="off" />
+            <div class="files-picker-options" id="searchProjectPickerOptions"></div>
+          </div>
+        </div>
+      </div>
+      <div class="search-controls-row">
+        <div class="search-field search-field-query">
+          <input type="text" class="search-input search-query-input" id="searchQueryInput"
+            placeholder="Separate multiple terms with commas" autocomplete="off" />
+        </div>
+        <div class="search-field search-field-mode">
+          <button type="button" class="and-or-toggle" id="searchModeToggle" role="switch" aria-checked="false" aria-label="Match mode: AND / OR">
+            <span class="and-or-toggle-label and-or-toggle-and">AND</span>
+            <span class="and-or-toggle-track"><span class="and-or-toggle-knob"></span></span>
+            <span class="and-or-toggle-label and-or-toggle-or">OR</span>
+          </button>
+        </div>
+      </div>
+      <div class="search-refine-row">
+        <div class="search-field search-field-include">
+          <input type="text" class="search-input search-refine-input" id="searchIncludeInput"
+            placeholder="Include: filename or content also has…" autocomplete="off" />
+        </div>
+        <div class="search-field search-field-exclude">
+          <input type="text" class="search-input search-refine-input" id="searchExcludeInput"
+            placeholder="Exclude: filename or content has…" autocomplete="off" />
+        </div>
+      </div>
+      </div>
+    </div>
+      <div class="search-tabs">
+        <button type="button" class="search-tab active" id="searchTabFiles" data-tab="files">
+          Files <span class="count-badge" id="searchFilesCount">0</span>
+        </button>
+        <button type="button" class="search-tab" id="searchTabMarkdown" data-tab="markdown">
+          Markdown <span class="count-badge" id="searchMarkdownCount">0</span>
+        </button>
+        <button type="button" class="search-tab" id="searchTabRisBib" data-tab="risbib">
+          Ris &amp; Bib <span class="count-badge" id="searchRisBibCount">0</span>
+        </button>
+        <button type="button" class="search-tab" id="searchTabOthers" data-tab="other">
+          Others <span class="count-badge" id="searchOthersCount">0</span>
+        </button>
+        <button type="button" class="search-tab" id="searchTabAbstracts" data-tab="abstracts" title="Select a single project to search its literature library">
+          Abstracts <span class="count-badge" id="searchAbstractsCount">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="search-panel-body">
+      <div class="search-loading" id="searchLoadingIndicator" hidden>Searching…</div>
+      <div class="search-empty-state" id="searchEmptyState">Search across your ARTi projects — type at least 2 characters.</div>
+      <div class="search-truncated-note" id="searchTruncatedNote" hidden>Showing the first results only — narrow your search for more.</div>
+      <div class="search-results-list" id="searchResultsFiles"></div>
+      <div class="search-results-list" id="searchResultsText" hidden></div>
+      <div class="search-results-list" id="searchResultsAbstracts" hidden></div>
+    </div>
   </div>
 
   <div class="panel" id="settingsPanel" hidden>
@@ -1456,9 +1673,17 @@
 
 <link rel="stylesheet" href="/lib/github-markdown.min.css">
 <link rel="stylesheet" href="/lib/katex.min.css">
+<link rel="stylesheet" href="/lib/pdf_viewer.min.css">
 <script src="/lib/marked.min.js"></script>
 <script src="/lib/katex.min.js"></script>
 <script src="/lib/auto-render.min.js"></script>
+<script src="/lib/pdf.min.js"></script>
+<script src="/lib/pdf_viewer.min.js"></script>
+<script>
+  if (typeof pdfjsLib !== "undefined") {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/lib/pdf.worker.min.js";
+  }
+</script>
 <script>
 (function(){
   var API = "/api";
@@ -1477,8 +1702,6 @@
     '<path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>';
   var ICON_REFERENCES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
     '<path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/></svg>';
-  var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
-    '<path d="M4 5h16v11H8l-4 4z" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   var ICON_MODEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
     '<rect x="7" y="7" width="10" height="10" rx="1.5"/>' +
     '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.5 4.5l2 2M17.5 17.5l2 2M19.5 4.5l-2 2M6.5 17.5l-2 2" stroke-linecap="round"/></svg>';
@@ -1493,6 +1716,9 @@
     '<path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>';
   var ICON_INSPECT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
     '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.5-4.5" stroke-linecap="round"/></svg>';
+  var ICON_WORKSPACE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<rect x="3" y="4" width="18" height="16" rx="1.5" stroke-linejoin="round"/>' +
+    '<path d="M9 4v16" stroke-linecap="round"/></svg>';
 
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -1629,7 +1855,7 @@
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">' + ICON_FOLDER + '<span>Open folder</span></button>' +
           '<button class="icon-btn icon-only" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '" title="Open VS Code">' + ICON_VSCODE + '</button>' +
           '<button class="icon-btn icon-only" data-role="references" data-path="' + escapeHtml(r.path) + '" title="References">' + ICON_REFERENCES + '</button>' +
-          '<button class="icon-btn icon-only" data-role="open-in-files" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '" title="Open in Files">' + ICON_CHAT + '</button>' +
+          '<button class="icon-btn icon-only" data-role="open-in-files" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '" title="Open in Workspace">' + ICON_WORKSPACE + '</button>' +
           '<div class="row-menu">' +
             '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
             '<div class="menu-dropdown" hidden>' + lifecycleBtns + '</div>' +
@@ -1785,6 +2011,7 @@
   var settingsPanel = document.getElementById("settingsPanel");
   var chatLoaded = false;
   var settingsLoaded = false;
+  var searchLoaded = false;
 
   var mainSidebarCollapsed = false;
   try { mainSidebarCollapsed = localStorage.getItem("mainSidebarCollapsed") === "1"; } catch(e){ mainSidebarCollapsed = false; }
@@ -1800,24 +2027,32 @@
   document.getElementById("mainSidebarCollapseBtn").addEventListener("click", function(){ setMainSidebarCollapsed(true); });
   document.getElementById("mainSidebarExpandBtn").addEventListener("click", function(){ setMainSidebarCollapsed(false); });
 
+  function switchMainView(view){
+    Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
+      b.classList.toggle("active", b.getAttribute("data-view") === view);
+    });
+    projectsPanel.hidden = view !== "projects";
+    ideasPanel.hidden = view !== "ideas";
+    filesPanel.hidden = view !== "files";
+    var searchPanelEl = document.getElementById("searchPanel");
+    if (searchPanelEl) searchPanelEl.hidden = view !== "search";
+    settingsPanel.hidden = view !== "settings";
+    document.getElementById("mainEl").classList.toggle("files-full", view === "files");
+    if (view === "ideas" && !ideasLoaded) loadIdeas();
+    if (view === "files") {
+      renderFilesProjectPicker();
+      if (!chatLoaded) { chatLoaded = true; loadChatData().then(function(){ renderChatSidebar(); }); }
+      updateFilesResponsiveState();
+    }
+    if (view === "search") {
+      if (!searchLoaded) { searchLoaded = true; renderSearchProjectPicker(); }
+    }
+    if (view === "settings") { settingsLoaded = true; loadSettingsPanel(); }
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(btn){
     btn.addEventListener("click", function(){
-      var view = btn.getAttribute("data-view");
-      Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
-        b.classList.toggle("active", b === btn);
-      });
-      projectsPanel.hidden = view !== "projects";
-      ideasPanel.hidden = view !== "ideas";
-      filesPanel.hidden = view !== "files";
-      settingsPanel.hidden = view !== "settings";
-      document.getElementById("mainEl").classList.toggle("files-full", view === "files");
-      if (view === "ideas" && !ideasLoaded) loadIdeas();
-      if (view === "files") {
-        renderFilesProjectPicker();
-        if (!chatLoaded) { chatLoaded = true; loadChatData().then(function(){ renderChatSidebar(); }); }
-        updateFilesResponsiveState();
-      }
-      if (view === "settings") { settingsLoaded = true; loadSettingsPanel(); }
+      switchMainView(btn.getAttribute("data-view"));
     });
   });
 
@@ -2327,8 +2562,9 @@
     });
   }
 
-  // Switches to the Files tab for a given project, then auto-expands Fine AI
-  // (which lazily creates its session via ensureFineAiSession above).
+  // Switches to the Workspace tab for a given project. Fine AI stays
+  // collapsed by default (per-project state from applyFineAiCollapsedForProject
+  // below), same as picking a project from the Workspace tab's own picker.
   function openProjectInFiles(projectPath, projectName){
     Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
       b.classList.toggle("active", b.getAttribute("data-view") === "files");
@@ -2336,16 +2572,15 @@
     projectsPanel.hidden = true;
     ideasPanel.hidden = true;
     settingsPanel.hidden = true;
+    var searchPanelEl = document.getElementById("searchPanel");
+    if (searchPanelEl) searchPanelEl.hidden = true;
     filesPanel.hidden = false;
     document.getElementById("mainEl").classList.add("files-full");
-    renderFilesPanel(projectPath);
+    var loaded = renderFilesPanel(projectPath);
     renderFilesProjectPicker();
     updateFilesResponsiveState();
-    setFineAiCollapsed(projectPath, false);
-    ensureFineAiSession(projectPath, projectName).then(function(sessionId){
-      if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
-      else renderChatSidebar();
-    });
+    applyFineAiCollapsedForProject(projectPath);
+    return loaded;
   }
 
   function reloadChatSessions(){
@@ -2615,6 +2850,8 @@
   var filesProjectPickerRows = [];
   var filesProjectPickerQuery = "";
   var filesProjectPickerOpen = false;
+  var filesProjectPickerFiltered = [];
+  var filesProjectPickerActiveIndex = -1;
 
   function renderFilesProjectPicker(){
     filesProjectPickerRows = allProjects.slice().sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
@@ -2637,22 +2874,45 @@
     var rows = !q ? filesProjectPickerRows : filesProjectPickerRows.filter(function(p){
       return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
     });
+    filesProjectPickerFiltered = rows;
+    if (filesProjectPickerActiveIndex >= rows.length) filesProjectPickerActiveIndex = rows.length - 1;
     if (!rows.length){
       list.innerHTML = '<div class="files-picker-empty">No matching projects</div>';
       return;
     }
-    list.innerHTML = rows.map(function(p){
-      var active = p.path === filesCurrentProjectPath ? " active" : "";
-      return '<div class="files-picker-option' + active + '" data-path="' + escapeHtml(p.path) + '">' +
+    list.innerHTML = rows.map(function(p, i){
+      var cls = p.path === filesCurrentProjectPath ? " active" : "";
+      if (i === filesProjectPickerActiveIndex) cls += " highlighted";
+      return '<div class="files-picker-option' + cls + '" data-path="' + escapeHtml(p.path) + '">' +
         '<div class="files-picker-option-name">' + escapeHtml(p.name) + '</div>' +
         '<div class="files-picker-option-path">' + escapeHtml(p.path) + '</div>' +
       '</div>';
     }).join("");
-    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt){
+    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt, i){
       opt.addEventListener("click", function(){
         selectFilesProjectPicker(opt.getAttribute("data-path"));
       });
+      opt.addEventListener("mouseenter", function(){
+        filesProjectPickerActiveIndex = i;
+        highlightFilesProjectPickerOption();
+      });
     });
+  }
+
+  function highlightFilesProjectPickerOption(){
+    var list = document.getElementById("filesProjectPickerOptions");
+    if (!list) return;
+    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt, i){
+      var isActive = i === filesProjectPickerActiveIndex;
+      opt.classList.toggle("highlighted", isActive);
+      if (isActive) opt.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function moveFilesProjectPickerSelection(delta){
+    if (!filesProjectPickerFiltered.length) return;
+    filesProjectPickerActiveIndex = (filesProjectPickerActiveIndex + delta + filesProjectPickerFiltered.length) % filesProjectPickerFiltered.length;
+    highlightFilesProjectPickerOption();
   }
 
   function selectFilesProjectPicker(path){
@@ -2671,6 +2931,7 @@
     dd.hidden = false;
     btn.classList.add("open");
     filesProjectPickerQuery = "";
+    filesProjectPickerActiveIndex = -1;
     search.value = "";
     renderFilesProjectPickerOptions();
     setTimeout(function(){ search.focus(); }, 0);
@@ -2690,14 +2951,489 @@
   });
   document.getElementById("filesProjectPickerSearch").addEventListener("input", function(e){
     filesProjectPickerQuery = e.target.value;
+    filesProjectPickerActiveIndex = 0;
     renderFilesProjectPickerOptions();
   });
   document.getElementById("filesProjectPickerSearch").addEventListener("keydown", function(e){
-    if (e.key === "Escape"){ e.preventDefault(); closeFilesProjectPickerDropdown(); }
+    if (e.key === "Escape"){ e.preventDefault(); closeFilesProjectPickerDropdown(); return; }
+    if (e.key === "ArrowDown"){ e.preventDefault(); moveFilesProjectPickerSelection(1); return; }
+    if (e.key === "ArrowUp"){ e.preventDefault(); moveFilesProjectPickerSelection(-1); return; }
+    if (e.key === "Enter"){
+      e.preventDefault();
+      var idx = filesProjectPickerActiveIndex >= 0 ? filesProjectPickerActiveIndex : 0;
+      var pick = filesProjectPickerFiltered[idx];
+      if (pick) selectFilesProjectPicker(pick.path);
+      return;
+    }
   });
   document.addEventListener("click", function(e){
     var wrap = document.getElementById("filesProjectPickerWrap");
     if (filesProjectPickerOpen && wrap && !wrap.contains(e.target)) closeFilesProjectPickerDropdown();
+  });
+
+  // ---- Search panel: cross-project / cross-file text search ----
+
+  var searchCurrentProjectPath = null; // null = All projects (global scope)
+  var searchMode = "and";
+  var searchActiveTab = "files";
+  var searchDebounceTimer = null;
+  var searchRequestSeq = 0;
+
+  var searchProjectPickerRows = [];
+  var searchProjectPickerQuery = "";
+  var searchProjectPickerOpen = false;
+  var searchProjectPickerFiltered = []; // includes the "All projects" pseudo-row (path: "") when unfiltered
+  var searchProjectPickerActiveIndex = -1;
+
+  function renderSearchProjectPicker(){
+    searchProjectPickerRows = allProjects.slice().sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
+    renderSearchProjectPickerLabel();
+    renderSearchProjectPickerOptions();
+  }
+
+  function renderSearchProjectPickerLabel(){
+    var label = document.getElementById("searchProjectPickerLabel");
+    if (!label) return;
+    if (!searchCurrentProjectPath){ label.textContent = "All projects"; return; }
+    var p = searchProjectPickerRows.filter(function(x){ return x.path === searchCurrentProjectPath; })[0];
+    label.textContent = p ? p.name : "All projects";
+  }
+
+  function renderSearchProjectPickerOptions(){
+    var list = document.getElementById("searchProjectPickerOptions");
+    if (!list) return;
+    var q = searchProjectPickerQuery.trim().toLowerCase();
+    var rows = !q ? searchProjectPickerRows : searchProjectPickerRows.filter(function(p){
+      return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
+    });
+    var allRow = { path: "", name: "All projects", isAll: true };
+    searchProjectPickerFiltered = !q ? [allRow].concat(rows) : rows;
+    if (searchProjectPickerActiveIndex >= searchProjectPickerFiltered.length) {
+      searchProjectPickerActiveIndex = searchProjectPickerFiltered.length - 1;
+    }
+    if (!searchProjectPickerFiltered.length){
+      list.innerHTML = '<div class="files-picker-empty">No matching projects</div>';
+      return;
+    }
+    list.innerHTML = searchProjectPickerFiltered.map(function(p, i){
+      var isActive = p.isAll ? !searchCurrentProjectPath : p.path === searchCurrentProjectPath;
+      var cls = isActive ? " active" : "";
+      if (i === searchProjectPickerActiveIndex) cls += " highlighted";
+      if (p.isAll) cls += " search-picker-all";
+      return '<div class="files-picker-option' + cls + '" data-path="' + escapeHtml(p.path) + '">' +
+        '<div class="files-picker-option-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="files-picker-option-path">' + (p.isAll ? "Search every registered project" : escapeHtml(p.path)) + '</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt, i){
+      opt.addEventListener("click", function(){
+        selectSearchProjectPicker(opt.getAttribute("data-path") || null);
+      });
+      opt.addEventListener("mouseenter", function(){
+        searchProjectPickerActiveIndex = i;
+        highlightSearchProjectPickerOption();
+      });
+    });
+  }
+
+  function highlightSearchProjectPickerOption(){
+    var list = document.getElementById("searchProjectPickerOptions");
+    if (!list) return;
+    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt, i){
+      var isActive = i === searchProjectPickerActiveIndex;
+      opt.classList.toggle("highlighted", isActive);
+      if (isActive) opt.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function moveSearchProjectPickerSelection(delta){
+    if (!searchProjectPickerFiltered.length) return;
+    searchProjectPickerActiveIndex = (searchProjectPickerActiveIndex + delta + searchProjectPickerFiltered.length) % searchProjectPickerFiltered.length;
+    highlightSearchProjectPickerOption();
+  }
+
+  function selectSearchProjectPicker(path){
+    closeSearchProjectPickerDropdown();
+    searchCurrentProjectPath = path || null;
+    renderSearchProjectPickerLabel();
+    updateSearchAbstractsTabState();
+    runSearchDebounced(0);
+  }
+
+  function openSearchProjectPickerDropdown(){
+    var dd = document.getElementById("searchProjectPickerDropdown");
+    var btn = document.getElementById("searchProjectPickerBtn");
+    var search = document.getElementById("searchProjectPickerSearch");
+    if (!dd || !btn || !search || searchProjectPickerOpen) return;
+    searchProjectPickerOpen = true;
+    dd.hidden = false;
+    btn.classList.add("open");
+    searchProjectPickerQuery = "";
+    searchProjectPickerActiveIndex = -1;
+    search.value = "";
+    renderSearchProjectPickerOptions();
+    setTimeout(function(){ search.focus(); }, 0);
+  }
+
+  function closeSearchProjectPickerDropdown(){
+    var dd = document.getElementById("searchProjectPickerDropdown");
+    var btn = document.getElementById("searchProjectPickerBtn");
+    if (!dd) return;
+    searchProjectPickerOpen = false;
+    dd.hidden = true;
+    if (btn) btn.classList.remove("open");
+  }
+
+  var searchProjectPickerBtnEl = document.getElementById("searchProjectPickerBtn");
+  if (searchProjectPickerBtnEl){
+    searchProjectPickerBtnEl.addEventListener("click", function(){
+      if (searchProjectPickerOpen) closeSearchProjectPickerDropdown(); else openSearchProjectPickerDropdown();
+    });
+  }
+  var searchProjectPickerSearchEl = document.getElementById("searchProjectPickerSearch");
+  if (searchProjectPickerSearchEl){
+    searchProjectPickerSearchEl.addEventListener("input", function(e){
+      searchProjectPickerQuery = e.target.value;
+      searchProjectPickerActiveIndex = 0;
+      renderSearchProjectPickerOptions();
+    });
+    searchProjectPickerSearchEl.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); closeSearchProjectPickerDropdown(); return; }
+      if (e.key === "ArrowDown"){ e.preventDefault(); moveSearchProjectPickerSelection(1); return; }
+      if (e.key === "ArrowUp"){ e.preventDefault(); moveSearchProjectPickerSelection(-1); return; }
+      if (e.key === "Enter"){
+        e.preventDefault();
+        var idx = searchProjectPickerActiveIndex >= 0 ? searchProjectPickerActiveIndex : 0;
+        var pick = searchProjectPickerFiltered[idx];
+        if (pick) selectSearchProjectPicker(pick.path);
+        return;
+      }
+    });
+  }
+  document.addEventListener("click", function(e){
+    var wrap = document.getElementById("searchProjectPickerWrap");
+    if (searchProjectPickerOpen && wrap && !wrap.contains(e.target)) closeSearchProjectPickerDropdown();
+  });
+
+  // AND/OR toggle -- one global combinator for every term in the query, not
+  // a per-term operator (simpler UX, matches how the user wants this to work).
+  // A single compact switch, not two buttons: unchecked = AND, checked = OR.
+  var searchModeToggleEl = document.getElementById("searchModeToggle");
+  function setSearchMode(m){
+    searchMode = m;
+    if (searchModeToggleEl) searchModeToggleEl.setAttribute("aria-checked", m === "or" ? "true" : "false");
+    runSearchDebounced(0);
+  }
+  if (searchModeToggleEl){
+    searchModeToggleEl.addEventListener("click", function(){
+      setSearchMode(searchMode === "and" ? "or" : "and");
+    });
+  }
+
+  // Files tab, three text-result tabs split by file type (Markdown / Ris &
+  // Bib / Others -- all three share the same underlying snippet data,
+  // filtered client-side by extension on tab switch), and an Abstracts tab
+  // that reads a scoped project's arti-lit.db bibliography instead.
+  var searchTextTabs = ["markdown", "risbib", "other"];
+  var searchTabButtons = {
+    files: document.getElementById("searchTabFiles"),
+    markdown: document.getElementById("searchTabMarkdown"),
+    risbib: document.getElementById("searchTabRisBib"),
+    other: document.getElementById("searchTabOthers"),
+    abstracts: document.getElementById("searchTabAbstracts")
+  };
+  var searchLastData = null;
+  var searchLastTerms = [];
+
+  function _searchSnippetCategory(relPath){
+    var lower = (relPath || "").toLowerCase();
+    if (lower.endsWith(".md")) return "markdown";
+    if (lower.endsWith(".ris") || lower.endsWith(".bib")) return "risbib";
+    return "other";
+  }
+
+  // Abstracts only makes sense scoped to one project (global search skips
+  // arti-lit.db entirely) -- grey the tab out and refuse to switch to it
+  // while scope is "All projects".
+  function updateSearchAbstractsTabState(){
+    var btn = searchTabButtons.abstracts;
+    if (!btn) return;
+    var disabled = !searchCurrentProjectPath;
+    btn.classList.toggle("disabled", disabled);
+    btn.title = disabled ? "Select a single project to search its literature library" : "";
+    if (disabled && searchActiveTab === "abstracts") setSearchActiveTab("files");
+  }
+
+  function setSearchActiveTab(tab){
+    if (tab === "abstracts" && !searchCurrentProjectPath) return; // disabled in global scope
+    searchActiveTab = tab;
+    Object.keys(searchTabButtons).forEach(function(key){
+      var btn = searchTabButtons[key];
+      if (btn) btn.classList.toggle("active", key === tab);
+    });
+    var filesList = document.getElementById("searchResultsFiles");
+    var textList = document.getElementById("searchResultsText");
+    var abstractsList = document.getElementById("searchResultsAbstracts");
+    if (filesList) filesList.hidden = tab !== "files";
+    if (textList) textList.hidden = searchTextTabs.indexOf(tab) === -1;
+    if (abstractsList) abstractsList.hidden = tab !== "abstracts";
+    if (searchTextTabs.indexOf(tab) !== -1) renderSearchTextTab();
+    if (tab === "abstracts") renderSearchAbstractsTab();
+  }
+  Object.keys(searchTabButtons).forEach(function(key){
+    var btn = searchTabButtons[key];
+    if (btn) btn.addEventListener("click", function(){ setSearchActiveTab(key); });
+  });
+  updateSearchAbstractsTabState();
+
+  // Query input, debounced live search with stale-response protection
+  var searchQueryInputEl = document.getElementById("searchQueryInput");
+  if (searchQueryInputEl){
+    searchQueryInputEl.addEventListener("input", function(){ runSearchDebounced(300); });
+  }
+
+  // Include / exclude refinement -- filters by filename OR content, on top
+  // of the main query; only takes effect once a main search is running.
+  var searchIncludeInputEl = document.getElementById("searchIncludeInput");
+  var searchExcludeInputEl = document.getElementById("searchExcludeInput");
+  if (searchIncludeInputEl){
+    searchIncludeInputEl.addEventListener("input", function(){ runSearchDebounced(300); });
+  }
+  if (searchExcludeInputEl){
+    searchExcludeInputEl.addEventListener("input", function(){ runSearchDebounced(300); });
+  }
+
+  function _parseSearchTermsClient(q){
+    return (q || "").split(",").map(function(t){ return t.trim(); }).filter(function(t){ return t; });
+  }
+
+  function runSearchDebounced(delay){
+    clearTimeout(searchDebounceTimer);
+    var raw = searchQueryInputEl ? searchQueryInputEl.value : "";
+    var terms = _parseSearchTermsClient(raw);
+    if (!terms.length || raw.trim().length < 2){
+      searchRequestSeq++; // invalidate any in-flight request so a stale reply can't render over this
+      renderSearchEmptyState(raw.trim().length
+        ? "Type at least 2 characters to search."
+        : "Search across your ARTi projects — type at least 2 characters.");
+      return;
+    }
+    searchDebounceTimer = setTimeout(executeSearch, delay == null ? 300 : delay);
+  }
+
+  function renderSearchEmptyState(message){
+    var empty = document.getElementById("searchEmptyState");
+    var loading = document.getElementById("searchLoadingIndicator");
+    var filesList = document.getElementById("searchResultsFiles");
+    var textList = document.getElementById("searchResultsText");
+    var abstractsList = document.getElementById("searchResultsAbstracts");
+    var truncNote = document.getElementById("searchTruncatedNote");
+    searchLastData = null;
+    searchLastTerms = [];
+    if (loading) loading.hidden = true;
+    if (empty){ empty.hidden = false; empty.textContent = message; }
+    if (filesList) filesList.innerHTML = "";
+    if (textList) textList.innerHTML = "";
+    if (abstractsList) abstractsList.innerHTML = "";
+    if (truncNote) truncNote.hidden = true;
+    updateSearchTabCounts(0, { markdown: 0, risbib: 0, other: 0 }, 0);
+  }
+
+  function updateSearchTabCounts(fileCount, textCounts, abstractsCount){
+    var fc = document.getElementById("searchFilesCount");
+    if (fc) fc.textContent = fileCount;
+    var mc = document.getElementById("searchMarkdownCount");
+    if (mc) mc.textContent = textCounts.markdown;
+    var rc = document.getElementById("searchRisBibCount");
+    if (rc) rc.textContent = textCounts.risbib;
+    var oc = document.getElementById("searchOthersCount");
+    if (oc) oc.textContent = textCounts.other;
+    var ac = document.getElementById("searchAbstractsCount");
+    if (ac) ac.textContent = abstractsCount || 0;
+  }
+
+  function executeSearch(){
+    var raw = searchQueryInputEl ? searchQueryInputEl.value : "";
+    var terms = _parseSearchTermsClient(raw);
+    if (!terms.length) return;
+    var mySeq = ++searchRequestSeq;
+    var loading = document.getElementById("searchLoadingIndicator");
+    var empty = document.getElementById("searchEmptyState");
+    if (loading) loading.hidden = false;
+    if (empty) empty.hidden = true;
+    var q = terms.join(",");
+    var includeQ = searchIncludeInputEl ? searchIncludeInputEl.value.trim() : "";
+    var excludeQ = searchExcludeInputEl ? searchExcludeInputEl.value.trim() : "";
+    var refineParams = (includeQ ? "&include=" + encodeURIComponent(includeQ) : "") +
+      (excludeQ ? "&exclude=" + encodeURIComponent(excludeQ) : "");
+    var url = (searchCurrentProjectPath
+      ? "/chat/search?path=" + encodeURIComponent(searchCurrentProjectPath) + "&q=" + encodeURIComponent(q) + "&mode=" + searchMode
+      : "/chat/search/all?q=" + encodeURIComponent(q) + "&mode=" + searchMode) + refineParams;
+    api(url).then(function(data){
+      if (mySeq !== searchRequestSeq) return; // a newer keystroke superseded this request
+      if (loading) loading.hidden = true;
+      renderSearchResults(data, terms);
+    }).catch(function(err){
+      if (mySeq !== searchRequestSeq) return;
+      if (loading) loading.hidden = true;
+      renderSearchEmptyState("Search failed: " + err.message);
+    });
+  }
+
+  function _searchHighlight(text, ranges){
+    if (!ranges || !ranges.length) return escapeHtml(text);
+    var out = "";
+    var last = 0;
+    ranges.forEach(function(r){
+      var s = r[0], e = r[1];
+      out += escapeHtml(text.slice(last, s));
+      out += '<mark class="search-hit">' + escapeHtml(text.slice(s, e)) + '</mark>';
+      last = e;
+    });
+    out += escapeHtml(text.slice(last));
+    return out;
+  }
+
+  function renderSearchResults(data, terms){
+    var empty = document.getElementById("searchEmptyState");
+    var filesList = document.getElementById("searchResultsFiles");
+    var truncNote = document.getElementById("searchTruncatedNote");
+    var files = data.files || [];
+    var snippets = data.snippets || [];
+    var abstracts = data.abstracts || [];
+    searchLastData = data;
+    searchLastTerms = terms;
+
+    var textCounts = { markdown: 0, risbib: 0, other: 0 };
+    snippets.forEach(function(s){ textCounts[_searchSnippetCategory(s.rel_path)]++; });
+    updateSearchTabCounts(files.length, textCounts, abstracts.length);
+    if (truncNote) truncNote.hidden = !(data.files_truncated || data.snippets_truncated);
+
+    if (!files.length && !snippets.length && !abstracts.length){
+      if (empty){ empty.hidden = false; empty.textContent = "No matches."; }
+      if (filesList) filesList.innerHTML = "";
+      renderSearchTextTab();
+      renderSearchAbstractsTab();
+      return;
+    }
+    if (empty) empty.hidden = true;
+
+    if (filesList){
+      filesList.innerHTML = files.map(function(f){
+        var projLabel = f.project_name ? '<span class="search-result-project">' + escapeHtml(f.project_name) + '</span>' : "";
+        return '<div class="search-result-file" data-project="' + escapeHtml(f.project_path || searchCurrentProjectPath || "") +
+          '" data-abs="' + escapeHtml(f.abs_path) + '" data-rel="' + escapeHtml(f.rel_path) + '">' +
+          projLabel +
+          '<span class="search-result-file-path">' + escapeHtml(f.rel_path) + '</span>' +
+        '</div>';
+      }).join("");
+      Array.prototype.forEach.call(filesList.querySelectorAll(".search-result-file"), function(row){
+        row.addEventListener("click", function(){
+          openSearchResultInPreview(row.getAttribute("data-project"), row.getAttribute("data-abs"), row.getAttribute("data-rel"));
+        });
+      });
+    }
+
+    renderSearchTextTab();
+    renderSearchAbstractsTab();
+  }
+
+  function renderSearchTextTab(){
+    var textList = document.getElementById("searchResultsText");
+    if (!textList) return;
+    if (searchTextTabs.indexOf(searchActiveTab) === -1){
+      textList.innerHTML = "";
+      return;
+    }
+    var terms = searchLastTerms;
+    var allSnippets = (searchLastData && searchLastData.snippets) || [];
+    var snippets = allSnippets.filter(function(s){ return _searchSnippetCategory(s.rel_path) === searchActiveTab; });
+
+    if (!snippets.length){
+      textList.innerHTML = '<div class="search-empty-state">No matches in this category.</div>';
+      return;
+    }
+
+    textList.innerHTML = snippets.map(function(s){
+      var projLabel = s.project_name ? '<span class="search-result-project">' + escapeHtml(s.project_name) + '</span>' : "";
+      return '<div class="search-result-snippet" data-project="' + escapeHtml(s.project_path || searchCurrentProjectPath || "") +
+        '" data-abs="' + escapeHtml(s.abs_path) + '" data-rel="' + escapeHtml(s.rel_path) + '">' +
+        projLabel +
+        '<div class="search-result-snippet-head">' + escapeHtml(s.rel_path) + ' <span class="search-result-line">:' + s.line_number + '</span></div>' +
+        '<div class="search-result-snippet-text">' + _searchHighlight(s.snippet, s.highlight_ranges) + '</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(textList.querySelectorAll(".search-result-snippet"), function(row, i){
+      row.addEventListener("click", function(){
+        var snippet = snippets[i];
+        var term = terms[0];
+        terms.some(function(t){
+          if ((snippet.snippet || "").toLowerCase().indexOf(t.toLowerCase()) !== -1){ term = t; return true; }
+          return false;
+        });
+        openSearchResultInPreview(row.getAttribute("data-project"), row.getAttribute("data-abs"), row.getAttribute("data-rel"), term);
+      });
+    });
+  }
+
+  function renderSearchAbstractsTab(){
+    var list = document.getElementById("searchResultsAbstracts");
+    if (!list || searchActiveTab !== "abstracts") return;
+
+    if (!searchCurrentProjectPath){
+      list.innerHTML = '<div class="search-empty-state">Select a single project to search its literature library.</div>';
+      return;
+    }
+    if (!searchLastData){
+      list.innerHTML = "";
+      return;
+    }
+    if (searchLastData.abstracts_available === false){
+      list.innerHTML = '<div class="search-empty-state">This project has no literature library (arti-lit.db) yet.</div>';
+      return;
+    }
+    var entries = searchLastData.abstracts || [];
+    if (!entries.length){
+      list.innerHTML = '<div class="search-empty-state">No matching abstracts.</div>';
+      return;
+    }
+
+    list.innerHTML = entries.map(function(e){
+      var statusBadge = e.read_status
+        ? '<span class="search-result-abstract-status">' + escapeHtml(e.read_status) + '</span>' : "";
+      var metaParts = [];
+      if (e.journal_name) metaParts.push(escapeHtml(e.journal_name));
+      if (e.doi) metaParts.push("DOI: " + escapeHtml(e.doi));
+      var meta = metaParts.length ? '<div class="search-result-abstract-meta">' + metaParts.join(" · ") + '</div>' : "";
+      var body = e.abstract_snippet
+        ? '<div class="search-result-snippet-text">' + _searchHighlight(e.abstract_snippet, e.highlight_ranges) + '</div>'
+        : '<div class="search-result-snippet-text">No abstract text on file.</div>';
+      return '<div class="search-result-abstract">' +
+        '<div class="search-result-abstract-head">' + escapeHtml(e.citation || e.key || "Untitled") + statusBadge + '</div>' +
+        meta + body +
+      '</div>';
+    }).join("");
+  }
+
+  function openSearchResultInPreview(projectPath, absPath, relPath, searchTerm){
+    if (!projectPath) return;
+    var loaded = openProjectInFiles(projectPath);
+    (loaded || Promise.resolve()).then(function(){
+      previewProjectFile(projectPath, absPath, relPath, searchTerm);
+    });
+  }
+
+  // Global Ctrl+K / Cmd+K -- opens Search with the query input focused from
+  // anywhere in the dashboard.
+  document.addEventListener("keydown", function(e){
+    var isOpenSearch = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
+    if (!isOpenSearch) return;
+    e.preventDefault();
+    switchMainView("search");
+    if (searchQueryInputEl){
+      searchQueryInputEl.focus();
+      searchQueryInputEl.select();
+    }
   });
 
   // ---- Fine AI collapse/expand, persisted per project path (not one global
@@ -2900,6 +3636,22 @@
     return TEXT_PREVIEWABLE_EXTS.some(function(ext){ return lower.endsWith(ext); });
   }
 
+  var IMAGE_PREVIEWABLE_EXTS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
+  function _isImagePreviewableFile(relPath){
+    var lower = relPath.toLowerCase();
+    return IMAGE_PREVIEWABLE_EXTS.some(function(ext){ return lower.endsWith(ext); });
+  }
+
+  var PDF_PREVIEWABLE_EXTS = [".pdf"];
+  function _isPdfPreviewableFile(relPath){
+    var lower = relPath.toLowerCase();
+    return PDF_PREVIEWABLE_EXTS.some(function(ext){ return lower.endsWith(ext); });
+  }
+
+  function _isPreviewableFile(relPath){
+    return _isTextPreviewableFile(relPath) || _isImagePreviewableFile(relPath) || _isPdfPreviewableFile(relPath);
+  }
+
   function _fileTypeIcon(relPath){
     var ext = (relPath.split(".").pop() || "").toLowerCase();
     var glyphs = {
@@ -2939,7 +3691,7 @@
       return;
     }
     list.innerHTML = files.map(function(f){
-      var isPreviewable = _isTextPreviewableFile(f.rel_path);
+      var isPreviewable = _isPreviewableFile(f.rel_path);
       var isAttached = !!attached[f.rel_path];
       var checked = chatFileSelection[f.rel_path] ? " checked" : "";
       var nameAttrs = isPreviewable ? ' data-role="preview-file"' : "";
@@ -2951,6 +3703,13 @@
         _fileTypeIcon(f.rel_path) +
         '<span class="' + nameClass + '"' + nameAttrs + ' title="' + escapeHtml(f.rel_path) + '">' + escapeHtml(f.rel_path) + '</span>' +
         attachedTag +
+        '<span class="row-menu">' +
+          '<button type="button" class="menu-toggle" data-role="file-menu-toggle" aria-label="File actions">&#8942;</button>' +
+          '<div class="menu-dropdown" hidden>' +
+            '<button type="button" data-role="open-file">Open</button>' +
+            '<button type="button" data-role="open-file-with">Open with&hellip;</button>' +
+          '</div>' +
+        '</span>' +
       '</div>';
     }).join("");
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="preview-file"]'), function(el){
@@ -2967,6 +3726,36 @@
         else delete chatFileSelection[relPath];
         updateFileSelectionUi(files);
       });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="file-menu-toggle"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = btn.nextElementSibling;
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="open-file"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        openProjectFileExternally(btn.closest("[data-abs]").getAttribute("data-abs"), "/chat/project-files/open");
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="open-file-with"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        openProjectFileExternally(btn.closest("[data-abs]").getAttribute("data-abs"), "/chat/project-files/open-with");
+      });
+    });
+  }
+
+  function openProjectFileExternally(absPath, endpoint){
+    apiRaw(endpoint, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: filesCurrentProjectPath, file: absPath })
+    }).catch(function(err){
+      alert("Failed to open file: " + (err && err.message ? err.message : "unknown error"));
     });
   }
 
@@ -3330,6 +4119,9 @@
 
   var chatPreviewRawText = "";
   var chatPreviewRelPath = "";
+  var chatPreviewRawUrl = "";
+  var chatPreviewProjectPath = "";
+  var chatPreviewAbsPath = "";
   var chatPreviewMatches = [];
   var chatPreviewMatchIndex = -1;
   var MARKDOWN_PREVIEW_EXTENSIONS = [".md"];
@@ -3347,15 +4139,26 @@
     if (panel) panel.classList.remove("editing");
     chatPreviewRawText = "";
     chatPreviewRelPath = "";
+    chatPreviewRawUrl = "";
     closePreviewSearchBar();
   }
 
-  function previewProjectFile(projectPath, absPath, relPath){
-    var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
-      "&file=" + encodeURIComponent(absPath);
-    apiRaw(url).then(function(d){
-      chatPreviewRawText = d.content;
+  function _applyPreviewSearchTerm(searchTerm){
+    if (!searchTerm) return;
+    var input = document.getElementById("chatPreviewSearchInput");
+    if (!input) return;
+    input.value = searchTerm;
+    openPreviewSearchBar();
+  }
+
+  function previewProjectFile(projectPath, absPath, relPath, searchTerm){
+    chatPreviewProjectPath = projectPath;
+    chatPreviewAbsPath = absPath;
+    if (_isImagePreviewableFile(relPath) || _isPdfPreviewableFile(relPath)){
+      chatPreviewRawText = "";
       chatPreviewRelPath = relPath;
+      chatPreviewRawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
+        "&file=" + encodeURIComponent(absPath);
       document.getElementById("chatPreviewFileName").textContent = relPath;
       document.getElementById("filesPreviewPanel").classList.remove("editing");
       closePreviewSearchBar();
@@ -3363,20 +4166,370 @@
       restorePreviewViewActions(projectPath, absPath);
       document.getElementById("filesPreviewEmpty").hidden = true;
       document.getElementById("filesPreviewContent").hidden = false;
+      _applyPreviewSearchTerm(searchTerm);
+      return;
+    }
+    var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
+      "&file=" + encodeURIComponent(absPath);
+    apiRaw(url).then(function(d){
+      chatPreviewRawText = d.content;
+      chatPreviewRelPath = relPath;
+      chatPreviewRawUrl = "";
+      document.getElementById("chatPreviewFileName").textContent = relPath;
+      document.getElementById("filesPreviewPanel").classList.remove("editing");
+      closePreviewSearchBar();
+      renderPreviewView();
+      restorePreviewViewActions(projectPath, absPath);
+      document.getElementById("filesPreviewEmpty").hidden = true;
+      document.getElementById("filesPreviewContent").hidden = false;
+      _applyPreviewSearchTerm(searchTerm);
     });
   }
 
+  // Resolves a relative markdown href/src (possibly with ../ segments)
+  // against the directory of baseAbsPath, returning a forward-slash
+  // absolute path. Used for both preview images and in-preview link clicks.
+  function resolveRelativeProjectPath(baseAbsPath, relative){
+    var baseDir = baseAbsPath.replace(/\\/g, "/").replace(/\/[^/]*$/, "");
+    var parts = (baseDir + "/" + relative).split("/");
+    var resolved = [];
+    parts.forEach(function(part){
+      if (part === "" || part === "."){ return; }
+      if (part === ".."){ resolved.pop(); return; }
+      resolved.push(part);
+    });
+    return resolved.join("/");
+  }
+
+  function projectRelPathFromAbs(projectPath, absPath){
+    var norm = function(p){ return p.replace(/\\/g, "/").replace(/\/+$/, ""); };
+    var root = norm(projectPath);
+    var target = norm(absPath);
+    if (target.toLowerCase().indexOf(root.toLowerCase()) === 0){
+      return target.slice(root.length).replace(/^\//, "");
+    }
+    return target.split("/").pop();
+  }
+
+  // Markdown `![alt](./images/foo.png)` style src paths are relative to the
+  // .md file's own folder, not to the dashboard page -- rewrite them to the
+  // project-files raw-file endpoint, resolved against chatPreviewAbsPath's
+  // directory, so local images actually load (remote http(s)/data URLs are
+  // left untouched).
+  function resolveMarkdownPreviewImages(body){
+    if (!chatPreviewProjectPath || !chatPreviewAbsPath) return;
+    Array.prototype.forEach.call(body.querySelectorAll("img[src]"), function(img){
+      var src = img.getAttribute("src");
+      if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.indexOf("//") === 0) return;
+      var resolvedAbsPath = resolveRelativeProjectPath(chatPreviewAbsPath, src);
+      img.setAttribute("src", API + "/chat/project-files/raw?path=" + encodeURIComponent(chatPreviewProjectPath) +
+        "&file=" + encodeURIComponent(resolvedAbsPath));
+    });
+  }
+
+  // Links inside rendered markdown (file preview and chat messages) must
+  // never navigate this window -- there's no address bar or back button in
+  // this shell, so an in-app navigation strands the user on a dead page.
+  // http(s) links go to the OS default browser instead; relative links
+  // inside the file-preview panel resolve against the previewed file's own
+  // folder and open in the preview itself.
+  document.addEventListener("click", function(e){
+    var a = e.target.closest && e.target.closest("a[href]");
+    if (!a) return;
+    var markdownHost = a.closest(".markdown-body");
+    if (!markdownHost) return;
+    var href = a.getAttribute("href");
+    if (!href) return;
+    if (/^https?:\/\//i.test(href)){
+      e.preventDefault();
+      api("/open-external", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ url: href }) }).catch(function(){});
+      return;
+    }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return; // mailto:, etc. -- leave to the OS/browser default
+    if (href.charAt(0) === "#") return; // in-page anchor
+    if (markdownHost.id === "chatPreviewBody" && chatPreviewProjectPath && chatPreviewAbsPath){
+      e.preventDefault();
+      var hrefPath = href.split("#")[0].split("?")[0];
+      if (!hrefPath) return;
+      var resolvedAbsPath = resolveRelativeProjectPath(chatPreviewAbsPath, hrefPath);
+      var relPath = projectRelPathFromAbs(chatPreviewProjectPath, resolvedAbsPath);
+      previewProjectFile(chatPreviewProjectPath, resolvedAbsPath, relPath);
+      return;
+    }
+    // No file-preview context to resolve a relative link against (e.g. a
+    // chat message) -- block the dead-end navigation rather than let it through.
+    e.preventDefault();
+  });
+
   function renderPreviewView(){
     var wrap = document.getElementById("chatPreviewBodyWrap");
-    if (isMarkdownPreview(chatPreviewRelPath)){
+    wrap.classList.toggle("flush", _isPdfPreviewableFile(chatPreviewRelPath) || _isImagePreviewableFile(chatPreviewRelPath));
+    if (_isPdfPreviewableFile(chatPreviewRelPath)){
+      wrap.innerHTML = '<div class="pdf-preview-body" id="chatPreviewBody"></div>';
+      renderPdfPreview(chatPreviewRawUrl);
+    } else if (_isImagePreviewableFile(chatPreviewRelPath)){
+      wrap.innerHTML = '<div class="image-preview-body" id="chatPreviewBody"></div>';
+      renderImagePreview(chatPreviewRawUrl, chatPreviewRelPath);
+    } else if (isMarkdownPreview(chatPreviewRelPath)){
       wrap.innerHTML = '<div class="markdown-body" id="chatPreviewBody"></div>';
       var body = document.getElementById("chatPreviewBody");
       body.innerHTML = marked.parse(chatPreviewRawText, { gfm: true });
+      resolveMarkdownPreviewImages(body);
       renderMathIn(body);
     } else {
       wrap.innerHTML = '<pre class="plain-text-body" id="chatPreviewBody"></pre>';
       document.getElementById("chatPreviewBody").textContent = chatPreviewRawText;
     }
+  }
+
+  // ---- image preview: CSS-transform zoom/pan, driven by buttons, ctrl+wheel
+  // (trackpad pinch), touch pinch, drag-to-pan, and double-click to toggle ----
+
+  function renderImagePreview(url, relPath){
+    var body = document.getElementById("chatPreviewBody");
+    if (!body) return;
+    body.innerHTML =
+      '<div class="image-viewer-container" id="imageViewerContainer">' +
+        '<img id="chatPreviewImage" src="' + escapeHtml(url) + '" alt="' + escapeHtml(relPath) + '" draggable="false" />' +
+      '</div>' +
+      '<div class="preview-zoom-toolbar">' +
+        '<div class="preview-zoom-controls">' +
+          '<button type="button" class="btn" id="imgZoomOutBtn" title="Zoom out">&minus;</button>' +
+          '<span class="preview-zoom-label" id="imgZoomLabel">100%</span>' +
+          '<button type="button" class="btn" id="imgZoomInBtn" title="Zoom in">+</button>' +
+        '</div>' +
+        '<button type="button" class="btn text" id="imgZoomResetBtn" title="Reset zoom">Reset</button>' +
+      '</div>';
+
+    var container = document.getElementById("imageViewerContainer");
+    var img = document.getElementById("chatPreviewImage");
+    var scale = 1, panX = 0, panY = 0;
+
+    function apply(){
+      img.style.transform = "translate(" + panX + "px, " + panY + "px) scale(" + scale + ")";
+      document.getElementById("imgZoomLabel").textContent = Math.round(scale * 100) + "%";
+      container.classList.toggle("zoomed", scale > 1);
+    }
+    function setScale(next){
+      scale = Math.max(0.2, Math.min(6, next));
+      if (scale <= 1){ panX = 0; panY = 0; }
+      apply();
+    }
+
+    document.getElementById("imgZoomOutBtn").addEventListener("click", function(){ setScale(scale - 0.25); });
+    document.getElementById("imgZoomInBtn").addEventListener("click", function(){ setScale(scale + 0.25); });
+    document.getElementById("imgZoomResetBtn").addEventListener("click", function(){ setScale(1); });
+    img.addEventListener("dblclick", function(){ setScale(scale > 1 ? 1 : 2); });
+
+    // Trackpad pinch surfaces as ctrl+wheel in Chrome/Firefox/Safari.
+    container.addEventListener("wheel", function(e){
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      setScale(scale * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+    }, { passive: false });
+
+    // Drag-to-pan once zoomed in, via pointer capture so the element itself
+    // (not window/document) owns the move/up listeners -- they're freed
+    // automatically when this container is replaced by the next preview.
+    var dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+    container.addEventListener("pointerdown", function(e){
+      if (scale <= 1 || e.button !== 0) return;
+      dragging = true;
+      dragStartX = e.clientX; dragStartY = e.clientY;
+      panStartX = panX; panStartY = panY;
+      container.classList.add("dragging");
+      container.setPointerCapture(e.pointerId);
+    });
+    container.addEventListener("pointermove", function(e){
+      if (!dragging) return;
+      panX = panStartX + (e.clientX - dragStartX);
+      panY = panStartY + (e.clientY - dragStartY);
+      apply();
+    });
+    function endDrag(){ dragging = false; container.classList.remove("dragging"); }
+    container.addEventListener("pointerup", endDrag);
+    container.addEventListener("pointercancel", endDrag);
+
+    // Real two-finger touch pinch (touchscreens).
+    var pinchStartDist = null, pinchStartScale = 1;
+    function touchDist(touches){
+      var dx = touches[0].clientX - touches[1].clientX;
+      var dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    container.addEventListener("touchstart", function(e){
+      if (e.touches.length === 2){
+        pinchStartDist = touchDist(e.touches);
+        pinchStartScale = scale;
+      }
+    }, { passive: true });
+    container.addEventListener("touchmove", function(e){
+      if (e.touches.length === 2 && pinchStartDist){
+        e.preventDefault();
+        setScale(pinchStartScale * (touchDist(e.touches) / pinchStartDist));
+      }
+    }, { passive: false });
+    container.addEventListener("touchend", function(e){
+      if (e.touches.length < 2) pinchStartDist = null;
+    });
+
+    apply();
+  }
+
+  // ---- PDF preview: pdf.js's own web-components bundle (PDFViewer +
+  // PDFFindController) instead of a hand-rolled renderer -- gets correct
+  // per-page layout, lazy rendering, and find/highlight/prev/next for free ----
+
+  var chatPdfEventBus = null;
+  var chatPdfLinkService = null;
+  var chatPdfFindController = null;
+  var chatPdfViewer = null;
+  var chatPdfLastQuery = "";
+
+  function renderPdfPreview(url){
+    var body = document.getElementById("chatPreviewBody");
+    if (!body || !url) return;
+    chatPdfViewer = null;
+    chatPdfLastQuery = "";
+    body.innerHTML =
+      '<div class="pdf-viewer-container" id="pdfViewerContainer"><div class="pdfViewer" id="pdfViewerInner"></div></div>' +
+      '<div class="preview-zoom-toolbar">' +
+        '<div class="preview-zoom-controls">' +
+          '<button type="button" class="btn" id="pdfZoomOutBtn" title="Zoom out">&minus;</button>' +
+          '<span class="preview-zoom-label" id="pdfZoomLabel">100%</span>' +
+          '<button type="button" class="btn" id="pdfZoomInBtn" title="Zoom in">+</button>' +
+        '</div>' +
+        '<span class="pdf-page-indicator" id="pdfPageIndicator"></span>' +
+      '</div>';
+
+    var container = document.getElementById("pdfViewerContainer");
+    var viewerEl = document.getElementById("pdfViewerInner");
+
+    chatPdfEventBus = new pdfjsViewer.EventBus();
+    chatPdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus: chatPdfEventBus });
+    chatPdfFindController = new pdfjsViewer.PDFFindController({
+      eventBus: chatPdfEventBus, linkService: chatPdfLinkService
+    });
+    chatPdfViewer = new pdfjsViewer.PDFViewer({
+      container: container, viewer: viewerEl, eventBus: chatPdfEventBus,
+      linkService: chatPdfLinkService, findController: chatPdfFindController
+    });
+    chatPdfLinkService.setViewer(chatPdfViewer);
+
+    chatPdfEventBus.on("pagesinit", function(){
+      chatPdfViewer.currentScaleValue = 1;
+      updatePdfZoomLabel();
+      updatePdfPageIndicator();
+    });
+    chatPdfEventBus.on("pagechanging", function(){ updatePdfPageIndicator(); });
+    chatPdfEventBus.on("scalechanging", function(e){ updatePdfZoomLabel(e.scale); });
+    chatPdfEventBus.on("updatefindmatchescount", function(e){ updatePdfMatchesCount(e.matchesCount); });
+    chatPdfEventBus.on("updatefindcontrolstate", function(e){ updatePdfMatchesCount(e.matchesCount); });
+
+    document.getElementById("pdfZoomOutBtn").addEventListener("click", function(){
+      setPdfZoomScale(chatPdfViewer.currentScale - 0.2);
+    });
+    document.getElementById("pdfZoomInBtn").addEventListener("click", function(){
+      setPdfZoomScale(chatPdfViewer.currentScale + 0.2);
+    });
+
+    // Trackpad pinch is reported by the browser as a wheel event with ctrlKey
+    // set (true on Chrome/Firefox/Safari for both Mac trackpad pinch and
+    // Windows precision-touchpad pinch) -- intercept it instead of letting it
+    // zoom the whole page.
+    container.addEventListener("wheel", function(e){
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      setPdfZoomScale(chatPdfViewer.currentScale * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+    }, { passive: false });
+
+    // Real two-finger touch pinch (touchscreens), tracked by the distance
+    // between the two touch points relative to where the gesture started.
+    var pinchStartDist = null;
+    var pinchStartScale = 1;
+    function pdfTouchDist(touches){
+      var dx = touches[0].clientX - touches[1].clientX;
+      var dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    container.addEventListener("touchstart", function(e){
+      if (e.touches.length === 2){
+        pinchStartDist = pdfTouchDist(e.touches);
+        pinchStartScale = chatPdfViewer.currentScale;
+      }
+    }, { passive: true });
+    container.addEventListener("touchmove", function(e){
+      if (e.touches.length === 2 && pinchStartDist){
+        e.preventDefault();
+        setPdfZoomScale(pinchStartScale * (pdfTouchDist(e.touches) / pinchStartDist));
+      }
+    }, { passive: false });
+    container.addEventListener("touchend", function(e){
+      if (e.touches.length < 2) pinchStartDist = null;
+    });
+
+    pdfjsLib.getDocument(url).promise.then(function(doc){
+      if (!chatPdfViewer) return; // preview closed/switched before the doc loaded
+      chatPdfViewer.setDocument(doc);
+      chatPdfLinkService.setDocument(doc, null);
+      chatPdfFindController.setDocument(doc);
+    }).catch(function(err){
+      container.innerHTML = '<div class="hint">Failed to load PDF: ' +
+        escapeHtml(err && err.message ? err.message : "unknown error") + '</div>';
+    });
+  }
+
+  function setPdfZoomScale(scale){
+    if (!chatPdfViewer) return;
+    chatPdfViewer.currentScaleValue = Math.max(0.4, Math.min(3, scale));
+  }
+
+  function updatePdfZoomLabel(scale){
+    var label = document.getElementById("pdfZoomLabel");
+    if (!label) return;
+    var s = typeof scale === "number" ? scale : (chatPdfViewer ? chatPdfViewer.currentScale : 1);
+    label.textContent = Math.round(s * 100) + "%";
+  }
+
+  function updatePdfPageIndicator(){
+    var indicator = document.getElementById("pdfPageIndicator");
+    if (!indicator || !chatPdfViewer) return;
+    var total = chatPdfViewer.pagesCount || 0;
+    var current = chatPdfViewer.currentPageNumber || (total ? 1 : 0);
+    indicator.textContent = total ? current + " of " + total + (total === 1 ? " page" : " pages") : "";
+  }
+
+  function updatePdfMatchesCount(matchesCount){
+    var el = document.getElementById("chatPreviewSearchCount");
+    if (!el) return;
+    el.textContent = matchesCount && matchesCount.total
+      ? matchesCount.current + " / " + matchesCount.total
+      : "0 / 0";
+  }
+
+  function runPdfPreviewSearch(query){
+    chatPdfLastQuery = query || "";
+    if (!chatPdfEventBus) return;
+    if (!chatPdfLastQuery.trim()){ updatePdfMatchesCount(null); }
+    chatPdfEventBus.dispatch("find", {
+      source: window, type: "", query: chatPdfLastQuery,
+      caseSensitive: false, entireWord: false, highlightAll: true,
+      matchDiacritics: false, findPrevious: false
+    });
+  }
+
+  function pdfFindAgain(findPrevious){
+    if (!chatPdfEventBus || !chatPdfLastQuery.trim()) return;
+    chatPdfEventBus.dispatch("find", {
+      source: window, type: "again", query: chatPdfLastQuery,
+      caseSensitive: false, entireWord: false, highlightAll: true,
+      matchDiacritics: false, findPrevious: !!findPrevious
+    });
+  }
+
+  function pdfFindBarClose(){
+    if (!chatPdfEventBus) return;
+    chatPdfEventBus.dispatch("findbarclose", { source: window });
   }
 
   function renderMathIn(el){
@@ -3409,7 +4562,11 @@
     var bar = document.getElementById("chatPreviewSearchBar");
     bar.hidden = true;
     document.getElementById("chatPreviewSearchInput").value = "";
-    clearPreviewSearchHighlights();
+    if (_isPdfPreviewableFile(chatPreviewRelPath)){
+      pdfFindBarClose();
+    } else {
+      clearPreviewSearchHighlights();
+    }
     chatPreviewMatches = [];
     chatPreviewMatchIndex = -1;
     updatePreviewSearchCount();
@@ -3427,6 +4584,7 @@
   }
 
   function runPreviewSearch(query){
+    if (_isPdfPreviewableFile(chatPreviewRelPath)) return runPdfPreviewSearch(query);
     clearPreviewSearchHighlights();
     chatPreviewMatches = [];
     chatPreviewMatchIndex = -1;
@@ -3490,15 +4648,22 @@
     else closePreviewSearchBar();
   });
   document.getElementById("chatPreviewSearchCloseBtn").addEventListener("click", closePreviewSearchBar);
-  document.getElementById("chatPreviewSearchPrevBtn").addEventListener("click", function(){ gotoPreviewMatch(chatPreviewMatchIndex - 1); });
-  document.getElementById("chatPreviewSearchNextBtn").addEventListener("click", function(){ gotoPreviewMatch(chatPreviewMatchIndex + 1); });
+  document.getElementById("chatPreviewSearchPrevBtn").addEventListener("click", function(){
+    if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(true);
+    else gotoPreviewMatch(chatPreviewMatchIndex - 1);
+  });
+  document.getElementById("chatPreviewSearchNextBtn").addEventListener("click", function(){
+    if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(false);
+    else gotoPreviewMatch(chatPreviewMatchIndex + 1);
+  });
   document.getElementById("chatPreviewSearchInput").addEventListener("input", function(e){
     runPreviewSearch(e.target.value);
   });
   document.getElementById("chatPreviewSearchInput").addEventListener("keydown", function(e){
     if (e.key === "Enter"){
       e.preventDefault();
-      if (e.shiftKey) gotoPreviewMatch(chatPreviewMatchIndex - 1);
+      if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(e.shiftKey);
+      else if (e.shiftKey) gotoPreviewMatch(chatPreviewMatchIndex - 1);
       else gotoPreviewMatch(chatPreviewMatchIndex + 1);
     } else if (e.key === "Escape"){
       e.preventDefault();
@@ -3525,6 +4690,12 @@
 
   function restorePreviewViewActions(projectPath, absPath){
     var actions = document.getElementById("chatPreviewActions");
+    if (_isImagePreviewableFile(chatPreviewRelPath) || _isPdfPreviewableFile(chatPreviewRelPath)){
+      actions.innerHTML = "";
+      actions.style.display = "none";
+      return;
+    }
+    actions.style.display = "";
     actions.innerHTML = '<button class="btn" id="chatPreviewEditBtn" type="button">Edit</button>';
     document.getElementById("chatPreviewEditBtn").onclick = function(){ enterPreviewEditMode(projectPath, absPath); };
     var body = document.getElementById("chatPreviewBody");
@@ -3532,6 +4703,7 @@
   }
 
   function enterPreviewEditMode(projectPath, absPath){
+    if (_isImagePreviewableFile(chatPreviewRelPath) || _isPdfPreviewableFile(chatPreviewRelPath)) return;
     var panel = document.getElementById("filesPreviewPanel");
     panel.classList.add("editing");
     document.getElementById("chatPreviewBodyWrap").innerHTML =
@@ -3592,9 +4764,11 @@
     panel.classList.add("editing");
     document.getElementById("chatPreviewFileName").innerHTML =
       '<input type="text" id="chatPreviewNewFileName" class="preview-filename-input" placeholder="filename.md" />';
+    document.getElementById("chatPreviewBodyWrap").classList.remove("flush");
     document.getElementById("chatPreviewBodyWrap").innerHTML =
       '<div class="file-preview-edit"><textarea id="chatPreviewEditInput" placeholder="Start typing…"></textarea></div>';
     var actions = document.getElementById("chatPreviewActions");
+    actions.style.display = "";
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">New file</span>' +
       '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +

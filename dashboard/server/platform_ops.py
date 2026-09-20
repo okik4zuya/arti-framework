@@ -55,6 +55,36 @@ def open_in_file_manager(path):
         subprocess.Popen(["xdg-open", path])
 
 
+def open_file_default(path):
+    """Launches path in its OS-default application -- the same as
+    double-clicking it in a file manager."""
+    system = platform.system()
+    path = str(path)
+    if system == "Windows":
+        # Start-Process resolves a data-file path via ShellExecute, same as
+        # explorer.exe would on double-click -- no need for a real .exe here.
+        _run_powershell_focused(path, [])
+    elif system == "Darwin":
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen(["xdg-open", path])
+
+
+def open_file_with_dialog(path):
+    """Shows the OS's native "Open with..." application chooser for path.
+    macOS/Linux have no equivalent single command for this, so they fall back
+    to the default-app open instead (same graceful-degradation precedent as
+    browse_folder()'s Linux picker fallback)."""
+    system = platform.system()
+    path = str(path)
+    if system == "Windows":
+        # shell32.dll's OpenAs_RunDLL entry point is the same one Explorer's
+        # own "Open with" context-menu item calls.
+        _run_powershell_focused("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", path])
+    else:
+        open_file_default(path)
+
+
 def browse_folder():
     """Returns the chosen absolute path, or None if cancelled / no picker available."""
     system = platform.system()
