@@ -390,7 +390,6 @@
      main app sidebar is collapsed its fixed-position expand button (top:18
      left:14) sits directly over the project picker -- reserve room for it. */
   body.sidebar-collapsed .files-topbar{ padding-left:56px; }
-  .files-topbar-actions{ display:flex; align-items:center; gap:8px; flex:none; margin-left:auto; }
   .files-content-row{ flex:1; display:flex; min-height:0; }
   .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles,
   .files-narrow .files-project-picker-wrap{ display:none; }
@@ -588,13 +587,6 @@
   .sessions-open-btn:hover{ color:var(--accent); background:var(--accent-soft); border-color:var(--accent); }
   .sessions-open-btn svg{ width:15px; height:15px; flex:none; }
   .fine-ai-body.sessions-collapsed .sessions-open-btn{ display:inline-flex; }
-  /* Fine AI trigger: lives in the topbar's button group, same .icon-btn.icon-only
-     style as the Menu toggle (a plain circle placeholder until a dedicated Fine
-     AI mark exists) -- only shown while Fine AI is collapsed; the section's own
-     header handles collapsing it again once open. */
-  #fineAiOpenBtn{ display:none; }
-  #filesPanel.fine-ai-collapsed #fineAiOpenBtn{ display:inline-flex; }
-  .files-narrow:not(.menu-open) #fineAiOpenBtn{ opacity:.5; pointer-events:none; }
   .chat-sidebar{
     width:270px; flex:none; border-right:1px solid var(--border);
     display:flex; flex-direction:column; min-height:0; background:var(--surface);
@@ -1107,11 +1099,6 @@
             <div class="files-picker-options" id="filesProjectPickerOptions"></div>
           </div>
         </div>
-        <div class="files-topbar-actions">
-          <button type="button" class="icon-btn icon-only" id="fineAiOpenBtn" title="Open Fine AI">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
-          </button>
-        </div>
       </div>
       <div class="files-content-row">
     <div class="chat-project-files" id="chatProjectFiles">
@@ -1176,7 +1163,6 @@
             <div class="menu-dropdown" id="chatFileActionsDropdown" hidden>
               <button type="button" id="chatAddToContextBtn">Add to chat context</button>
               <button type="button" id="chatCopySelectedBtn">Copy as MD</button>
-              <button type="button" id="chatSummarizeSelectedBtn">Summarize PDF(s)</button>
               <button type="button" id="chatExtractPdfBtn">Extract PDF(s)</button>
             </div>
           </span>
@@ -3512,18 +3498,6 @@
     if (e.key === "Enter" || e.key === " "){ e.preventDefault(); this.click(); }
   });
 
-  document.getElementById("fineAiOpenBtn").addEventListener("click", function(){
-    var panel = document.getElementById("filesPanel");
-    if (panel.classList.contains("files-narrow") && !panel.classList.contains("menu-open")) return;
-    if (!filesCurrentProjectPath) return;
-    fineAiAutoCollapsed = false;
-    setFineAiCollapsed(filesCurrentProjectPath, false);
-    ensureFineAiSession(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath)).then(function(sessionId){
-      if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
-      else renderChatSidebar();
-    });
-  });
-
   // ---- Fine AI's own session-list sub-panel can be hidden independently,
   // to give the thread more room without collapsing Fine AI itself ----
   var SESSIONS_COLLAPSE_KEY = "arti-fine-ai-sessions-collapsed";
@@ -3773,10 +3747,6 @@
     label.textContent = totalSelected ? "Select all (" + totalSelected + " selected)" : "Select all";
 
     var attached = getAttachedFilesByRelPath();
-    var hasSummarizable = selectedPaths.some(function(p){
-      var lower = p.toLowerCase();
-      return lower.endsWith(".pdf") || lower.endsWith(".md");
-    });
     var hasPdf = selectedPaths.some(function(p){ return p.toLowerCase().endsWith(".pdf"); });
     var hasAddableToContext = selectedPaths.some(function(p){
       return !p.toLowerCase().endsWith(".pdf") && !attached[p];
@@ -3785,7 +3755,6 @@
     document.getElementById("chatFileActionsToggle").disabled = totalSelected === 0;
     document.getElementById("chatAddToContextBtn").disabled = !hasAddableToContext;
     document.getElementById("chatCopySelectedBtn").disabled = totalSelected === 0;
-    document.getElementById("chatSummarizeSelectedBtn").disabled = !hasSummarizable;
     document.getElementById("chatExtractPdfBtn").disabled = !hasPdf;
   }
 
@@ -3982,18 +3951,6 @@
     closeModal(document.getElementById("chatBulkJobOverlay"));
     chatBulkJob = null;
     renderBulkJobPill();
-  });
-
-  document.getElementById("chatSummarizeSelectedBtn").addEventListener("click", function(){
-    closeAllRowMenus();
-    var relPaths = Object.keys(chatFileSelection).filter(function(p){
-      var lower = p.toLowerCase();
-      return lower.endsWith(".pdf") || lower.endsWith(".md");
-    }).sort();
-    if (!relPaths.length) return;
-    runBulkFileJob("Summarizing files…", "/chat/bulk-summarize", relPaths, function(evt){
-      return "✓ Saved: " + evt.output + " (model: " + evt.model + ")";
-    });
   });
 
   document.getElementById("chatExtractPdfBtn").addEventListener("click", function(){

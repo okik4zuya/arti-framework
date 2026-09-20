@@ -5,8 +5,8 @@ project-local (not the default ~/.claude memory).
 command below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand>
 ...` (Mac/Linux: `~/.arti/python/bin/python3`). Each call prints one JSON object
 (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for
-the full subcommand surface. This is the *cross-project* index only — each project's own local
-`inbox/index.md` stays plain markdown, hand-edited by Claude directly, unchanged by this tool.
+the full subcommand surface. This is the *cross-project* aggregator only — a project's own local
+`inbox/` has no index or database of its own to keep in sync; it's plain files, glob-scanned.
 
 **`arti-lit` invocation** — every `library add`/`update`/`remove`/`refs generate` command in the
 `literature/` bullet below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py"
@@ -67,45 +67,25 @@ to already exist in `library.md` — it never creates new library rows. See
      (both keep their placeholder for the same reason as the Journal Profile), `growth-log.md`,
      journal-formatted export, supplementary files
    - `inbox/` — (named "wdyt" — "what do you think?" — before 2026-09-09) raw-idea inbox: pure
-     capture, no structural expectation on content, for anything the researcher thinks might
-     improve the project but that doesn't obviously belong to any existing document yet.
-     `inbox/index.md` is a header-only Markdown table (`File · Tipe · Status · One-line hook ·
-     Dipakai di · Date added`) — the file Claude reads first to see what's still live. Idea files
-     use free-form naming while unreviewed (`inbox/<anything>.md`); once triaged, rename with a
-     status prefix — `YYMMDD_STATUS_<slug>.md` — where `STATUS` is one of **OK** (ingested
-     somewhere in the project), **SKIP** (reviewed, deliberately not used), or **PARKED** (good
-     idea, not for this paper — candidate for the next one, an `idea-bank add` entry
-     if it's a research idea, or `~/.arti/inbox/` if it's about the ARTi framework/skills
-     themselves rather than any paper) — and update its row in `index.md` to match. The date in the
-     filename is when the note was *triaged*, not written.
-     **`Tipe` determines lifecycle, not just navigation** — only two values, don't add a third
-     without a real case: **Ide** (default) = a note *about* something to decide/do, the
-     OK/SKIP/PARKED behavior above unchanged. **Narasi** = verbatim researcher prose that *is* the
-     content itself (ebook narrative, landing-page copy, workshop material) — Claude never
-     summarizes, rewrites, or condenses it; triage only fills in `One-line hook` and `Dipakai di`.
-     A Narasi file is never archived and immune to the cap of 10 below; its `OK` means "used in a
-     deliverable," not "ingested and done," and the file stays put. `Dipakai di` records where a
-     Narasi file has actually been used (e.g. `ebook Bab 1`, `landing: hero`) — `—` until it has.
-     **Whenever an idea is triaged (OK/SKIP/PARKED) in this or any project's `inbox/index.md`, also
-     run `idea-index upsert`** — a `project-index.md`-style cross-project aggregator
-     (`Project · File · Status · One-line hook · Date added`), the same touch-point pattern used
-     for the Idea Bank auto-park and Positioning Line write. This lets "what's my idea list and
-     status" be answered by reading one file, with no per-project scanning.
-     `inbox/` is the one folder in a scaffolded project meant for the researcher to create and edit
-     files in directly — everything else is Claude-managed. To keep it tidy: `inbox/archive/` holds
-     old triaged notes. Untriaged files (no status prefix) are uncapped and never archived — they're
-     exactly what the "still live" scan needs to see. Triaged files (OK/SKIP/PARKED) are capped at
-     10 outside `archive/` — this cap is local to this project's own `inbox/index.md`, unrelated to
-     the cross-project `idea-index upsert` above. Once a triage step pushes the count past 10, move
-     the oldest triaged-by-filename-date file(s) into `inbox/archive/`, then run
-     `idea-index archive --ids <row ids> --summary "<one line>"` (e.g. "12 ideas archived 2026-09 to
-     2026-11 (see inbox/archive/*.md — filenames retain date+status+slug)") — this marks those rows
-     archived in `~/.arti/inbox/idea-index.md` and appends the summary line to its Change log in one
-     call, so the aggregator never accumulates per-file rows past their local archival. Findability
-     does not depend on the row surviving: archived filenames are self-describing
-     (`YYMMDD_STATUS_slug.md`) and file content is untouched in `inbox/archive/` — if a researcher
-     asks about past `inbox/` content not found in the live table, grep `inbox/archive/*.md`
-     directly (filenames and content) rather than relying on a summary row.
+     drop-and-forget capture, no structural expectation on content, no index, no rename, no
+     archiving — for anything the researcher thinks might improve the project but that doesn't
+     obviously belong to any existing document yet. `inbox/` is the one folder in a scaffolded
+     project meant for the researcher to create and edit files in directly — everything else is
+     Claude-managed.
+     **Discovery:** presence in the folder *is* the "still open" signal — session start globs
+     `inbox/*.md` and surfaces whatever is there. No separate index file to keep in sync.
+     **Reviewing a file** ends one of three ways, decided in conversation, no ceremony: (a) worth
+     keeping — fold it into the right place (a `memories/` topic file, an `idea-bank add` entry if
+     it's a research idea, or `~/.arti/inbox/` if it's about the ARTi framework/skills themselves
+     rather than this paper) and delete the raw file; (b) not worth keeping — delete it; (c) still
+     undecided — leave it in place.
+     **Verbatim researcher prose that *is* the content** (ebook narrative, landing-page copy,
+     workshop material — as opposed to a note *about* something to decide) is never summarized,
+     rewritten, or condensed, and isn't deleted once used. Record where it's been used with one
+     `<!-- used-in: ... -->` comment at the top of the file itself.
+     A capture worth cross-project tracking can be added to `~/.arti/inbox/idea-index.md` via
+     `idea-index upsert` — an available action for something genuinely worth tracking across
+     projects, not a step every file goes through.
 
    Note: ARTi-writing's Voice Profile is deliberately **not** in this project's `writing/` folder
    — it's cross-project and lives in `~/.arti/voice-profiles/`, alongside the Researcher Profile and
@@ -125,15 +105,20 @@ to already exist in `library.md` — it never creates new library rows. See
    the T0 set, read every session:
    - `memory/MEMORY.md` — the index: pointers only, one line each (hard-capped — no line restates
      another file's content), never content itself
-   - `memory/todo-list.md` — **checklist only**: the contiguous `- [ ]` / `- [x]` task list, grouped
-     by phase or milestone if the project has them. No narrative, no session write-ups — if a line
-     isn't a checkbox item, it belongs in `status.md` instead. Search keywords and query lists
-     belong in `literature\search-log.md`, not here.
-   - `memory/status.md` — the living narrative: **one overwritten "Current state" block at the
-     top** (replaced in place each session, never stacked alongside older "Current state" / "Next
-     session" blocks — the change log carries the fact that an old one existed), and an **archive**
-     section below it for superseded narrative worth keeping but no longer live. This is where
-     session-by-session prose (what changed, what was verified, what a session decided) lives —
+   - `memory/todo-list.md` — **checklist only**: the contiguous `- [ ]` / `- [x]` task list, one
+     line per item, grouped by phase or milestone if the project has them. No narrative, no session
+     write-ups, no multi-line continuation under an item — if a line isn't a checkbox item (or a
+     short blocking-condition note), it belongs in a `memories/` topic file, linked with
+     `[[slug]]`. No `## Change log` section — git history covers edits to this file. A phase's
+     checked items get deleted once it's closed and captured in a topic file; this file tracks
+     outstanding work, not history. Search keywords and query lists belong in
+     `literature\search-log.md`, not here.
+   - `memory/status.md` — the living narrative, but only as a pointer: **one overwritten "Current
+     state" block at the top** (replaced in place each session, never stacked alongside older
+     "Current state" / "Next session" blocks), 2-4 sentences naming what changed and a
+     `[[topic-file]]` link for every detail — the topic file carries the actual report (what was
+     verified, what was decided), not this block. No Archive section and no `## Change log` section
+     here either — the linked topic file's own change log and git history already cover it.
      `todo-list.md` stays pure checklist so its name keeps meaning what it says.
 
    Every other memory file — one per topic, T1, read on demand — goes in `memory/memories/`, not
@@ -150,9 +135,9 @@ to already exist in `library.md` — it never creates new library rows. See
      question and the Research Design's objective; a meta-project's purpose is a short "Project
      goal" section folded directly into `MEMORY.md` instead of a separate file. Either way, a
      second free-standing statement of purpose drifts out of sync with the first.
-   - `history.md` — a cross-topic chronological log duplicates the per-file change logs and
-     `status.md`'s own Archive section; it earns its keep nowhere in this convention, meta-project
-     included.
+   - `history.md` — a cross-topic chronological log duplicates the per-file change logs already
+     living in `memory/memories/` topic files; it earns its keep nowhere in this convention,
+     meta-project included.
 
 2. Create `CLAUDE.md` in the project root by copying
    `references/project-claude-template.md` and substituting `{{PROJECT_NAME}}`. That template is
@@ -184,7 +169,9 @@ to already exist in `library.md` — it never creates new library rows. See
      rounds. Prose enumeration of parallel items is the largest source of bulk in practice.
    - **Change log = one line per date, ≤120 chars, naming *what changed*** — never re-summarizing
      the file's own content. Keep ~10 entries; collapse older ones to one "created and iterated
-     through `<date>`" line.
+     through `<date>`" line. Exception: `status.md` and `todo-list.md` carry no `## Change log`
+     section at all — git history covers edits to the tracker itself, and the substantive record
+     already lives in the `memories/` topic file each entry links to.
    - **Rule/evidence split for behavioral files.** Imperative one-line rules at the top; narrative
      evidence below or in a T2 archive — never the reverse.
    - **One-sentence index lines, hard-capped.** Detail lives in the linked file, not in the index.
@@ -220,15 +207,17 @@ to already exist in `library.md` — it never creates new library rows. See
 
 7. **Session-end wrap-up ritual.** Any phrasing that means "we're done for now" — not only the
    exact words "update memory" — fires this fixed checklist: update the relevant project memory
-   file(s) · overwrite `status.md`'s "Current state" block · check off/add any `todo-list.md` items
-   the session resolved or surfaced · **check whether a phase boundary (idea complete / writing
-   started / submitted / published) was crossed this session and, if so, run `project upsert`
-   for this project's row** — this is what keeps the cross-project dashboard current; a session
-   that changes stage/status but skips this leaves the dashboard showing stale data even
-   though every project file is up to date · append to the cross-project
-   workflow-session log (`~/.arti/workflow-sessions/`) · check whether anything said this session
-   should be promoted to `~/.arti/memory/working-preferences.md` (a correction on *how* to do something) ·
-   check whether a recurring loop should be logged or updated in `~/.arti/memory/memories/ebook-notes.md`'s
+   file(s) · **only if the session moved outstanding work or produced a state change worth
+   recording**, overwrite `status.md`'s "Current state" pointer and/or check off/add any
+   `todo-list.md` items — a session that was pure discussion, research, or Q&A with no checklist or
+   state change skips both files entirely, there is nothing to overwrite · **check whether a phase
+   boundary (idea complete / writing started / submitted / published) was crossed this session and,
+   if so, run `project upsert` for this project's row** — this is what keeps the cross-project
+   dashboard current; a session that changes stage/status but skips this leaves the dashboard
+   showing stale data even though every project file is up to date · write any correction on *how*
+   to work straight into `~/.arti/memory/working-preferences.md`, the same turn it's given, never
+   deferred to session end · check whether a recurring loop should be logged or updated in
+   `~/.arti/memory/memories/ebook-notes.md`'s
    micro-flow catalog (once a loop repeats a second time, write it up). Skipping the ritual because
    the trigger phrase wasn't the exact one used before is the failure mode this step exists to
    close.
@@ -236,7 +225,6 @@ to already exist in `library.md` — it never creates new library rows. See
 8. **Surface standing asks at session start.** If any memory file records an open question Claude
    was supposed to ask the researcher (e.g. "ask whether an Iteration Log entry is wanted"), ask it
    near the start of the session rather than merely re-recording that it's still open. Same
-   pattern for `inbox/index.md`: if it has any unprefixed (untriaged) rows, surface them near
-   session start.
+   pattern for `inbox/`: glob it and surface any file sitting there.
 
 Confirm the folder and file layout once done.

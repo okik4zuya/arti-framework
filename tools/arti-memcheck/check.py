@@ -4,9 +4,15 @@ arti-memcheck - composition checker for an ARTi project's T0 memory set
 
 T0 is the four files auto-loaded into context every session: CLAUDE.md,
 memory/MEMORY.md, memory/todo-list.md, memory/status.md. The defect this
-catches is composition, not size: stacked "Current state" blocks, a change log
-that has eaten its own file, prose in a checklist-only file, and references
-left dangling by a directory move. Those are ERRORs at any size.
+catches is composition, not size: stacked "Current state" blocks, an
+oversized Current-state block (it must be a short pointer to a memories/
+topic file, not the report itself), a change log that has eaten its own
+file, a "## Change log" section in status.md/todo-list.md at all (git
+history plus the linked topic file's own change log cover it - these two
+files don't get a second one), prose in a checklist-only file (including
+prose smuggled in as indented continuation lines under a checkbox item,
+not just bare stray lines), and references left dangling by a directory
+move. Those are ERRORs at any size.
 
 Size is a WARN only. A large T0 made entirely of live state is a pass - the
 checker must never create pressure to delete load-bearing content.
@@ -38,6 +44,10 @@ FOLDED_ENTRY_CHARS = 120
 INDEX_LINE_CHARS = 200
 PROSE_WARN = 0
 PROSE_ERR = 5
+CURRENT_STATE_WARN_CHARS = 800
+CURRENT_STATE_ERR_CHARS = 2000
+TODO_CONTINUATION_WARN_CHARS = 200
+TODO_CONTINUATION_ERR_CHARS = 400
 
 FENCE = "<!-- arti: local additions below"
 TEMPLATE_MARKER = "arti-claude-template:"
@@ -148,6 +158,31 @@ def check_status(rel, text, findings):
         )
     elif not hits:
         findings.append(Finding(ERROR, rel, "no '## Current state' block"))
+    elif len(hits) == 1:
+        # Current state must be a short pointer to a memories/ topic file, not
+        # the report itself - this is the exact defect that let status.md grow
+        # to 21.5K in the ARTi framework project before this check existed.
+        start = hits[0]  # 1-indexed line of the heading; body starts right after
+        next_head = next((i for i, l in enumerate(lines) if i > start - 1 and l.startswith("## ")), len(lines))
+        body = "\n".join(lines[start:next_head])
+        n = len(body.encode("utf-8"))
+        # INFO, not WARN/ERROR (neither fails a check - see fails() below): this
+        # check landed 2026-09-20 and most existing projects predate the
+        # lean-pointer convention it enforces. Nudge them toward it without
+        # failing every one of their sessions until they're migrated - a new
+        # project scaffolded from the updated template starts clean and this
+        # never fires for it.
+        if n > CURRENT_STATE_ERR_CHARS:
+            findings.append(
+                Finding(INFO, rel, "'Current state' block is %d B (hard cap %d) - it must be a short pointer "
+                                    "(what changed + a [[topic-file]] link), not the report itself"
+                        % (n, CURRENT_STATE_ERR_CHARS))
+            )
+        elif n > CURRENT_STATE_WARN_CHARS:
+            findings.append(
+                Finding(INFO, rel, "'Current state' block is %d B (soft cap %d) - move detail into a "
+                                    "memories/ topic file and link it" % (n, CURRENT_STATE_WARN_CHARS))
+            )
 
     archive = next((i for i, l in enumerate(lines) if l.startswith("## Archive")), len(lines))
     for i, l in enumerate(lines[:archive]):
@@ -163,20 +198,47 @@ def check_status(rel, text, findings):
             )
 
 
+RE_CHECKBOX = re.compile(r"^(\s*)-\s\[[ xX]\]")
+
+
 def check_todo(rel, text, findings):
     lines = text.splitlines()
     bad = []
+    long_items = []
     for name, start, end in sections(lines):
         low = name.lower()
         if low.startswith("change log") or low.startswith("archive"):
             continue
-        for i in range(start + 1, end):
-            l = lines[i]
+        item_start = None
+        item_chars = 0
+        for i in range(start + 1, end + 1):
+            l = lines[i] if i < end else ""
+            is_checkbox = i < end and bool(RE_CHECKBOX.match(l))
+            is_continuation = (
+                i < end and l.strip() and (l.startswith("  ") or l.startswith("\t"))
+                and not is_checkbox
+            )
+            if is_continuation:
+                # Indented text under a checkbox item is allowed (a short
+                # blocking-condition note or a nested sub-item), but a
+                # multi-paragraph narrative smuggled in this way is exactly
+                # the defect that let todo-list.md balloon undetected - cap
+                # its total length same as a folded change-log entry.
+                item_chars += len(l.strip()) + 1
+                continue
+            # Reached a checkbox line, a blank line, a table row, or the
+            # section end - close out whatever item was accumulating.
+            if item_start is not None and item_chars > 0:
+                if item_chars > TODO_CONTINUATION_ERR_CHARS:
+                    long_items.append((item_start, item_chars, ERROR))
+                elif item_chars > TODO_CONTINUATION_WARN_CHARS:
+                    long_items.append((item_start, item_chars, WARN))
+            item_chars = 0
+            item_start = None
+            if is_checkbox:
+                item_start = i + 1
+                continue
             if not l.strip():
-                continue
-            if l.startswith("- [ ]") or l.startswith("- [x]") or l.startswith("- [X]"):
-                continue
-            if l.startswith("  ") or l.startswith("\t"):
                 continue
             if l.lstrip().startswith("|"):
                 continue
@@ -190,6 +252,32 @@ def check_todo(rel, text, findings):
         findings.append(
             Finding(WARN, rel, "%d non-checklist line(s) in task sections (lines %s)"
                     % (len(bad), ", ".join(str(b) for b in bad)))
+        )
+    for item_start, item_chars, level in long_items:
+        findings.append(
+            Finding(level, rel, "line %d: checklist item's continuation is %d chars - narrative belongs in a "
+                                 "memories/ topic file, link it with [[slug]] instead" % (item_start, item_chars))
+        )
+
+
+def check_no_changelog(rel, text, findings):
+    """status.md and todo-list.md don't get their own '## Change log' section -
+    git history covers edits to the tracker itself, and the substantive record
+    already lives in the memories/ topic file each entry links to. A second
+    change log here is exactly the kind of bookkeeping-about-bookkeeping that
+    grew status.md/todo-list.md past budget in the first place.
+
+    INFO, not WARN/ERROR (neither fails a check - see fails() below): this
+    rule landed 2026-09-20 and most existing projects predate it. Nudge them
+    toward dropping the section without failing every one of their sessions
+    until they're migrated - a new project scaffolded from the updated
+    template starts clean and this never fires for it."""
+    lines = text.splitlines()
+    start, _ = changelog_span(lines)
+    if start is not None:
+        findings.append(
+            Finding(INFO, rel, "line %d: '## Change log' section not allowed here - git history plus the "
+                                "linked topic file's own change log already cover it" % (start + 1))
         )
 
 
@@ -470,8 +558,12 @@ def check_project(project, budget):
 
     total = check_size(project, budget, findings, sizes)
 
+    NO_CHANGELOG_FILES = ("memory/status.md", "memory/todo-list.md")
     for rel, text in texts.items():
-        check_changelog(rel, text, sizes.get(rel, 0), findings)
+        if rel in NO_CHANGELOG_FILES:
+            check_no_changelog(rel, text, findings)
+        else:
+            check_changelog(rel, text, sizes.get(rel, 0), findings)
     if "memory/status.md" in texts:
         check_status("memory/status.md", texts["memory/status.md"], findings)
     if "memory/todo-list.md" in texts:
@@ -509,6 +601,15 @@ def imperative(project, findings):
     prose = [f for f in findings if "non-checklist" in f.message]
     if prose:
         parts.append("prose in todo-list.md")
+    long_items = [f for f in findings if "checklist item's continuation" in f.message]
+    if long_items:
+        parts.append("%d over-long todo-list.md item(s)" % len(long_items))
+    oversized_state = [f for f in findings if "'Current state' block is" in f.message]
+    if oversized_state:
+        parts.append("oversized Current-state block")
+    stray_changelog = [f for f in findings if "'## Change log' section not allowed" in f.message]
+    if stray_changelog:
+        parts.append("stray Change log in status.md/todo-list.md")
     drift = [f for f in findings if "differs from the canonical template" in f.message]
     if drift:
         parts.append("CLAUDE.md drifted from the template")

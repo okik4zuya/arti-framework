@@ -108,38 +108,18 @@ fi
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --
 
-mkdir -p "$ARTI_HOME/memory" "$ARTI_HOME/memory/memories" "$ARTI_HOME/voice-profiles" "$ARTI_HOME/workflow-sessions" "$ARTI_HOME/inbox/archive"
+mkdir -p "$ARTI_HOME/memory" "$ARTI_HOME/memory/memories" "$ARTI_HOME/voice-profiles" "$ARTI_HOME/inbox"
 
-# inbox/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
-# ideas never ship), so a fresh install seeds the two index files it needs, missing-only.
-if [ ! -f "$ARTI_HOME/inbox/index.md" ]; then
-  cat > "$ARTI_HOME/inbox/index.md" <<'EOF'
-# ~/.arti/inbox/ index
-
-Cross-project raw-idea inbox - for capture about the ARTi framework/skills themselves (new skill
-ideas, workflow friction, tooling gaps), distinct from `~/.arti/memory/research-idea-bank.md`
-(research ideas for future papers) and from `~/.arti/inbox/idea-index.md` (the general cross-project
-aggregator of every project's triaged `inbox/` ideas, this file's own entries included). Unprefixed
-filename = not yet reviewed. Triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`;
-untriaged ones are uncapped and never archived.
-
-| File | Type | Status | One-line hook | Used in | Date added |
-|---|---|---|---|---|---|
-EOF
-  echo "  [ok] stub created: inbox/index.md"
-fi
-
+# inbox/ is the researcher's raw-idea inbox: pure drop-and-forget capture, git-ignored (the
+# maintainer's own ideas never ship). No index file - presence in the folder is the signal. Only
+# the cross-project idea-index.md aggregator is seeded, missing-only.
 if [ ! -f "$ARTI_HOME/inbox/idea-index.md" ]; then
   cat > "$ARTI_HOME/inbox/idea-index.md" <<'EOF'
 # Idea List Index
 
-**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator: one row
-per raw idea captured in any project's `inbox/` folder (this `~/.arti` home's own `inbox/` included),
-so "what's my idea list and status" is answered by reading this one file, no per-project scanning
-needed.
-
-> Claude upserts a row here the moment an idea is triaged (OK/SKIP/PARKED) in any project's
-> `inbox/index.md`.
+**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator for a
+capture worth cross-project tracking, added via `idea-index upsert` when Claude or the researcher
+judges it genuinely worth tracking across projects - not a row for every `inbox/` file.
 
 | Idea | Project | Status | One-line hook | Date added |
 |---|---|---|---|---|
@@ -155,8 +135,8 @@ if [ ! -f "$ARTI_HOME/memory/MEMORY.md" ]; then
 # ~/.arti/memory Index
 
 Plain pointers-only index of this ~/.arti home's researcher-facing state and package files. See
-`todo-list.md` for the live package build/scope checklist and `status.md` for the live narrative
-(current state + archive). Add a one-line pointer row here for each new topic file, per the
+`todo-list.md` for the live package build/scope checklist and `status.md` for the live
+Current-state pointer. Add a one-line pointer row here for each new topic file, per the
 `[[slug]]`-link convention.
 
 ## Index
@@ -176,10 +156,8 @@ metadata:
 ---
 
 Authoritative package build/scope checklist. Add Phase sections and `- [ ]`/`- [x]` items as the
-package plan develops. No narrative here - session write-ups and Current-state prose belong in
-`status.md`.
-
-## Change log
+package plan develops, one line each - no narrative continuation, link `[[slug]]` for context
+instead. No Change log section here - git history covers edits to this file.
 EOF
   echo "  [ok] stub created: memory/todo-list.md"
 fi
@@ -188,7 +166,7 @@ if [ ! -f "$ARTI_HOME/memory/status.md" ]; then
   cat > "$ARTI_HOME/memory/status.md" <<'EOF'
 ---
 name: status
-description: Live narrative for the ARTi package build - Current state + archive (see todo-list.md for the checklist)
+description: Live narrative for the ARTi package build - a short Current-state pointer (see todo-list.md for the checklist)
 metadata:
   type: project
 ---
@@ -196,10 +174,6 @@ metadata:
 ## Current state
 
 (nothing yet)
-
-## Archive
-
-## Change log
 EOF
   echo "  [ok] stub created: memory/status.md"
 fi
@@ -278,6 +252,15 @@ if [ "$NEED_PYTHON" -eq 1 ]; then
   echo "  [ok] Python installed at $PYTHON_DIR"
 else
   echo "  [ok] Python $PY_VERSION (build $PY_BUILD_TAG) already installed - skipping."
+fi
+
+# Top-level wrapper so the vendored interpreter is reachable without remembering the
+# python/bin/python3 subpath -- never added to PATH (would risk clashing with any system
+# Python), just a fixed, guessable entry point at the root of ~/.arti.
+if [ -d "$PYTHON_DIR" ]; then
+  WRAPPER_PATH="$ARTI_HOME/python3"
+  printf '#!/usr/bin/env bash\nexec "%s/bin/python3" "$@"\n' "$PYTHON_DIR" > "$WRAPPER_PATH"
+  chmod +x "$WRAPPER_PATH"
 fi
 
 REQ_FILE="$ARTI_HOME/tools/requirements.txt"

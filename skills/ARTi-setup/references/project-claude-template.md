@@ -23,37 +23,43 @@ Voice Profile is cross-project: `~/.arti/voice-profiles/`, not `writing/`.
 
 ## `inbox/` — the one folder the researcher edits directly
 
-Everything else is Claude-managed. `inbox/index.md` columns:
-`File · Tipe · Status · One-line hook · Dipakai di · Date added`.
+Pure drop-and-forget capture, no structure required to add a file. No index, no rename, no
+archiving — presence in the folder *is* the "still open" signal. Everything else here is
+Claude-managed.
 
-- **Tipe = Ide** (default) — a note *about* something to do/decide. Triage renames it
-  `YYMMDD_STATUS_<slug>.md` (date = triaged, not written), status one of **OK** (ingested
-  somewhere) / **SKIP** (reviewed, unused) / **PARKED** (good, not this paper → `idea-bank add`
-  entry if a research idea, `~/.arti/inbox/` if about the ARTi framework itself).
-- **Tipe = Narasi** — verbatim researcher prose that *is* the content. Never summarize, rewrite,
-  or condense it; triage fills only `One-line hook` and `Dipakai di` (e.g. `ebook Bab 1`). Never
-  archived, exempt from the cap; its `OK` means "used in a deliverable," and the file stays put.
-- **Every triage event** also runs `idea-index upsert` (see `arti-db` invocation below).
-- **Caps:** untriaged files (no prefix) uncapped, never archived. Triaged files capped at 10
-  outside `inbox/archive/`; past that, move the oldest in, then run `idea-index archive` with the
-  affected row ids and a one-line summary — it marks those rows archived and appends the summary
-  to the aggregator's Change log in one call.
-- **Findability:** if asked about `inbox/` content absent from the live table, grep
-  `inbox/archive/*.md` — only index rows are deleted, never files.
+- **Session start:** glob `inbox/*.md` and surface whatever is there — that's the whole discovery
+  mechanism.
+- **Reviewing a file** ends one of three ways, decided in conversation, no ceremony: (a) worth
+  keeping — fold it into the right place (a `memories/` topic file, `idea-bank add` if it's a
+  research idea, or `~/.arti/inbox/` if it's about the ARTi framework itself) and delete the raw
+  file; (b) not worth keeping — delete it; (c) still undecided — leave it in place.
+- **Verbatim researcher prose that *is* the content** (not a note *about* something — ebook
+  narrative, landing-page copy) is never summarized, rewritten, or condensed, and isn't deleted
+  once used. Record where it's been used with one `<!-- used-in: ... -->` comment at the top of the
+  file itself instead of a separate index row.
+- A capture worth cross-project tracking can be added to `~/.arti/inbox/idea-index.md` via
+  `idea-index upsert` (see `arti-db` invocation below) — an available action, not a step every file
+  goes through.
 
 ## Memory rules
 
 - `memory/` holds exactly three files flat (`MEMORY.md`, `todo-list.md`, `status.md`). Every topic
   file goes in `memory/memories/`, read on demand.
 - `MEMORY.md` = index, pointers only, one line each — never content.
-- `todo-list.md` = contiguous `- [ ]`/`- [x]` items only, no narrative.
-- `status.md` = narrative: one "Current state" block overwritten in place each session (never
-  stacked), archive below.
+- `todo-list.md` = contiguous `- [ ]`/`- [x]` items only, one line each, no narrative continuation
+  — link `[[slug]]` for context instead of inlining it. No `## Change log` section. A phase's
+  checked items get deleted once it's closed and captured in a topic file — this file tracks
+  outstanding work, not history.
+- `status.md` = narrative, but only as a pointer: one "Current state" block overwritten in place
+  each session (never stacked), 2-4 sentences naming what changed and a `[[topic-file]]` link for
+  every detail — the topic file carries the report, not this block. No Archive section and no
+  `## Change log` section here either; the linked topic file's own change log and git history
+  already cover it.
 - One file per topic — update it rather than creating a near-duplicate; read it before advising on
   that topic. Link with `[[slug]]`, don't restate across files.
 - **Timestamps:** run a date command, never guess. Set `created` on creation, `updated` on every
-  write, add one `## Change log` line. That is the whole ritual — no history file, no change log
-  of the index.
+  write. Every memory file except `status.md`/`todo-list.md` adds one `## Change log` line on
+  write — no history file, no change log of the index.
 
 Frontmatter for every memory file:
 
@@ -72,8 +78,8 @@ metadata:
 
 ## Session start
 
-Surface, unasked: any open question a memory file recorded ("ask whether X"), and any untriaged
-`inbox/index.md` rows.
+Surface, unasked: any open question a memory file recorded ("ask whether X"), and any file sitting
+untriaged in `inbox/`.
 
 ## Session end
 
@@ -81,15 +87,14 @@ Fired by *any* phrasing meaning "we're done" — "update memory", "update status
 and the like:
 
 1. Update the relevant memory file(s).
-2. Overwrite `status.md`'s "Current state" block.
-3. Check off / add `todo-list.md` items.
-4. If a phase boundary was crossed (idea complete / writing started / submitted / published),
+2. **Only if the session moved outstanding work or produced a state change worth recording:**
+   overwrite `status.md`'s "Current state" pointer and/or check off / add `todo-list.md` items. A
+   session that was pure discussion, research, or Q&A with no checklist or state change skips both
+   files entirely — there is nothing to overwrite.
+3. If a phase boundary was crossed (idea complete / writing started / submitted / published),
    run `project upsert` for this project's row.
-5. Append the session log to `~/.arti/workflow-sessions/` — **preserve turn order; never reorder
-   or flatten by topic.** The sequence in which topics arose is itself the feedback signal for how
-   ARTi's own stages should be sequenced. Synthesized findings live in
-   `~/.arti/memory/memories/arti-workflow-profile.md`.
-6. Promote any correction on *how* to work to `~/.arti/memory/working-preferences.md`.
+4. Write any correction on *how* to work straight into `~/.arti/memory/working-preferences.md`, the
+   same turn it's given — never deferred to session end.
 
 ## Cross-project discovery
 

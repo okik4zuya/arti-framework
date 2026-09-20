@@ -145,7 +145,7 @@ if ($newFrameworkVersion) {
 
 # --- 2. researcher-content subfolders (created empty if missing, never overwritten) --
 
-foreach ($dir in @('memory', 'memory\memories', 'voice-profiles', 'workflow-sessions', 'inbox\archive')) {
+foreach ($dir in @('memory', 'memory\memories', 'voice-profiles', 'inbox')) {
   $p = Join-Path $ArtiHome $dir
   if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
 }
@@ -157,8 +157,8 @@ $memoryStub = @'
 # ~/.arti/memory Index
 
 Plain pointers-only index of this ~/.arti home's researcher-facing state and package files. See
-`todo-list.md` for the live package build/scope checklist and `status.md` for the live narrative
-(current state + archive). Add a one-line pointer row here for each new topic file, per the
+`todo-list.md` for the live package build/scope checklist and `status.md` for the live
+Current-state pointer. Add a one-line pointer row here for each new topic file, per the
 `[[slug]]`-link convention.
 
 ## Index
@@ -175,16 +175,14 @@ metadata:
 ---
 
 Authoritative package build/scope checklist. Add Phase sections and `- [ ]`/`- [x]` items as the
-package plan develops. No narrative here - session write-ups and Current-state prose belong in
-`status.md`.
-
-## Change log
+package plan develops, one line each - no narrative continuation, link `[[slug]]` for context
+instead. No Change log section here - git history covers edits to this file.
 '@
 
 $statusStub = @'
 ---
 name: status
-description: Live narrative for the ARTi package build - Current state + archive (see todo-list.md for the checklist)
+description: Live narrative for the ARTi package build - a short Current-state pointer (see todo-list.md for the checklist)
 metadata:
   type: project
 ---
@@ -192,49 +190,23 @@ metadata:
 ## Current state
 
 (nothing yet)
-
-## Archive
-
-## Change log
 '@
 
-# inbox/ is the researcher's raw-idea inbox. Its contents are git-ignored (the maintainer's own
-# ideas never ship), so a fresh install seeds the two index files it needs, missing-only.
-$inboxIndexStub = @'
-# ~/.arti/inbox/ index
-
-Cross-project raw-idea inbox - for capture about the ARTi framework/skills themselves (new skill
-ideas, workflow friction, tooling gaps), distinct from `~/.arti/memory/research-idea-bank.md`
-(research ideas for future papers) and from `~/.arti/inbox/idea-index.md` (the general cross-project
-aggregator of every project's triaged `inbox/` ideas, this file's own entries included). Unprefixed
-filename = not yet reviewed. Triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`;
-untriaged ones are uncapped and never archived.
-
-| File | Type | Status | One-line hook | Used in | Date added |
-|---|---|---|---|---|---|
-'@
-
+# inbox/ is the researcher's raw-idea inbox: pure drop-and-forget capture, git-ignored (the
+# maintainer's own ideas never ship). No index file - presence in the folder is the signal. Only
+# the cross-project idea-index.md aggregator is seeded, missing-only.
 $ideaIndexStub = @'
 # Idea List Index
 
-**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator: one row
-per raw idea captured in any project's `inbox/` folder (this `~/.arti` home's own `inbox/` included),
-so "what's my idea list and status" is answered by reading this one file, no per-project scanning
-needed.
-
-> Claude upserts a row here the moment an idea is triaged (OK/SKIP/PARKED) in any project's
-> `inbox/index.md`.
+**File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator for a
+capture worth cross-project tracking, added via `idea-index upsert` when Claude or the researcher
+judges it genuinely worth tracking across projects - not a row for every `inbox/` file.
 
 | Idea | Project | Status | One-line hook | Date added |
 |---|---|---|---|---|
 '@
 
-$inboxIndexPath = Join-Path $ArtiHome 'inbox\index.md'
 $ideaIndexPath = Join-Path $ArtiHome 'inbox\idea-index.md'
-if (-not (Test-Path $inboxIndexPath)) {
-  Write-StubFile -Path $inboxIndexPath -Content $inboxIndexStub
-  Write-Host "  [ok] stub created: inbox\index.md"
-}
 if (-not (Test-Path $ideaIndexPath)) {
   Write-StubFile -Path $ideaIndexPath -Content $ideaIndexStub
   Write-Host "  [ok] stub created: inbox\idea-index.md"
@@ -332,6 +304,14 @@ if ($needPython) {
   Write-Host "  [ok] Python installed at $pythonDir"
 } else {
   Write-Host "  [ok] Python $pyVersion (build $pyBuildTag) already installed - skipping."
+}
+
+# Top-level wrapper so the vendored interpreter is reachable without remembering the
+# python\python.exe subpath -- never added to PATH (would risk clashing with any system
+# Python), just a fixed, guessable entry point at the root of ~/.arti.
+if (Test-Path $pythonDir) {
+  $wrapperPath = Join-Path $ArtiHome 'python.cmd'
+  Write-StubFile -Path $wrapperPath -Content "@echo off`r`n`"%~dp0python\python.exe`" %*`r`n"
 }
 
 $reqFile = Join-Path $ArtiHome 'tools\requirements.txt'

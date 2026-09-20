@@ -84,7 +84,7 @@ def scaffold_project(project_path, name):
     today = datetime.now().strftime("%Y-%m-%d")
 
     for folder in ("idea", "writing", "literature/exports", "literature/fulltext",
-                   "data", "figures", "submission", "inbox/archive", "memory"):
+                   "data", "figures", "submission", "inbox", "memory"):
         (project_path / folder).mkdir(parents=True, exist_ok=True)
 
     _write_if_missing(
@@ -95,11 +95,6 @@ def scaffold_project(project_path, name):
     _write_if_missing(
         project_path / "literature" / "library.md",
         "# Library\n\n| Key | Full citation | DOI | Local file path | Read status | Used in |\n"
-        "|---|---|---|---|---|---|\n",
-    )
-    _write_if_missing(
-        project_path / "inbox" / "index.md",
-        "# inbox index\n\n| File | Tipe | Status | One-line hook | Dipakai di | Date added |\n"
         "|---|---|---|---|---|---|\n",
     )
 
@@ -126,18 +121,13 @@ def scaffold_project(project_path, name):
     _write_if_missing(
         project_path / "memory" / "todo-list.md",
         frontmatter("todo-list", f"Checklist of outstanding tasks for {name}", "T0")
-        + "- [ ] Run ARTi-idea to develop the research idea\n\n"
-        "## Change log\n"
-        f"- {today}: project scaffolded\n",
+        + "- [ ] Run ARTi-idea to develop the research idea\n",
     )
     _write_if_missing(
         project_path / "memory" / "status.md",
-        frontmatter("status", f"Living current-state narrative for {name}", "T0")
+        frontmatter("status", f"Living current-state pointer for {name}", "T0")
         + "## Current state\n"
-        f"Project scaffolded {today}. No idea work started yet.\n\n"
-        "## Archive\n\n"
-        "## Change log\n"
-        f"- {today}: project scaffolded\n",
+        f"Project scaffolded {today}. No idea work started yet.\n",
     )
 
     _write_if_missing(project_path / "CLAUDE.md", _claude_md(name))
@@ -162,7 +152,8 @@ def _claude_md(name):
             "truth -- never read or write the default `~/.claude/projects/.../memory/` for "
             "it.\n\n"
             "Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, "
-            "`memory/status.md`, `~/.arti/memory/working-preferences.md`, `inbox/index.md`.\n\n"
+            "`memory/status.md`, `~/.arti/memory/working-preferences.md`. Glob `inbox/*.md` "
+            "for anything sitting untriaged.\n\n"
             "> Canonical template missing at "
             f"`{CLAUDE_TEMPLATE_PATH}` -- regenerate this file once it is restored.\n\n"
             "<!-- arti: local additions below -- preserved on regeneration -->\n"

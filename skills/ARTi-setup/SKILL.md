@@ -28,7 +28,7 @@ the Researcher Profile.
 Windows, `~/.arti` on Mac/Linux) is the single cross-project home for everything that isn't a
 specific paper project — both ARTi tooling (vendored Python, `tools/`, `skills/`, installed via
 the separate `install.ps1`/`install.sh` in the `arti` repo) and researcher content
-(`researcher-profile.md`, `voice-profiles/`, `workflow-sessions/`, etc.). It mirrors where Claude
+(`researcher-profile.md`, `voice-profiles/`, `inbox/`, etc.). It mirrors where Claude
 Code itself keeps `~/.claude`. Unlike the old Drive-based `_ARTi` folder, this path is never asked
 about or confirmed with the researcher — it's the same on every machine. What *is* still the
 researcher's free-form choice, entirely separate from `~/.arti`, is where each individual paper
@@ -40,6 +40,14 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
    `skills/` parts) is created by running `install.ps1` (Windows) or `install.sh` (Mac) from the
    `arti` tooling repo, not by this skill — if those are missing, tell the researcher to run the
    installer first, since this skill only manages researcher-content subfolders.
+
+   **Every Python-backed command below (`arti-db`, `arti-lit`, …) must run through the vendored
+   interpreter, never a bare `python`/`python3`/`py`** — nothing on the researcher's machine puts
+   it on `PATH` (deliberate, to avoid clashing with any system Python), so a bare invocation has
+   nothing to resolve to on a clean install. Use the full path:
+   `"~/.arti/python/python.exe" <script>.py ...` (Windows) or
+   `~/.arti/python/bin/python3 <script>.py ...` (Mac/Linux) — or the shorter top-level wrapper the
+   installer also creates, `~/.arti/python.cmd` / `~/.arti/python3`, if the subpath is forgotten.
 2. Run `arti-db init` (see Reference Files for the invocation) — it creates `~/.arti/memory/arti.db`
    and, if the legacy `research-idea-bank.md`/`project-index.md`/`inbox/idea-index.md` files exist
    already, one-time migrates them; either way it also (re)generates all three `.md` files from the
@@ -47,17 +55,14 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
    Also create empty `journal-library\` and `voice-profiles\` folders. `voice-profiles\` holds ARTi-writing's
    per-researcher Voice Profile files (Stage 0 of that skill) — created empty here, populated the
    first time ARTi-writing needs one.
-   Also create `inbox\` with a header-only `index.md` (`File · Status · One-line hook · Date
-   added`), same shape as a per-project `inbox/index.md` (see
-   `references/project-scaffold-template.md`). This is the cross-project raw-idea inbox — for
-   capture about the **ARTi framework/skills themselves** (new skill ideas, workflow friction,
-   tooling gaps), distinct from `research-idea-bank.md` (research ideas for future papers). A per-project
-   `inbox/` note that turns out to be about the framework rather than that paper gets moved here
-   and PARKED in the project's own index, same triage convention (`YYMMDD_STATUS_<slug>.md`).
-   Create `inbox\archive\` alongside it, empty — same archiving rule as a per-project `inbox/`
-   (see `references/project-scaffold-template.md`): untriaged files stay in the root uncapped,
-   triaged files (OK/SKIP/PARKED) are capped at 10 outside `archive/`, oldest moves in first when
-   the cap is exceeded, with its `index.md` row's `File` column updated to `archive/<filename>`.
+   Also create `inbox\`, empty — the cross-project raw-idea inbox, pure drop-and-forget capture
+   for the **ARTi framework/skills themselves** (new skill ideas, workflow friction, tooling gaps),
+   distinct from `research-idea-bank.md` (research ideas for future papers). No index, no rename,
+   no archiving — same convention as a per-project `inbox/` (see
+   `references/project-scaffold-template.md`): presence in the folder is the "still open" signal.
+   A per-project `inbox/` file that turns out to be about the framework rather than that paper
+   moves here instead. A capture worth cross-project tracking can be added to
+   `inbox\idea-index.md` via `idea-index upsert` — an available action, not a mandatory step.
    Also seed two files if missing:
    - `working-preferences.md` (flat in `memory/`, a cross-project singleton) — normally already
      seeded by `install.ps1`/`install.sh` (missing-only copy of `references/
@@ -100,7 +105,7 @@ project lives (Drive, Dropbox, a bare local folder) — see Workflow B.
 - Follow `references/project-scaffold-template.md` to create the new project's standard folder
   boilerplate — `idea/`, `writing/`, `literature/`, `data/`, `figures/`, `submission/`, `inbox/` —
   plus a `memory/` folder holding `MEMORY.md`, `todo-list.md` (checklist only), and `status.md`
-  (living Current-state narrative + archive) flat, with any topic files under `memory/memories/`
+  (a short overwritten Current-state pointer, no archive) flat, with any topic files under `memory/memories/`
   (see the template's tiering rule), and a root `CLAUDE.md`.
   This layout is identical across every ARTi paper project — don't invent a different one.
 - **Keep the paper-project memory scaffold light.** No `goal.md` (the Idea Canvas and Experiment
