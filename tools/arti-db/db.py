@@ -88,6 +88,84 @@ CREATE TABLE IF NOT EXISTS idea_index_log (
   ts   TEXT NOT NULL,
   note TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS chat_projects (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL UNIQUE,
+  color      TEXT NOT NULL DEFAULT '#007bff',
+  created_at TEXT NOT NULL,
+  linked_project_path TEXT
+);
+
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  name         TEXT NOT NULL,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL,
+  system_role  TEXT NOT NULL DEFAULT 'You are a helpful assistant.',
+  temperature  REAL NOT NULL DEFAULT 0.7,
+  project_id   INTEGER REFERENCES chat_projects(id),
+  linked_project_path TEXT,
+  model_id     INTEGER REFERENCES chat_models(id),
+  files_position TEXT NOT NULL DEFAULT 'before',
+  cross_session_position TEXT NOT NULL DEFAULT 'before'
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id   INTEGER NOT NULL REFERENCES chat_sessions(id),
+  role         TEXT NOT NULL,
+  content      TEXT NOT NULL,
+  is_context   INTEGER NOT NULL DEFAULT 1,
+  tokens_used  INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL,
+  sort_order   INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS chat_templates (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL UNIQUE,
+  content    TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_system_roles (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL UNIQUE,
+  content    TEXT NOT NULL,
+  is_default INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_skills (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL UNIQUE,
+  description TEXT,
+  content     TEXT NOT NULL,
+  created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_session_skills (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL REFERENCES chat_sessions(id),
+  skill_id   INTEGER NOT NULL REFERENCES chat_skills(id),
+  created_at TEXT NOT NULL,
+  UNIQUE(session_id, skill_id)
+);
+
+CREATE TABLE IF NOT EXISTS chat_models (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL UNIQUE,
+  api_key    TEXT NOT NULL,
+  base_url   TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT,
+  updated_at TEXT NOT NULL
+);
 """
 
 
@@ -148,8 +226,53 @@ def init_db():
             if "tag" not in cols:
                 conn.execute("ALTER TABLE idea_bank ADD COLUMN tag TEXT")
                 conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_sessions)").fetchall()}
+            if "linked_project_path" not in cols:
+                conn.execute("ALTER TABLE chat_sessions ADD COLUMN linked_project_path TEXT")
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_sessions)").fetchall()}
+            if "model_id" not in cols:
+                conn.execute("ALTER TABLE chat_sessions ADD COLUMN model_id INTEGER REFERENCES chat_models(id)")
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_sessions)").fetchall()}
+            if "files_position" not in cols:
+                conn.execute("ALTER TABLE chat_sessions ADD COLUMN files_position TEXT NOT NULL DEFAULT 'before'")
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_sessions)").fetchall()}
+            if "cross_session_position" not in cols:
+                conn.execute("ALTER TABLE chat_sessions ADD COLUMN cross_session_position TEXT NOT NULL DEFAULT 'before'")
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_projects)").fetchall()}
+            if "linked_project_path" not in cols:
+                conn.execute("ALTER TABLE chat_projects ADD COLUMN linked_project_path TEXT")
+                conn.commit()
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(chat_messages)").fetchall()}
+            if "sort_order" not in cols:
+                conn.execute("ALTER TABLE chat_messages ADD COLUMN sort_order INTEGER")
+                session_ids = [r["session_id"] for r in conn.execute(
+                    "SELECT DISTINCT session_id FROM chat_messages"
+                ).fetchall()]
+                for sid in session_ids:
+                    rows = conn.execute(
+                        "SELECT id FROM chat_messages WHERE session_id = ? ORDER BY created_at",
+                        (sid,),
+                    ).fetchall()
+                    for rank, row in enumerate(rows, start=1):
+                        conn.execute(
+                            "UPDATE chat_messages SET sort_order = ? WHERE id = ?",
+                            (rank * 10, row["id"]),
+                        )
+                conn.commit()
             if is_new:
                 _migrate_legacy(conn)
+                conn.commit()
+            if conn.execute("SELECT COUNT(*) FROM chat_system_roles").fetchone()[0] == 0:
+                now = _now()
+                conn.execute(
+                    "INSERT INTO chat_system_roles (name, content, is_default, created_at) "
+                    "VALUES ('Helper', 'You are a helpful assistant.', 1, ?)",
+                    (now,),
+                )
                 conn.commit()
             _run_migrations(conn, MIGRATIONS, SCHEMA_VERSION)
         finally:

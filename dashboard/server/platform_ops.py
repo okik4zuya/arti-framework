@@ -13,6 +13,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 BROWSE_SCRIPT = SCRIPT_DIR / "browse-folder.ps1"
 BROWSE_FILES_SCRIPT = SCRIPT_DIR / "browse-files.ps1"
+SAVE_FILE_SCRIPT = SCRIPT_DIR / "browse-save-file.ps1"
 LAUNCH_SCRIPT = SCRIPT_DIR / "launch-focused.ps1"
 
 
@@ -79,6 +80,42 @@ def browse_folder():
             picker = ["kdialog", "--getexistingdirectory"]
         if not picker:
             raise NoPickerAvailable("no folder picker found: install zenity or kdialog")
+        result = subprocess.run(picker, capture_output=True, timeout=120)
+        chosen = result.stdout.decode("utf-8", "replace").strip()
+        return chosen or None
+
+
+def save_file(initial_dir=None, default_name="message.md"):
+    """Shows a native Save-As dialog (folder navigation + new-folder button +
+    filename entry all built in) and returns the chosen absolute path, or
+    None if cancelled / no picker available."""
+    system = platform.system()
+    if system == "Windows":
+        result = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass",
+             "-File", str(SAVE_FILE_SCRIPT), "-InitialDir", initial_dir or "", "-DefaultName", default_name],
+            capture_output=True, timeout=120, creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        chosen = result.stdout.decode("utf-8", "replace").strip()
+        return chosen or None
+    elif system == "Darwin":
+        loc_clause = f'default location POSIX file "{initial_dir}"' if initial_dir else ""
+        script = (
+            f'set theFile to choose file name with prompt "Save as" default name "{default_name}" {loc_clause}\n'
+            'return POSIX path of theFile'
+        )
+        result = subprocess.run(["osascript", "-e", script], capture_output=True, timeout=120)
+        chosen = result.stdout.decode("utf-8", "replace").strip()
+        return chosen or None
+    else:
+        suggested = str(Path(initial_dir or Path.home()) / default_name)
+        picker = None
+        if shutil.which("zenity"):
+            picker = ["zenity", "--file-selection", "--save", "--confirm-overwrite", "--filename", suggested]
+        elif shutil.which("kdialog"):
+            picker = ["kdialog", "--getsavefilename", suggested]
+        if not picker:
+            raise NoPickerAvailable("no save-file picker found: install zenity or kdialog")
         result = subprocess.run(picker, capture_output=True, timeout=120)
         chosen = result.stdout.decode("utf-8", "replace").strip()
         return chosen or None

@@ -71,7 +71,10 @@ Section "Install" SEC01
     ; Tracked repo content (mirrors $TrackedItems / TRACKED_ITEMS in install.ps1 / install.sh)
     File /r "..\tools"
     File /r "..\skills"
-    File /r "..\dashboard"
+    ; server.log is runtime state (app.py truncates/recreates it on each fresh spawn, gitignored) --
+    ; never something to ship. Without this exclude, whatever happens to be on the maintainer's own
+    ; machine at build time gets baked into every install.
+    File /r /x "server.log" "..\dashboard"
     File /r "..\logo"
     File "..\CLAUDE.md"
     File "..\README.md"

@@ -30,10 +30,27 @@
 
   .sidebar{
     flex:none; width:232px; min-height:100vh; background:var(--surface);
-    border-right:1px solid var(--border); display:flex; flex-direction:column;
-    padding:28px 18px 18px;
+    border-right:1px solid var(--border); overflow:hidden;
+    transition:width .15s ease, border-color .15s ease;
   }
+  body.sidebar-collapsed .sidebar{ width:0; border-right-color:transparent; }
+  .sidebar-inner{
+    width:232px; min-height:100vh; display:flex; flex-direction:column;
+    padding:28px 18px 18px; box-sizing:border-box;
+  }
+  .sidebar-toggle-btn{
+    width:28px; height:28px; flex:none; display:flex; align-items:center; justify-content:center;
+    border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    cursor:pointer;
+  }
+  .sidebar-toggle-btn:hover{ background:var(--surface-2); color:var(--text); }
+  #mainSidebarExpandBtn{
+    position:fixed; top:18px; left:14px; z-index:50; display:none;
+    box-shadow:var(--shadow);
+  }
+  body.sidebar-collapsed #mainSidebarExpandBtn{ display:flex; }
   .brand{ display:flex; flex-direction:row; align-items:center; gap:10px; margin-bottom:26px; }
+  .brand h1{ flex:1; min-width:0; }
   .brand .mark{
     display:inline-block; width:34px; height:34px; border-radius:8px;
     background:var(--surface-2); flex:none;
@@ -59,6 +76,7 @@
   .side-note{ font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:14px; }
 
   main{ flex:1; min-width:0; padding:32px 36px 48px; overflow-y:auto; }
+  main.files-full{ padding:0; overflow:hidden; }
 
   .cat-badge{
     display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
@@ -267,6 +285,7 @@
     cursor:pointer; white-space:nowrap;
   }
   .row-menu{ position:relative; display:inline-block; }
+  .row-menu[hidden]{ display:none; }
   .menu-toggle{
     font-family:"Inter",system-ui,sans-serif; font-size:15px; font-weight:700; line-height:1;
     padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface);
@@ -284,6 +303,8 @@
     padding:9px 14px; border:none; background:none; color:var(--text); cursor:pointer; white-space:nowrap;
   }
   .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
+  .menu-dropdown button:disabled{ opacity:.4; cursor:default; }
+  .menu-dropdown button:disabled:hover{ background:none; color:var(--text); }
 
   .panel[hidden]{ display:none; }
 
@@ -351,30 +372,533 @@
   .toggle-row button.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
   .modal-actions{ display:flex; gap:8px; padding:0 20px 18px; justify-content:flex-end; }
   .err{ font-size:13px; color:var(--red); }
+
+  /* ---- Files panel ---- */
+  #filesPanel{ height:calc(100vh - 64px); flex-direction:row; position:relative; }
+  main.files-full #filesPanel{
+    height:100vh; border:none; border-radius:0; box-shadow:none; background:transparent;
+  }
+  /* files-main = everything right of the file-list resizer but left of the
+     Fine AI column: a topbar (project picker + button group) stacked above
+     the project-files / preview content row. */
+  .files-main{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; }
+  .files-topbar{
+    flex:none; display:flex; align-items:center; gap:12px;
+    padding:10px 14px; border-bottom:1px solid var(--border); background:var(--surface);
+  }
+  /* Files view is full-bleed (main.files-full has no padding), so when the
+     main app sidebar is collapsed its fixed-position expand button (top:18
+     left:14) sits directly over the project picker -- reserve room for it. */
+  body.sidebar-collapsed .files-topbar{ padding-left:56px; }
+  .files-topbar-actions{ display:flex; align-items:center; gap:8px; flex:none; margin-left:auto; }
+  .files-content-row{ flex:1; display:flex; min-height:0; }
+  .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles,
+  .files-narrow .files-project-picker-wrap{ display:none; }
+  .files-narrow.menu-open #chatProjectFiles, .files-narrow.menu-open #chatResizerFiles{ display:flex; }
+  #filesMenuToggleBtn{
+    display:none; position:absolute; top:12px; left:12px; z-index:6;
+    align-items:center; gap:5px; height:32px;
+  }
+  #filesMenuToggleBtn svg{ width:14px; height:14px; transition:transform .12s ease; }
+  #filesMenuToggleBtn.menu-open-icon svg{ transform:rotate(180deg); }
+  .files-narrow #filesMenuToggleBtn{ display:inline-flex; }
+  /* Same overlap as the topbar padding-left rule above, but for this
+     separately-positioned toggle: narrow Files view + collapsed main sidebar
+     both anchor a button to the same top-left corner. */
+  body.sidebar-collapsed #filesMenuToggleBtn{ left:56px; }
+  .files-project-picker-wrap{ position:relative; flex:1; min-width:0; max-width:320px; }
+  .files-picker-btn{
+    width:100%; display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface); color:var(--text); font-family:inherit; font-size:13px;
+    cursor:pointer; text-align:left;
+  }
+  .files-picker-btn:hover{ border-color:var(--accent); }
+  .files-picker-btn.open{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+  .files-picker-btn span{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .files-picker-btn span.placeholder{ color:var(--text-muted); }
+  .files-picker-chevron{ width:14px; height:14px; flex:none; color:var(--text-muted); transition:transform .12s ease; }
+  .files-picker-btn.open .files-picker-chevron{ transform:rotate(180deg); }
+  .files-picker-dropdown{
+    position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:480px; z-index:20;
+    background:var(--surface); border:1px solid rgba(16,24,40,0.14); border-radius:10px;
+    box-shadow:0 12px 28px rgba(16,24,40,0.22); padding:8px; display:flex; flex-direction:column; gap:6px;
+    max-height:320px; overflow:hidden;
+  }
+  .files-picker-dropdown[hidden]{ display:none; }
+  .files-picker-dropdown .search-input{ font-size:13px; padding:7px 9px; flex:none; }
+  .files-picker-options{
+    overflow-y:auto; min-height:0; flex:1 1 auto; display:flex; flex-direction:column;
+    border-top:1px solid var(--border); padding-top:4px; margin-top:2px;
+  }
+  .files-picker-option{
+    padding:6px 9px; border-radius:6px; cursor:pointer; flex:none; min-width:0;
+  }
+  .files-picker-option-name{
+    font-size:13px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .files-picker-option-path{
+    font-size:11px; line-height:1.3; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .files-picker-option:hover{ background:var(--accent-soft); }
+  .files-picker-option:hover .files-picker-option-name{ color:var(--accent); }
+  .files-picker-option.active{ background:var(--accent-soft); }
+  .files-picker-option.active .files-picker-option-name{ color:var(--accent); font-weight:600; }
+  .files-picker-empty{ padding:8px 9px; font-size:12.5px; color:var(--text-muted); }
+  .files-preview-panel{
+    flex:1; min-width:280px; display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border);
+    background:var(--surface);
+  }
+  .files-preview-empty{
+    flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px;
+  }
+  .files-preview-empty[hidden]{ display:none; }
+  .files-preview-content{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .files-preview-content[hidden]{ display:none; }
+  .files-preview-panel.editing .files-preview-content{
+    box-shadow:0 0 0 2px var(--accent) inset;
+  }
+  .fine-ai-section{
+    flex:none; display:flex; flex-direction:column; min-height:0; background:var(--surface);
+    width:640px; min-width:380px; max-width:960px;
+  }
+  .fine-ai-section.fine-ai-collapsed{ display:none; }
+  #filesPanel.fine-ai-collapsed #chatResizerFineAi{ display:none; }
+  .fine-ai-header{
+    flex:none; display:flex; align-items:center; gap:8px; padding:12px 16px; cursor:pointer;
+    font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600; color:var(--text);
+    border-left:1px solid var(--border); user-select:none;
+  }
+  .fine-ai-header .chat-folder-chevron{ transition:transform .12s ease; }
+  .fine-ai-header .hint{ margin-left:auto; font-size:12px; }
+  .fine-ai-body{ flex:1; display:flex; min-height:0; position:relative; }
+  .fine-ai-header:disabled, .fine-ai-header.disabled{ opacity:.5; cursor:default; }
+  /* Session-list sub-panel inside Fine AI can itself be hidden to give the
+     thread more room, independent of collapsing Fine AI as a whole. The
+     thread header reserves left padding while collapsed so its title never
+     sits under the floating expand button. */
+  .fine-ai-body.sessions-collapsed #chatSidebarPanel,
+  .fine-ai-body.sessions-collapsed #chatResizerSidebar{ display:none; }
+  .fine-ai-body.sessions-collapsed .chat-thread-head{ padding-left:56px; }
+  .sessions-open-btn{
+    display:none; position:absolute; top:10px; left:10px; z-index:5;
+    align-items:center; justify-content:center; width:28px; height:28px; padding:0;
+    border-radius:6px; border:1px solid var(--border); cursor:pointer;
+    background:var(--surface); color:var(--text-muted);
+  }
+  .sessions-open-btn:hover{ color:var(--accent); background:var(--accent-soft); border-color:var(--accent); }
+  .sessions-open-btn svg{ width:15px; height:15px; flex:none; }
+  .fine-ai-body.sessions-collapsed .sessions-open-btn{ display:inline-flex; }
+  /* Fine AI trigger: lives in the topbar's button group, same .icon-btn.icon-only
+     style as the Menu toggle (a plain circle placeholder until a dedicated Fine
+     AI mark exists) -- only shown while Fine AI is collapsed; the section's own
+     header handles collapsing it again once open. */
+  #fineAiOpenBtn{ display:none; }
+  #filesPanel.fine-ai-collapsed #fineAiOpenBtn{ display:inline-flex; }
+  .files-narrow:not(.menu-open) #fineAiOpenBtn{ opacity:.5; pointer-events:none; }
+  .chat-sidebar{
+    width:270px; flex:none; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; min-height:0; background:var(--surface);
+    min-width:180px; max-width:480px;
+  }
+  .chat-sidebar-inner{ width:100%; display:flex; flex-direction:column; min-height:0; height:100%; min-width:0; }
+
+  /* Drag handles between the three chat columns (sidebar / project files / thread).
+     Width persists per-column in localStorage via CHAT_LAYOUT_KEY. */
+  .chat-resizer{
+    width:6px; flex:none; cursor:col-resize; position:relative; background:transparent;
+    transition:background .1s ease;
+  }
+  .chat-resizer::after{
+    content:""; position:absolute; top:0; bottom:0; left:2px; width:2px;
+    background:var(--border); transition:background .1s ease;
+  }
+  .chat-resizer:hover::after, .chat-resizer.dragging::after{ background:var(--accent); }
+  .chat-resizer.dragging{ background:var(--accent-soft); }
+  body.chat-resizing{ cursor:col-resize; user-select:none; }
+  body.chat-resizing *{ user-select:none; }
+  .chat-sidebar-head{ padding:14px 14px 10px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+  .chat-sidebar-search-row{ display:flex; align-items:center; gap:6px; }
+  .chat-sidebar-search-row .search-input{ flex:1; min-width:0; }
+  .chat-sidebar-search-row .icon-btn.icon-only{ width:32px; height:32px; flex:none; }
+  .chat-sidebar-actions{ display:flex; gap:6px; }
+  .chat-sidebar-actions .btn{ flex:1; padding:7px 8px; font-size:12.5px; }
+  .chat-folder-list{ flex:1; overflow-y:auto; padding:6px; }
+  .chat-folder-group{ margin-bottom:12px; }
+  .chat-folder-label{
+    display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.03em; color:var(--text-muted); padding:8px 4px 8px 6px; border-radius:7px;
+    cursor:pointer; user-select:none; background:var(--surface-2); transition:filter .1s ease;
+    margin-bottom:6px;
+  }
+  .chat-folder-label:hover{ color:var(--text); filter:brightness(0.96); }
+  .chat-folder-chevron{
+    width:14px; height:14px; flex:none; display:flex; align-items:center; justify-content:center;
+    transition:transform .12s ease; color:var(--text-muted);
+  }
+  .chat-folder-group.collapsed .chat-folder-chevron{ transform:rotate(-90deg); }
+  .chat-folder-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .chat-folder-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat-folder-count{
+    font-size:10.5px; font-weight:600; color:var(--text-muted); background:var(--surface-2);
+    border-radius:999px; padding:1px 7px; flex:none;
+  }
+  .chat-folder-add-btn{
+    width:22px; height:22px; flex:none; display:flex; align-items:center; justify-content:center;
+    border-radius:5px; border:none; background:transparent; color:var(--text-muted); cursor:pointer;
+    transition:background .1s ease, color .1s ease;
+  }
+  .chat-folder-add-btn:hover{ background:var(--accent-soft); color:var(--accent); }
+  .chat-folder-add-btn svg{ width:17px; height:17px; }
+  .chat-folder-items{ padding-left:2px; display:flex; flex-direction:column; gap:4px; }
+  .chat-folder-group.collapsed .chat-folder-items{ display:none; }
+  .chat-session-item{
+    display:flex; flex-direction:column; gap:2px; padding:9px 10px; border-radius:8px; cursor:pointer;
+    font-size:13.5px; color:var(--text); border-left:2px solid transparent;
+  }
+  .chat-session-item:hover{ background:var(--surface-2); }
+  .chat-session-item.active{ background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); }
+  .chat-session-item .css-meta{ font-size:11.5px; color:var(--text-muted); }
+  .chat-session-item.active .css-meta{ color:var(--accent); opacity:0.8; }
+
+  .chat-project-files{
+    width:250px; flex:none; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; min-height:0; background:var(--surface);
+    min-width:180px; max-width:520px;
+  }
+  .chat-project-files-head{
+    padding:12px 14px; border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .chat-project-files-label-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .chat-project-files-label{
+    font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-muted);
+    display:flex; align-items:center; gap:6px; flex:1 1 auto; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .chat-project-files-label-row .files-head-actions{
+    display:flex; align-items:center; gap:2px; flex:none; margin-left:auto;
+  }
+  .chat-project-files-label-row .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
+  .chat-project-files-label-row .icon-btn.icon-only svg{ width:15px; height:15px; }
+  .files-action-group{ display:flex; align-items:center; gap:2px; }
+  .files-action-divider{ width:1px; height:16px; background:var(--border); margin:0 5px; flex:none; }
+  .chat-project-files-search-row{ display:flex; align-items:center; gap:6px; }
+  .chat-project-files-search-row .icon-btn.icon-only{ width:30px; height:30px; flex:none; }
+  .chat-project-files-head .search-input{ padding:7px 10px; font-size:13px; min-width:0; flex:1; }
+  .icon-btn.icon-only.filter-active{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .chat-project-files-select-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; position:relative; }
+  .files-select-all{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); cursor:pointer; flex:none; }
+  .chat-project-files-select-row .btn{ padding:5px 9px; font-size:12px; white-space:nowrap; }
+  .chat-project-files-select-row .menu-toggle{ font-family:"Inter",system-ui,sans-serif; }
+  .chat-file-list{ overflow-y:auto; overflow-x:auto; padding:6px; flex:1; min-height:0; }
+  .chat-file-item{
+    display:flex; align-items:center; gap:6px;
+    padding:7px 8px; border-radius:6px; font-size:12.5px;
+    width:max-content; min-width:100%;
+  }
+  .chat-file-item:hover{ background:var(--surface-2); }
+  .chat-file-select{ flex:none; }
+  .chat-file-name{
+    cursor:pointer; color:var(--text); white-space:nowrap;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:12px; flex:none;
+  }
+  .chat-file-name:hover{ color:var(--accent); }
+  .chat-file-name.no-preview{ cursor:default; }
+  .chat-file-name.no-preview:hover{ color:var(--text); }
+  .chat-file-type-icon{ flex:none; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
+  .chat-file-attached-tag{ flex:none; color:var(--accent); font-size:12px; font-weight:700; }
+  .chat-project-files-select-row .btn:disabled,
+  .chat-project-files-select-row .menu-toggle:disabled{ opacity:.5; cursor:default; }
+  .chat-bulk-job-modal{ width:480px; max-width:90vw; }
+  .chat-bulk-job-log{
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; line-height:1.6;
+    max-height:340px; overflow-y:auto; white-space:pre-wrap; word-break:break-word;
+    background:var(--surface-2); border-radius:6px; padding:10px 12px;
+  }
+  .chat-bulk-job-log .log-error{ color:#dc2626; }
+  .chat-bulk-job-head-actions{ display:flex; align-items:center; gap:2px; }
+
+  .chat-bulk-job-pill{
+    position:fixed; right:22px; bottom:22px; z-index:50;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:9px 16px; box-shadow:0 6px 20px rgba(16,24,40,0.18);
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text); cursor:pointer;
+  }
+  .chat-bulk-job-pill:hover{ border-color:var(--accent); }
+  .chat-bulk-job-pill[hidden]{ display:none; }
+  .chat-bulk-job-pill-spinner{
+    width:12px; height:12px; border-radius:50%; flex:none;
+    border:2px solid var(--accent-soft); border-top-color:var(--accent);
+    animation:chat-bulk-job-spin .7s linear infinite;
+  }
+  .chat-bulk-job-pill.done .chat-bulk-job-pill-spinner{
+    border:none; background:#16a34a; animation:none;
+  }
+  @keyframes chat-bulk-job-spin{ to{ transform:rotate(360deg); } }
+
+  /* Project-file preview: an inline column next to the file list (not a modal),
+     so the file list and Fine AI section stay visible while a file is open. */
+  .files-preview-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; border-bottom:1px solid var(--border); flex:none;
+  }
+  .chat-preview-head-actions{ display:flex; align-items:center; gap:4px; flex:none; }
+  .files-preview-head h2{
+    margin:0; font-size:14px; font-family:"SFMono-Regular",Consolas,monospace; font-weight:500;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .preview-filename-input{
+    width:100%; font-size:14px; font-family:"SFMono-Regular",Consolas,monospace; font-weight:500;
+    padding:6px 9px; border:1px solid var(--border); border-radius:6px;
+    background:var(--surface); color:var(--text);
+  }
+  .preview-filename-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .files-preview-content .modal-body{ flex:1; overflow-y:auto; padding:20px 22px; }
+  #chatPreviewBody.markdown-body{ font-size:14px; }
+  #chatPreviewBody.plain-text-body{
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:13px; line-height:1.6;
+    white-space:pre-wrap; word-break:break-word; margin:0; color:var(--text);
+  }
+  .file-preview-edit{ height:100%; display:flex; flex-direction:column; }
+  .file-preview-edit textarea{
+    flex:1; width:100%; font-family:"SFMono-Regular",Consolas,monospace; font-size:13.5px; line-height:1.6;
+    padding:0; margin:0; border:none; outline:none; resize:none; background:transparent; color:var(--text);
+  }
+  .modal-actions .chat-msg-edit-hint{ font-size:12px; }
+
+  .chat-preview-search-bar{
+    display:flex; align-items:center; gap:6px; padding:8px 14px; border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+  }
+  .chat-preview-search-bar[hidden]{ display:none; }
+  .chat-preview-search-bar input{
+    flex:1; min-width:0; font-family:inherit; font-size:13px; padding:6px 10px;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);
+  }
+  .chat-preview-search-count{ font-size:12px; color:var(--text-muted); white-space:nowrap; flex:none; }
+  .chat-preview-search-bar .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
+  mark.search-hit{ background:var(--amber-soft); color:inherit; border-radius:2px; }
+  mark.search-hit.active{ background:var(--amber); color:#fff; }
+
+  .chat-thread{ flex:1; min-width:340px; display:flex; flex-direction:column; min-height:0; background:var(--surface); }
+  .chat-thread-head{
+    padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center;
+    justify-content:space-between; gap:10px;
+  }
+  .chat-thread-title{ font-weight:600; font-size:15px; display:flex; align-items:center; gap:8px; min-width:0; flex:1; overflow:hidden; }
+  .chat-thread-title-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat-thread-title .lifecycle-tag{ flex:none; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat-thread-actions{ display:flex; gap:6px; flex:none; }
+  .chat-context-row{
+    padding:8px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center;
+    gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--text-muted); background:var(--surface-2);
+  }
+  .chat-context-row .btn{ padding:3px 10px; font-size:12px; white-space:nowrap; flex:none; }
+  .chat-context-actions{ display:flex; align-items:center; gap:4px; flex:none; }
+  .chat-context-actions .icon-btn.icon-only{ width:26px; height:26px; }
+  .chat-context-actions .icon-btn.icon-only svg{ width:14px; height:14px; }
+  .token-pill{
+    font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600; color:var(--slate);
+    background:var(--slate-soft); padding:3px 10px; border-radius:20px; white-space:nowrap;
+  }
+  .token-pill.files-pill{
+    border:1px solid transparent; cursor:pointer; color:var(--accent); background:var(--accent-soft);
+  }
+  .token-pill.files-pill:hover{ border-color:var(--accent); }
+  .pill-icon-btn{ display:inline-flex; align-items:center; gap:5px; }
+  .pill-icon-btn svg{ width:13px; height:13px; flex:none; }
+  .files-dropdown{ min-width:220px; max-width:320px; top:calc(100% + 4px); left:0; right:auto; z-index:20; }
+  .files-dropdown-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:7px 12px; font-size:12.5px; color:var(--text);
+  }
+  .files-dropdown-item:hover{ background:var(--surface-2); }
+  .context-dropdown-item{ justify-content:flex-start; cursor:pointer; }
+  .context-dropdown-item input{ flex:none; cursor:pointer; }
+  .files-dropdown-name{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:12px;
+  }
+  .files-dropdown-item button{
+    font-size:13px; line-height:1; border:none; background:none; color:var(--text-muted);
+    cursor:pointer; flex:none; padding:2px 4px;
+  }
+  .files-dropdown-item button:hover{ color:var(--red); }
+  .icon-btn.icon-only.attached{
+    border-color:var(--green); color:var(--green); background:var(--green-soft);
+  }
+  .icon-btn.icon-only.attached:hover{ border-color:var(--red); color:var(--red); background:var(--red-soft); }
+  .chat-messages{ flex:1; overflow-y:auto; padding:16px 18px; display:flex; flex-direction:column; gap:14px; }
+  .chat-msg{ display:flex; flex-direction:column; gap:5px; max-width:82%; min-width:0; }
+  .chat-msg.role-user{ align-self:flex-end; align-items:flex-end; }
+  .chat-msg.role-assistant{ align-self:flex-start; align-items:flex-start; }
+  .chat-msg-bubble{
+    border-radius:12px; padding:10px 13px; font-size:14px; line-height:1.55; white-space:normal;
+    word-break:break-word; cursor:default; min-width:0; max-width:100%; box-sizing:border-box;
+  }
+  .chat-msg.role-user .chat-msg-bubble{ background:var(--accent); color:#fff; }
+  .chat-msg.role-assistant .chat-msg-bubble{ background:var(--surface-2); color:var(--text); }
+  .chat-msg.ctx-off .chat-msg-bubble{ opacity:0.45; }
+  .chat-msg-bubble.markdown-body{ font-size:14px; background-color:transparent; }
+  .chat-msg-bubble.markdown-body > *:first-child{ margin-top:0; }
+  .chat-msg-bubble.markdown-body > *:last-child{ margin-bottom:0; }
+  .chat-msg-bubble pre{
+    background:rgba(0,0,0,0.06); border-radius:8px; padding:10px; overflow-x:auto; position:relative;
+    font-size:12.5px; font-family:"SFMono-Regular",Consolas,monospace; margin:6px 0;
+  }
+  .chat-msg.role-user .chat-msg-bubble pre{ background:rgba(255,255,255,0.16); }
+  .chat-msg-bubble code{ font-family:"SFMono-Regular",Consolas,monospace; font-size:0.92em; }
+  .chat-msg-bubble .code-copy-btn{
+    position:absolute; top:6px; right:6px; font-size:11px; padding:2px 7px; border-radius:5px;
+    border:1px solid rgba(0,0,0,0.15); background:var(--surface); color:var(--text-muted); cursor:pointer;
+  }
+  /* markdown-body bakes in dark-on-light colors for links/blockquotes/tables/hr;
+     override to stay legible on the user bubble's solid accent background */
+  .chat-msg.role-user .chat-msg-bubble.markdown-body a{ color:#eaf1ff; }
+  .chat-msg.role-user .chat-msg-bubble.markdown-body blockquote{
+    color:rgba(255,255,255,0.85); border-left-color:rgba(255,255,255,0.35);
+  }
+  .chat-msg.role-user .chat-msg-bubble.markdown-body hr{
+    background-color:rgba(255,255,255,0.35); border-bottom-color:rgba(255,255,255,0.35);
+  }
+  .chat-msg.role-user .chat-msg-bubble.markdown-body table td,
+  .chat-msg.role-user .chat-msg-bubble.markdown-body table th{ border-color:rgba(255,255,255,0.35); }
+  .chat-msg.role-user .chat-msg-bubble.markdown-body code{ background-color:rgba(255,255,255,0.16); }
+
+  .chat-msg-bubble.editing{ display:flex; flex-direction:column; box-shadow:0 0 0 2px var(--accent); }
+  .chat-msg.role-user .chat-msg-bubble.editing{ box-shadow:0 0 0 2px rgba(255,255,255,0.85); }
+  .chat-msg-edit-badge{
+    display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.03em; color:var(--accent);
+  }
+  .chat-msg.role-user .chat-msg-edit-badge{ color:#fff; }
+  .chat-msg-edit-badge::before{ content:"\270E"; font-size:11px; }
+  .chat-msg-edit{ display:flex; flex-direction:column; flex:1; min-height:0; gap:8px; }
+  .chat-msg-edit textarea{
+    width:100%; flex:1; min-height:40px; font:inherit; line-height:1.55;
+    padding:0; margin:0; border:none; outline:none; resize:none;
+    background:transparent; color:inherit;
+  }
+  .chat-msg-edit-actions{ display:flex; align-items:center; gap:6px; }
+  .chat-msg-edit-hint{ margin-right:auto; }
+  .chat-msg-edit-actions button{
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600; padding:5px 12px;
+    border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+    cursor:pointer;
+  }
+  .chat-msg-edit-actions button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .chat-msg-edit-hint{ font-size:11px; color:var(--text-muted); }
+  .chat-msg.role-user .chat-msg-edit-hint{ color:rgba(255,255,255,0.75); }
+
+  .chat-msg-meta{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-muted); }
+  .chat-msg-meta button{
+    font-family:inherit; font-size:11px; padding:1px 7px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-muted); cursor:pointer;
+  }
+  .chat-msg-meta button:hover{ border-color:var(--accent); color:var(--accent); }
+  .chat-msg-meta button.on{ border-color:var(--green); color:var(--green); background:var(--green-soft); }
+  .chat-compose{ border-top:1px solid var(--border); padding:12px 18px; display:flex; flex-direction:column; gap:8px; }
+  .chat-compose-row{
+    display:flex; gap:8px; align-items:flex-end;
+    border:1.5px solid var(--border); border-radius:16px; background:var(--surface);
+    padding:6px 6px 6px 16px; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .chat-compose-row:focus-within{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .chat-compose textarea{
+    flex:1; resize:none; min-height:24px; max-height:220px; font-family:inherit; font-size:14.5px;
+    line-height:1.5; padding:9px 0; border:none; outline:none; background:transparent; color:var(--text);
+    overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .chat-compose textarea::-webkit-scrollbar{ display:none; }
+  .chat-compose-row .btn.primary{ flex:none; align-self:flex-end; margin-bottom:3px; border-radius:12px; }
+  .chat-compose-tools{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .compose-dropdown{
+    left:0; right:auto; top:auto; bottom:calc(100% + 4px); min-width:160px; max-width:260px;
+    max-height:240px; overflow-y:auto;
+  }
+  .chat-empty{ margin:auto; text-align:center; color:var(--text-muted); font-size:14px; padding:40px; }
+
+  /* ---- Settings panel ---- */
+  #settingsPanel .modal-body{ gap:22px; }
+  .settings-section{ display:flex; flex-direction:column; gap:10px; }
+  .settings-section h3{ margin:0; font-size:14px; font-weight:600; }
+  .settings-section .hint{ margin-top:-4px; }
+  .model-row{
+    display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .model-row:first-child{ border-top:none; }
+  .model-row .m-name{ font-weight:600; font-size:13.5px; min-width:140px; }
+  .model-row .m-url{ font-size:12px; color:var(--text-muted); flex:1; min-width:120px; }
+  .model-add-row{ display:flex; gap:8px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--border); }
+  .model-add-row input{
+    font-family:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:7px;
+  }
+  .model-add-row input.m-in-name{ width:170px; }
+  .model-add-row input.m-in-url{ width:200px; }
+  .model-add-row input.m-in-key{ flex:1; min-width:160px; }
+  #pdfSummaryPrompt{
+    width:100%; min-height:100px; font-family:inherit; font-size:13.5px; padding:10px 12px;
+    border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); resize:vertical;
+  }
+  .settings-panel-body{ padding:20px; display:flex; flex-direction:column; gap:24px; max-width:760px; }
+
+  /* ---- Message management / bulk-inject / export modals ---- */
+  .mm-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .mm-table th, .mm-table td{ padding:7px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  .mm-table td.mm-content{ max-width:520px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mm-table td.mm-content.expanded{ white-space:pre-wrap; overflow:visible; text-overflow:clip; }
+  .mm-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:10px; }
+  #bulkJsonText, #exportJsonText, #contextInspectText{
+    width:100%; min-height:320px; font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px;
+    padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); color:var(--text);
+  }
+  #contextInspectOverlay .modal-body{ flex:1; min-height:0; }
+  #contextInspectHint, #contextInspectOverlay .export-format-tabs{ flex:none; }
+  #contextInspectText{ flex:1; min-height:0; resize:none; }
+  .export-format-tabs{ display:flex; gap:6px; margin-bottom:8px; }
+  .export-format-tabs .btn{ padding:5px 12px; font-size:12.5px; }
+  .export-format-tabs .btn.active{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  #contextInspectManagePane{ flex:1; min-height:0; flex-direction:column; }
+  #contextInspectManagePane:not([hidden]){ display:flex; }
+  #contextInspectManagePane .mm-table-wrap{ overflow:auto; flex:1; }
+  .mm-table td.mm-drag{ width:20px; cursor:grab; color:var(--text-muted); user-select:none; }
+  .mm-table tr.mm-dragging{ opacity:.4; }
+  .mm-table tr.mm-drop-target{ box-shadow:inset 0 2px 0 var(--accent); }
+  .mm-ctx-toggle{ padding:3px 9px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); cursor:pointer; }
+  .mm-ctx-toggle.on{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  #contextInspectManageErr{ margin-top:6px; }
 </style>
 </head>
 <body>
 <div class="sidebar">
-  <div class="brand">
-    <svg class="mark" viewBox="0 0 160 160" aria-hidden="true">
-      <rect width="160" height="160" rx="36" fill="var(--surface-2)" />
-      <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
-            fill="none" stroke="var(--slate)" stroke-width="19"
-            stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="103" cy="34" r="16" fill="var(--accent)" />
-    </svg>
-    <h1>ARTi</h1>
+  <div class="sidebar-inner">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 160 160" aria-hidden="true">
+        <rect width="160" height="160" rx="36" fill="var(--surface-2)" />
+        <path d="M 51,132 L 51,108 L 77,108 L 77,84 L 103,84 L 103,50"
+              fill="none" stroke="var(--slate)" stroke-width="19"
+              stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="103" cy="34" r="16" fill="var(--accent)" />
+      </svg>
+      <h1>ARTi</h1>
+      <button type="button" class="sidebar-toggle-btn" id="mainSidebarCollapseBtn" title="Hide sidebar">&#9776;</button>
+    </div>
+    <nav class="side-nav">
+      <button type="button" class="nav-item active" data-view="projects">Projects</button>
+      <button type="button" class="nav-item" data-view="ideas">Ideas</button>
+      <button type="button" class="nav-item" data-view="files">Files</button>
+      <button type="button" class="nav-item" data-view="settings">Settings</button>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-version" id="frameworkVersion" style="opacity:0.5; font-size:11px; padding:4px 0;"></div>
+    <button class="btn danger" id="quitBtn">Quit Dashboard</button>
   </div>
-  <nav class="side-nav">
-    <button type="button" class="nav-item active" data-view="projects">Projects</button>
-    <button type="button" class="nav-item" data-view="ideas">Ideas</button>
-  </nav>
-  <div class="side-spacer"></div>
-  <div class="side-version" id="frameworkVersion" style="opacity:0.5; font-size:11px; padding:4px 0;"></div>
-  <button class="btn danger" id="quitBtn">Quit Dashboard</button>
 </div>
+<button type="button" class="sidebar-toggle-btn" id="mainSidebarExpandBtn" title="Show sidebar">&#9776;</button>
 
-<main>
+<main id="mainEl">
   <div class="col">
     <div class="panel" id="projectsPanel">
       <div class="panel-head">
@@ -413,6 +937,223 @@
           </thead>
           <tbody id="ideasBody"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel fine-ai-collapsed" id="filesPanel" hidden>
+    <button type="button" id="filesMenuToggleBtn" class="icon-btn" title="Show project / file list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Files</span>
+    </button>
+    <div class="files-main" id="filesMain">
+      <div class="files-topbar">
+        <div class="files-project-picker-wrap" id="filesProjectPickerWrap">
+          <button type="button" class="files-picker-btn" id="filesProjectPickerBtn">
+            <span id="filesProjectPickerLabel" class="placeholder">Select a project…</span>
+            <svg class="files-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="files-picker-dropdown" id="filesProjectPickerDropdown" hidden>
+            <input type="text" class="search-input" id="filesProjectPickerSearch" placeholder="Search projects…" autocomplete="off" />
+            <div class="files-picker-options" id="filesProjectPickerOptions"></div>
+          </div>
+        </div>
+        <div class="files-topbar-actions">
+          <button type="button" class="icon-btn icon-only" id="fineAiOpenBtn" title="Open Fine AI">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="files-content-row">
+    <div class="chat-project-files" id="chatProjectFiles">
+      <div class="chat-project-files-head">
+        <div class="chat-project-files-label-row">
+          <div class="chat-project-files-label">Project files <span class="count-badge" id="chatProjectFilesCount">0</span></div>
+          <div class="files-head-actions">
+            <span class="files-action-group">
+              <button type="button" class="icon-btn icon-only" id="chatNewFileBtn" title="New file">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke-linejoin="round"/>
+                  <path d="M13 3v5h5" stroke-linejoin="round"/>
+                  <path d="M12 12v5M9.5 14.5h5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="button" class="icon-btn icon-only" id="chatAddFileBtn" title="Upload file">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="button" class="icon-btn icon-only" id="chatRefreshFilesBtn" title="Refresh file list">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M20 11a8 8 0 0 0-14.9-3.5M4 13a8 8 0 0 0 14.9 3.5" stroke-linecap="round"/>
+                  <path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </span>
+            <span class="files-action-divider"></span>
+            <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="References">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button type="button" class="icon-btn icon-only" id="chatOpenVscodeBtn" title="Open in VS Code">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
+              </svg>
+            </button>
+            <button type="button" class="icon-btn icon-only" id="chatOpenProjectFolderBtn" title="Open in file explorer">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#FFA000" d="M2 6a2 2 0 0 1 2-2h4.17a2 2 0 0 1 1.41.59L11 6h9a2 2 0 0 1 2 2v1H2z"/>
+                <path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="chat-project-files-search-row">
+          <input class="search-input" id="chatFileSearch" placeholder="Search files…" />
+          <button type="button" class="icon-btn icon-only" id="chatFileFilterBtn" title="Show only attached files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M4 5h16l-6.5 7.5V18l-3 1.5v-7z" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-project-files-select-row">
+          <label class="files-select-all">
+            <input type="checkbox" id="chatFileSelectAll" />
+            <span id="chatFileSelectAllLabel">Select all</span>
+          </label>
+          <span class="row-menu">
+            <button type="button" class="menu-toggle" id="chatFileActionsToggle" disabled aria-label="File actions">&#8942;</button>
+            <div class="menu-dropdown" id="chatFileActionsDropdown" hidden>
+              <button type="button" id="chatAddToContextBtn">Add to chat context</button>
+              <button type="button" id="chatCopySelectedBtn">Copy as MD</button>
+              <button type="button" id="chatSummarizeSelectedBtn">Summarize PDF(s)</button>
+              <button type="button" id="chatExtractPdfBtn">Extract PDF(s)</button>
+            </div>
+          </span>
+        </div>
+      </div>
+      <div class="chat-file-list" id="chatFileList"></div>
+    </div>
+    <div class="chat-resizer" id="chatResizerFiles" data-target="chatProjectFiles" title="Drag to resize"></div>
+
+    <div class="files-preview-panel" id="filesPreviewPanel">
+      <div class="files-preview-empty" id="filesPreviewEmpty">No file selected.</div>
+      <div class="files-preview-content" id="filesPreviewContent" hidden>
+        <div class="files-preview-head">
+          <h2 id="chatPreviewFileName"></h2>
+          <div class="chat-preview-head-actions">
+            <button class="icon-btn icon-only" id="chatPreviewSearchToggleBtn" type="button" title="Search in file (Ctrl+F)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <circle cx="10.5" cy="10.5" r="6.5"/>
+                <path d="M20 20l-5-5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="icon-btn icon-only" id="chatPreviewCloseBtn" title="Close preview">&times;</button>
+          </div>
+        </div>
+        <div class="chat-preview-search-bar" id="chatPreviewSearchBar" hidden>
+          <input type="text" id="chatPreviewSearchInput" placeholder="Search in file…" />
+          <span class="chat-preview-search-count" id="chatPreviewSearchCount">0 / 0</span>
+          <button type="button" class="icon-btn icon-only" id="chatPreviewSearchPrevBtn" title="Previous match">&#8593;</button>
+          <button type="button" class="icon-btn icon-only" id="chatPreviewSearchNextBtn" title="Next match">&#8595;</button>
+          <button type="button" class="icon-btn icon-only" id="chatPreviewSearchCloseBtn" title="Close search">&times;</button>
+        </div>
+        <div class="modal-body" id="chatPreviewBodyWrap">
+          <div class="markdown-body" id="chatPreviewBody"></div>
+        </div>
+        <div class="modal-actions" id="chatPreviewActions">
+          <button class="btn" id="chatPreviewEditBtn" type="button">Edit</button>
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <div class="chat-resizer" id="chatResizerFineAi" data-target="fineAiSection" data-invert="true" title="Drag to resize"></div>
+
+    <div class="fine-ai-section fine-ai-collapsed" id="fineAiSection">
+      <div class="fine-ai-header" id="fineAiHeader" role="button" tabindex="0">
+        <span class="chat-folder-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="fine-ai-label">Fine AI</span>
+        <span class="hint" id="fineAiStatusHint"></span>
+      </div>
+      <div class="fine-ai-body" id="fineAiBody">
+        <button type="button" class="sessions-open-btn" id="sessionsOpenBtn" title="Show sessions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="chat-sidebar" id="chatSidebarPanel">
+          <div class="chat-sidebar-inner">
+            <div class="chat-sidebar-head">
+              <div class="chat-sidebar-search-row">
+                <input class="search-input" id="chatSearch" placeholder="Search sessions…" />
+                <button type="button" class="icon-btn icon-only" id="sessionsHideBtn" title="Hide sessions">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+              <div class="chat-sidebar-actions">
+                <button class="btn primary" id="newChatSessionBtn" type="button">New session</button>
+                <button class="btn" id="newChatFolderBtn" type="button">New folder</button>
+              </div>
+            </div>
+            <div class="chat-folder-list" id="chatFolderList"></div>
+          </div>
+        </div>
+        <div class="chat-resizer" id="chatResizerSidebar" data-target="chatSidebarPanel" title="Drag to resize"></div>
+        <div class="chat-thread" id="chatThread">
+          <div class="chat-empty" id="chatEmptyState">Select or create a session to start chatting.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="chatBulkJobOverlay" hidden>
+      <div class="modal chat-bulk-job-modal">
+        <div class="modal-head">
+          <h2 id="chatBulkJobTitle">Working…</h2>
+          <div class="chat-bulk-job-head-actions">
+            <button class="modal-close" id="chatBulkJobMinimizeBtn" type="button" title="Minimize — keep running in the background">&#8211;</button>
+            <button class="modal-close" id="chatBulkJobCloseBtn" disabled>&times;</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="chat-bulk-job-log" id="chatBulkJobLog"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn primary" id="chatBulkJobDoneBtn" disabled>Close</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="chat-bulk-job-pill" id="chatBulkJobPill" hidden>
+      <span class="chat-bulk-job-pill-spinner" id="chatBulkJobPillSpinner"></span>
+      <span id="chatBulkJobPillText">Working…</span>
+    </button>
+  </div>
+
+  <div class="panel" id="settingsPanel" hidden>
+    <div class="panel-head">
+      <div class="panel-title">Settings</div>
+    </div>
+    <div class="settings-panel-body">
+      <div class="settings-section">
+        <h3>Chat models</h3>
+        <div class="hint">OpenAI-compatible models (name, API key, optional base URL override for Gemini/Grok/etc). The default model is used for chat and PDF summarization.</div>
+        <div id="modelsList"></div>
+        <div class="model-add-row">
+          <input class="m-in-name" id="newModelName" placeholder="Model name (e.g. gpt-4o)" />
+          <input class="m-in-url" id="newModelUrl" placeholder="Base URL (optional)" />
+          <input class="m-in-key" id="newModelKey" placeholder="API key" type="password" />
+          <button class="btn primary" id="addModelBtn" type="button">Add model</button>
+        </div>
+        <div class="err" id="modelsErr" hidden></div>
+      </div>
+      <div class="settings-section">
+        <h3>PDF summarizer prompt</h3>
+        <div class="hint">Used by ArtiPDF's "Summarize with AI" context-menu action, sent as the system prompt against the default model above.</div>
+        <textarea id="pdfSummaryPrompt"></textarea>
+        <div><button class="btn primary" id="savePdfPromptBtn" type="button">Save prompt</button></div>
       </div>
     </div>
   </div>
@@ -500,6 +1241,224 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="sessionOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="sessionModalTitle">New Session</h2>
+      <button class="modal-close" id="closeSessionModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input id="sessionName" placeholder="Session name" />
+      <select id="sessionFolder"></select>
+      <select id="sessionSystemRole"></select>
+      <div class="hint">Temperature</div>
+      <input id="sessionTemperature" type="number" min="0" max="2" step="0.1" placeholder="0.7" />
+      <div class="hint">Attached files position</div>
+      <select id="sessionFilesPosition">
+        <option value="before">Before conversation</option>
+        <option value="after">After conversation</option>
+      </select>
+      <div class="hint">Cross-session context position</div>
+      <select id="sessionCrossSessionPosition">
+        <option value="before">Before conversation</option>
+        <option value="after">After conversation</option>
+      </select>
+      <div class="err" id="sessionErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="sessionConfirmBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="chatFolderOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="chatFolderModalTitle">New Folder</h2>
+      <button class="modal-close" id="closeChatFolderModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input id="chatFolderName" placeholder="Folder name" />
+      <input id="chatFolderColor" type="color" value="#2563eb" style="width:60px; padding:2px; height:38px;" />
+      <div class="err" id="chatFolderErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="chatFolderConfirmBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="qaOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Add Q&amp;A Pair</h2>
+      <button class="modal-close" id="closeQaModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint">Writes a synthetic user question + assistant answer directly into context, without calling the model.</div>
+      <textarea id="qaQuestion" placeholder="Question (user)" style="min-height:70px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <textarea id="qaAnswer" placeholder="Answer (assistant)" style="min-height:110px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <div class="err" id="qaErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="qaConfirmBtn">Add to session</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkInjectOverlay" hidden>
+  <div class="modal fullsize">
+    <div class="modal-head">
+      <h2>Bulk Inject Messages (JSON)</h2>
+      <button class="modal-close" id="closeBulkInjectModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint">Paste a JSON array of <code>{role, content, is_context}</code> objects, or load a file, to import a whole conversation directly into this session.</div>
+      <input type="file" id="bulkJsonFile" accept="application/json" />
+      <textarea id="bulkJsonText" placeholder="[&#10;  { &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot; },&#10;  { &quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;...&quot; }&#10;]"></textarea>
+      <div class="err" id="bulkInjectErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="bulkInjectConfirmBtn">Inject</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportOverlay" hidden>
+  <div class="modal fullsize">
+    <div class="modal-head">
+      <h2>Export Context</h2>
+      <button class="modal-close" id="closeExportModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-format-tabs">
+        <button type="button" class="btn" id="exportFormatJsonBtn" data-format="json">JSON</button>
+        <button type="button" class="btn" id="exportFormatMdBtn" data-format="markdown">Markdown</button>
+      </div>
+      <textarea id="exportJsonText" readonly></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="exportCopyBtn" type="button">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="contextInspectOverlay" hidden>
+  <div class="modal fullsize">
+    <div class="modal-head">
+      <h2>Inspect Context</h2>
+      <button class="modal-close" id="closeContextInspectModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint" id="contextInspectHint"></div>
+      <div class="export-format-tabs">
+        <button type="button" class="btn" id="contextInspectReadableBtn" data-format="readable">Readable</button>
+        <button type="button" class="btn" id="contextInspectRawBtn" data-format="raw">Raw JSON</button>
+        <button type="button" class="btn" id="contextInspectManageBtn" data-format="manage">Manage</button>
+      </div>
+      <textarea id="contextInspectText" readonly></textarea>
+      <div id="contextInspectManagePane" hidden>
+        <div class="mm-toolbar">
+          <button class="btn danger" id="mmDeleteBtn" type="button">Delete selected</button>
+          <button class="btn" id="mmCopyJsonBtn" type="button">Copy selected as JSON</button>
+        </div>
+        <div class="mm-table-wrap">
+          <table class="mm-table">
+            <thead><tr><th></th><th></th><th>Role</th><th>Content</th><th>Context</th><th>Created</th></tr></thead>
+            <tbody id="mmBody"></tbody>
+          </table>
+        </div>
+        <div class="err" id="contextInspectManageErr" hidden></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="contextInspectCopyBtn" type="button">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addFileOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Upload Files</h2>
+      <button class="modal-close" id="closeAddFileModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="addFileUploadPane">
+        <label class="hint" for="addFileFolderSelect">Save to</label>
+        <select id="addFileFolderSelect"></select>
+        <input type="file" id="addFileUploadInput" multiple />
+        <div class="hint">Any file type. Each file keeps its own name; existing files won't be overwritten.</div>
+      </div>
+      <div class="err" id="addFileErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="addFileSubmitBtn" type="button">Upload</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="templatesOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Templates</h2>
+      <button class="modal-close" id="closeTemplatesModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="templatesList"></div>
+      <input id="newTemplateName" placeholder="Template name" />
+      <textarea id="newTemplateContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <div class="err" id="templatesErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="addTemplateBtn" type="button">Add template</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="skillsOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Skills</h2>
+      <button class="modal-close" id="closeSkillsModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="skillsList"></div>
+      <input id="newSkillName" placeholder="Skill name" />
+      <input id="newSkillDescription" placeholder="Description (optional)" />
+      <textarea id="newSkillContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <div class="err" id="skillsErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="addSkillBtn" type="button">Add skill</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="systemRolesOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>System Roles</h2>
+      <button class="modal-close" id="closeSystemRolesModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="systemRolesList"></div>
+      <input id="newRoleName" placeholder="Role name" />
+      <textarea id="newRoleContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <label style="font-size:13px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="newRoleDefault" /> Set as default</label>
+      <div class="err" id="systemRolesErr" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" id="addRoleBtn" type="button">Add role</button>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="/lib/github-markdown.min.css">
+<link rel="stylesheet" href="/lib/katex.min.css">
+<script src="/lib/marked.min.js"></script>
+<script src="/lib/katex.min.js"></script>
+<script src="/lib/auto-render.min.js"></script>
 <script>
 (function(){
   var API = "/api";
@@ -518,11 +1477,36 @@
     '<path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>';
   var ICON_REFERENCES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
     '<path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/></svg>';
+  var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<path d="M4 5h16v11H8l-4 4z" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  var ICON_MODEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<rect x="7" y="7" width="10" height="10" rx="1.5"/>' +
+    '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.5 4.5l2 2M17.5 17.5l2 2M19.5 4.5l-2 2M6.5 17.5l-2 2" stroke-linecap="round"/></svg>';
+  var ICON_TEMPLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<path d="M6 3h8l4 4v14H6z" stroke-linejoin="round"/><path d="M14 3v4h4" stroke-linejoin="round"/>' +
+    '<path d="M9 12h6M9 16h6" stroke-linecap="round"/></svg>';
+  var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<rect x="9" y="9" width="12" height="12" rx="1.5"/><path d="M6 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V6"/></svg>';
+  var ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">' +
+    '<path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_PLUS_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">' +
+    '<path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>';
+  var ICON_INSPECT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
+    '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.5-4.5" stroke-linecap="round"/></svg>';
 
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
+  }
+
+  function hexToRgba(hex, alpha){
+    var h = (hex || "").replace("#", "");
+    if (h.length === 3) h = h.split("").map(function(c){ return c + c; }).join("");
+    var num = parseInt(h, 16);
+    if (isNaN(num)) return "rgba(37,99,235," + alpha + ")";
+    var r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+    return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
   }
 
   function openModal(overlay){
@@ -548,6 +1532,7 @@
       allProjects = data.projects;
       renderCategoryChips();
       renderProjects();
+      renderFilesProjectPicker();
       if (data.frameworkVersion) {
         document.getElementById("frameworkVersion").textContent = "v" + data.frameworkVersion;
       }
@@ -644,6 +1629,7 @@
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">' + ICON_FOLDER + '<span>Open folder</span></button>' +
           '<button class="icon-btn icon-only" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '" title="Open VS Code">' + ICON_VSCODE + '</button>' +
           '<button class="icon-btn icon-only" data-role="references" data-path="' + escapeHtml(r.path) + '" title="References">' + ICON_REFERENCES + '</button>' +
+          '<button class="icon-btn icon-only" data-role="open-in-files" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '" title="Open in Files">' + ICON_CHAT + '</button>' +
           '<div class="row-menu">' +
             '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
             '<div class="menu-dropdown" hidden>' + lifecycleBtns + '</div>' +
@@ -665,6 +1651,11 @@
       btn.addEventListener("click", function(){
         closeAllRowMenus();
         openReferencesModal(btn.getAttribute("data-path"));
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="open-in-files"]'), function(btn){
+      btn.addEventListener("click", function(){
+        openProjectInFiles(btn.getAttribute("data-path"), btn.getAttribute("data-name"));
       });
     });
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="edit-project"]'), function(btn){
@@ -790,6 +1781,24 @@
 
   var projectsPanel = document.getElementById("projectsPanel");
   var ideasPanel = document.getElementById("ideasPanel");
+  var filesPanel = document.getElementById("filesPanel");
+  var settingsPanel = document.getElementById("settingsPanel");
+  var chatLoaded = false;
+  var settingsLoaded = false;
+
+  var mainSidebarCollapsed = false;
+  try { mainSidebarCollapsed = localStorage.getItem("mainSidebarCollapsed") === "1"; } catch(e){ mainSidebarCollapsed = false; }
+  function applyMainSidebarCollapsed(){
+    document.body.classList.toggle("sidebar-collapsed", mainSidebarCollapsed);
+  }
+  function setMainSidebarCollapsed(v){
+    mainSidebarCollapsed = v;
+    try { localStorage.setItem("mainSidebarCollapsed", v ? "1" : "0"); } catch(e){}
+    applyMainSidebarCollapsed();
+  }
+  applyMainSidebarCollapsed();
+  document.getElementById("mainSidebarCollapseBtn").addEventListener("click", function(){ setMainSidebarCollapsed(true); });
+  document.getElementById("mainSidebarExpandBtn").addEventListener("click", function(){ setMainSidebarCollapsed(false); });
 
   Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(btn){
     btn.addEventListener("click", function(){
@@ -799,7 +1808,16 @@
       });
       projectsPanel.hidden = view !== "projects";
       ideasPanel.hidden = view !== "ideas";
+      filesPanel.hidden = view !== "files";
+      settingsPanel.hidden = view !== "settings";
+      document.getElementById("mainEl").classList.toggle("files-full", view === "files");
       if (view === "ideas" && !ideasLoaded) loadIdeas();
+      if (view === "files") {
+        renderFilesProjectPicker();
+        if (!chatLoaded) { chatLoaded = true; loadChatData().then(function(){ renderChatSidebar(); }); }
+        updateFilesResponsiveState();
+      }
+      if (view === "settings") { settingsLoaded = true; loadSettingsPanel(); }
     });
   });
 
@@ -1151,6 +2169,2597 @@
     api("/shutdown", { method:"POST" }).finally(function(){
       document.body.innerHTML = '<div style="padding:40px; text-align:center; font-family:\'IBM Plex Mono\',monospace; color:var(--text-muted);">Dashboard stopped. You can close this tab.</div>';
     });
+  });
+
+  // =====================================================================
+  // Chat (ported from fine-ai-chat) — sessions/folders/messages with
+  // per-message context curation, cross-session context merging, streaming
+  // responses, templates/system-roles/models CRUD.
+  // =====================================================================
+
+  var chatFolders = [];
+  var chatSessionsList = [];
+  var chatModels = [];
+  var chatSystemRoles = [];
+  var chatTemplates = [];
+  var chatSkills = [];
+  var chatSessionSkillIds = [];
+  var chatCurrentSessionId = null;
+  var chatCurrentMessages = [];
+  var chatContextSessionIds = [];
+  var chatSearchQuery = "";
+  var chatSending = false;
+  var chatProjectFiles = [];
+
+  var chatFolderCollapsed = {};
+  try { chatFolderCollapsed = JSON.parse(localStorage.getItem("chatFolderCollapsed") || "{}"); } catch(e){ chatFolderCollapsed = {}; }
+  function saveChatFolderCollapsed(){
+    try { localStorage.setItem("chatFolderCollapsed", JSON.stringify(chatFolderCollapsed)); } catch(e){}
+  }
+
+  function renderMsgContent(content){
+    var text = typeof content === "string" ? content : JSON.stringify(content);
+    var html = marked.parse(text, { gfm: true, breaks: true });
+    var tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    Array.prototype.forEach.call(tmp.querySelectorAll("pre"), function(pre){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "code-copy-btn";
+      btn.setAttribute("data-role", "copy-code");
+      btn.textContent = "Copy";
+      pre.insertBefore(btn, pre.firstChild);
+    });
+    return tmp.innerHTML;
+  }
+
+  function apiRaw(path, opts){
+    return fetch(API + path, opts).then(function(r){
+      return r.json().then(function(data){
+        if (!r.ok) throw new Error(data.error || ("request failed: " + path));
+        return data;
+      });
+    });
+  }
+
+  // ---- draggable column resizers (chat panel: session sidebar / project
+  // files / thread) -- each .chat-resizer's data-target is the element to
+  // its left; width is clamped to that element's CSS min/max-width and
+  // persisted per-column so the layout survives reloads ----
+  var CHAT_LAYOUT_KEY = "arti-chat-column-widths";
+
+  function loadChatColumnWidths(){
+    try {
+      return JSON.parse(localStorage.getItem(CHAT_LAYOUT_KEY)) || {};
+    } catch (e){ return {}; }
+  }
+
+  function saveChatColumnWidth(targetId, width){
+    try {
+      var widths = loadChatColumnWidths();
+      widths[targetId] = width;
+      localStorage.setItem(CHAT_LAYOUT_KEY, JSON.stringify(widths));
+    } catch (e){ /* private mode / storage unavailable -- resizing still works this session */ }
+  }
+
+  function applyStoredChatColumnWidths(){
+    var widths = loadChatColumnWidths();
+    Object.keys(widths).forEach(function(targetId){
+      var el = document.getElementById(targetId);
+      if (el) el.style.width = widths[targetId] + "px";
+    });
+  }
+
+  function initChatResizer(resizer){
+    var targetId = resizer.getAttribute("data-target");
+    var invert = resizer.getAttribute("data-invert") === "true";
+    resizer.addEventListener("mousedown", function(e){
+      var target = document.getElementById(targetId);
+      if (!target) return;
+      e.preventDefault();
+      var startX = e.clientX;
+      var startWidth = target.getBoundingClientRect().width;
+      resizer.classList.add("dragging");
+      document.body.classList.add("chat-resizing");
+      function onMove(ev){
+        var delta = ev.clientX - startX;
+        if (invert) delta = -delta;
+        var next = startWidth + delta;
+        target.style.width = next + "px";
+      }
+      function onUp(){
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        resizer.classList.remove("dragging");
+        document.body.classList.remove("chat-resizing");
+        saveChatColumnWidth(targetId, Math.round(target.getBoundingClientRect().width));
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+    resizer.addEventListener("dblclick", function(){
+      var target = document.getElementById(targetId);
+      if (!target) return;
+      target.style.width = "";
+      var widths = loadChatColumnWidths();
+      delete widths[targetId];
+      try { localStorage.setItem(CHAT_LAYOUT_KEY, JSON.stringify(widths)); } catch (e){}
+    });
+  }
+
+  applyStoredChatColumnWidths();
+  Array.prototype.forEach.call(document.querySelectorAll(".chat-resizer"), initChatResizer);
+
+  function loadChatData(){
+    return Promise.all([
+      apiRaw("/chat/projects").then(function(d){ chatFolders = d.projects || []; }),
+      apiRaw("/chat/sessions").then(function(d){ chatSessionsList = d.sessions || []; }),
+      apiRaw("/chat/templates").then(function(d){ chatTemplates = d.templates || []; }),
+      apiRaw("/chat/system-roles").then(function(d){ chatSystemRoles = d.system_roles || []; }),
+      apiRaw("/chat/skills").then(function(d){ chatSkills = d.skills || []; }),
+      apiRaw("/chat/models").then(function(d){ chatModels = d.models || []; })
+    ]);
+  }
+
+  // Returns (creating if necessary) the Fine AI session id for a project.
+  // This is the ONLY path (besides attachProjectFile, which calls this too)
+  // that hits POST /chat/project-session -- which is also what materializes
+  // that project's chat_projects folder row server-side -- so merely
+  // browsing/previewing files in the Files tab never creates a row; a row
+  // only appears once the user explicitly expands Fine AI or attaches a file.
+  function ensureFineAiSession(projectPath, projectName){
+    var existing = chatSessionsList.filter(function(s){ return s.linked_project_path === projectPath; })[0];
+    if (existing) return Promise.resolve(existing.id);
+    var ready = Promise.resolve();
+    if (!chatLoaded){
+      chatLoaded = true;
+      ready = loadChatData();
+    }
+    return ready.then(function(){
+      var existing2 = chatSessionsList.filter(function(s){ return s.linked_project_path === projectPath; })[0];
+      if (existing2) return existing2.id;
+      return apiRaw("/chat/project-session", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ project_path: projectPath, project_name: projectName })
+      }).then(function(d){
+        return reloadChatFoldersAndSessions().then(function(){ return d.session_id; });
+      });
+    });
+  }
+
+  // Switches to the Files tab for a given project, then auto-expands Fine AI
+  // (which lazily creates its session via ensureFineAiSession above).
+  function openProjectInFiles(projectPath, projectName){
+    Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
+      b.classList.toggle("active", b.getAttribute("data-view") === "files");
+    });
+    projectsPanel.hidden = true;
+    ideasPanel.hidden = true;
+    settingsPanel.hidden = true;
+    filesPanel.hidden = false;
+    document.getElementById("mainEl").classList.add("files-full");
+    renderFilesPanel(projectPath);
+    renderFilesProjectPicker();
+    updateFilesResponsiveState();
+    setFineAiCollapsed(projectPath, false);
+    ensureFineAiSession(projectPath, projectName).then(function(sessionId){
+      if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
+      else renderChatSidebar();
+    });
+  }
+
+  function reloadChatSessions(){
+    return apiRaw("/chat/sessions").then(function(d){
+      chatSessionsList = d.sessions || [];
+      renderChatSidebar();
+    });
+  }
+
+  function reloadChatFoldersAndSessions(){
+    return Promise.all([
+      apiRaw("/chat/projects").then(function(d){ chatFolders = d.projects || []; }),
+      apiRaw("/chat/sessions").then(function(d){ chatSessionsList = d.sessions || []; })
+    ]).then(renderChatSidebar);
+  }
+
+  // Fine AI's session list, scoped to whichever project the Files tab has
+  // selected: primary group is that project's own sessions
+  // (linked_project_path === projectPath), secondary group is freeform
+  // ("No folder") sessions not linked to any project -- always shown so
+  // pre-existing unlinked chats stay reachable regardless of project.
+  function renderFineAiSessionList(projectPath){
+    var q = chatSearchQuery.trim().toLowerCase();
+    var sessions = chatSessionsList.filter(function(s){
+      if (!q) return true;
+      return (s.name || "").toLowerCase().indexOf(q) !== -1;
+    });
+    var mine = projectPath ? sessions.filter(function(s){ return s.linked_project_path === projectPath; }) : [];
+    var noFolder = sessions.filter(function(s){ return !s.project_id; });
+
+    function renderGroup(key, label, items){
+      var collapsed = !!chatFolderCollapsed[key];
+      return '<div class="chat-folder-group' + (collapsed ? " collapsed" : "") + '" data-folder-key="' + escapeHtml(key) + '">' +
+        '<div class="chat-folder-label" data-folder-toggle="' + escapeHtml(key) + '">' +
+          '<span class="chat-folder-chevron">' + ICON_CHEVRON + '</span>' +
+          '<span class="chat-folder-name">' + escapeHtml(label) + '</span>' +
+          '<span class="chat-folder-count">' + items.length + '</span>' +
+        '</div>' +
+        '<div class="chat-folder-items">' +
+          (items.map(renderSessionItem).join("") || '<div class="hint" style="padding:2px 10px 8px;">No sessions</div>') +
+        '</div>' +
+      '</div>';
+    }
+
+    var html = "";
+    if (projectPath) html += renderGroup("project:" + projectPath, "This project", mine);
+    html += renderGroup("nofolder", "No folder", noFolder);
+    if (!sessions.length){
+      html = '<div class="empty">' + (chatSessionsList.length ? "No sessions match your search." : "No sessions yet — create one to get started.") + '</div>';
+    }
+    var el = document.getElementById("chatFolderList");
+    el.innerHTML = html;
+    Array.prototype.forEach.call(el.querySelectorAll("[data-session-id]"), function(item){
+      item.addEventListener("click", function(){ selectSession(parseInt(item.getAttribute("data-session-id"), 10)); });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll("[data-folder-toggle]"), function(head){
+      head.addEventListener("click", function(){
+        var key = head.getAttribute("data-folder-toggle");
+        chatFolderCollapsed[key] = !chatFolderCollapsed[key];
+        saveChatFolderCollapsed();
+        renderFineAiSessionList(projectPath);
+      });
+    });
+  }
+
+  // Thin wrapper kept so the many existing call sites (session/folder CRUD,
+  // search, collapse-all, etc.) don't each need to know the current Files
+  // project path -- they just keep calling renderChatSidebar().
+  function renderChatSidebar(){
+    renderFineAiSessionList(filesCurrentProjectPath);
+  }
+
+  function renderSessionItem(s){
+    var active = s.id === chatCurrentSessionId ? " active" : "";
+    return '<div class="chat-session-item' + active + '" data-session-id="' + s.id + '">' +
+      '<div>' + escapeHtml(s.name) + '</div>' +
+      '<div class="css-meta">' + (s.messageCount || 0) + ' replies</div>' +
+    '</div>';
+  }
+
+  document.getElementById("chatSearch").addEventListener("input", function(e){
+    chatSearchQuery = e.target.value;
+    renderChatSidebar();
+  });
+
+  function currentSession(){
+    return chatSessionsList.filter(function(s){ return s.id === chatCurrentSessionId; })[0] || null;
+  }
+
+  function selectSession(id){
+    chatCurrentSessionId = id;
+    chatContextSessionIds = [];
+    renderChatSidebar();
+    loadChatMessages().then(renderChatThread);
+  }
+
+  function loadChatMessages(){
+    if (!chatCurrentSessionId) { chatCurrentMessages = []; chatSessionSkillIds = []; return Promise.resolve(); }
+    return Promise.all([
+      apiRaw("/chat/messages?session_id=" + chatCurrentSessionId).then(function(d){
+        chatCurrentMessages = d.messages || [];
+      }),
+      apiRaw("/chat/session-skills?session_id=" + chatCurrentSessionId).then(function(d){
+        chatSessionSkillIds = (d.skills || []).map(function(s){ return s.id; });
+      })
+    ]);
+  }
+
+  function updateTokenEstimate(){
+    var session = currentSession();
+    if (!session) return;
+    var ids = [chatCurrentSessionId].concat(chatContextSessionIds);
+    var model = session.model_name || (chatModels.length ? chatModels[0].name : "gpt-4o");
+    apiRaw("/chat/tokens-estimate", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ session_ids: ids, model: model })
+    }).then(function(d){
+      var pill = document.getElementById("chatTokenPill");
+      if (pill) pill.textContent = "≈ " + d.estimated_tokens + " tokens";
+    }).catch(function(){});
+  }
+
+  function renderChatThread(){
+    var thread = document.getElementById("chatThread");
+    var session = currentSession();
+    if (!session){
+      thread.innerHTML = '<div class="chat-empty">Select or create a session to start chatting.</div>';
+      return;
+    }
+    var sameFolderSessions = chatSessionsList.filter(function(s){
+      return s.id !== chatCurrentSessionId && s.project_id === session.project_id;
+    });
+    var contextPillHtml = sameFolderSessions.length
+      ? '<span class="row-menu" id="chatContextWrap">' +
+          '<button type="button" class="token-pill files-pill" id="chatContextToggle" data-role="context-toggle">' +
+            (chatContextSessionIds.length
+              ? chatContextSessionIds.length + " session" + (chatContextSessionIds.length === 1 ? "" : "s") + " in context"
+              : "Cross-session context") +
+          '</button>' +
+          '<div class="menu-dropdown files-dropdown" id="chatContextDropdown" hidden>' +
+            sameFolderSessions.map(function(s){
+              var checked = chatContextSessionIds.indexOf(s.id) !== -1 ? " checked" : "";
+              return '<label class="files-dropdown-item context-dropdown-item">' +
+                '<input type="checkbox" data-role="context-session-cb" value="' + s.id + '"' + checked + '>' +
+                '<span class="files-dropdown-name" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</span>' +
+              '</label>';
+            }).join("") +
+          '</div>' +
+        '</span>'
+      : '';
+
+    var showFolderTag = session.project_name && session.project_name !== session.name;
+    thread.innerHTML =
+      '<div class="chat-thread-head">' +
+        '<div class="chat-thread-title" title="' + escapeHtml(session.name) + '">' +
+          '<span class="chat-thread-title-text">' + escapeHtml(session.name) + '</span>' +
+          (showFolderTag ? '<span class="lifecycle-tag">' + escapeHtml(session.project_name) + '</span>' : '') +
+        '</div>' +
+        '<div class="chat-thread-actions row-menu">' +
+          '<button type="button" class="menu-toggle" data-role="thread-menu-toggle" aria-label="Session actions">&#8942;</button>' +
+          '<div class="menu-dropdown" hidden>' +
+            '<button type="button" data-role="edit-session">Edit</button>' +
+            '<button type="button" data-role="manage-messages">Manage messages</button>' +
+            '<button type="button" data-role="bulk-inject">Bulk inject</button>' +
+            '<button type="button" data-role="export-json">Export JSON</button>' +
+            '<button type="button" data-role="open-templates">Templates</button>' +
+            '<button type="button" data-role="open-roles">System roles</button>' +
+            '<button type="button" data-role="open-skills">Skills</button>' +
+            '<button type="button" data-role="delete-session">Delete</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="chat-context-row">' +
+        '<span class="chat-context-actions">' +
+          '<button type="button" class="icon-btn icon-only" id="addQaBtn" title="Add Q&amp;A pair">' + ICON_PLUS_SMALL + '</button>' +
+          '<button type="button" class="icon-btn icon-only" id="chatInspectContextBtn" title="Inspect full context sent to the model">' + ICON_INSPECT + '</button>' +
+        '</span>' +
+        contextPillHtml +
+        '<span class="row-menu" id="chatAttachedFilesWrap" hidden>' +
+          '<button type="button" class="token-pill files-pill" id="chatAttachedFilesToggle" data-role="attached-files-toggle"></button>' +
+          '<div class="menu-dropdown files-dropdown" id="chatAttachedFilesDropdown" hidden></div>' +
+        '</span>' +
+        '<span class="row-menu" id="chatSkillsWrap" hidden>' +
+          '<button type="button" class="token-pill files-pill" id="chatSkillsToggle" data-role="skills-toggle"></button>' +
+          '<div class="menu-dropdown files-dropdown" id="chatSkillsDropdown" hidden></div>' +
+        '</span>' +
+        '<span class="token-pill" id="chatTokenPill" style="margin-left:auto">≈ … tokens</span>' +
+      '</div>' +
+      '<div class="chat-messages" id="chatMessagesList"></div>' +
+      '<div class="chat-compose">' +
+        '<div class="chat-compose-row">' +
+          '<textarea id="composeText" placeholder="Message…"></textarea>' +
+          '<button class="btn primary" id="sendChatBtn" type="button">Send</button>' +
+        '</div>' +
+        '<div class="chat-compose-tools">' +
+          '<span class="row-menu">' +
+            '<button type="button" class="token-pill files-pill pill-icon-btn" id="composeModelToggle" data-role="model-toggle" title="Model for this session">' +
+              ICON_MODEL + '<span>' + escapeHtml(session.model_name || "App default") + '</span>' +
+            '</button>' +
+            '<div class="menu-dropdown compose-dropdown" id="modelDropdown" hidden>' +
+              '<button type="button" data-role="select-model" data-model-id="">App default</button>' +
+              chatModels.map(function(m){
+                return '<button type="button" data-role="select-model" data-model-id="' + m.id + '">' + escapeHtml(m.name) + '</button>';
+              }).join("") +
+            '</div>' +
+          '</span>' +
+          (chatTemplates.length
+            ? '<span class="row-menu">' +
+                '<button type="button" class="token-pill files-pill pill-icon-btn" data-role="template-toggle">' + ICON_TEMPLATE + '<span>Template</span></button>' +
+                '<div class="menu-dropdown compose-dropdown" id="templateDropdown" hidden>' +
+                  chatTemplates.map(function(t){
+                    return '<button type="button" data-role="insert-template" data-tpl-id="' + t.id + '">' + escapeHtml(t.name) + '</button>';
+                  }).join("") +
+                '</div>' +
+              '</span>'
+            : '') +
+        '</div>' +
+      '</div>';
+
+    renderMessages();
+    updateTokenEstimate();
+    wireThreadActions();
+    renderAttachedFilesPill();
+    renderSkillsPill();
+  }
+
+  var filesCurrentProjectPath = null;
+  var chatFileFilterActive = false;
+  var chatFileSelection = {};
+
+  function setChatFileFilterActive(v){
+    chatFileFilterActive = v;
+    var btn = document.getElementById("chatFileFilterBtn");
+    btn.classList.toggle("filter-active", v);
+    btn.title = v ? "Showing attached files only — click to show all" : "Show only attached files";
+  }
+
+  function filesProjectNameForPath(projectPath){
+    var p = allProjects.filter(function(x){ return x.path === projectPath; })[0];
+    return p ? p.name : "";
+  }
+
+  // Renders the file-list column (+ resets the inline preview panel) for the
+  // given project path. Independent of any Fine AI / chat session -- this is
+  // the "Files" tab's own state, driven by the project picker (or by
+  // openProjectInFiles), not by currentSession().
+  function renderFilesPanel(projectPath){
+    closePreviewInline();
+    filesCurrentProjectPath = projectPath;
+    chatFileSearchQuery = "";
+    var searchInput = document.getElementById("chatFileSearch");
+    if (searchInput) searchInput.value = "";
+    chatFileSelection = {};
+    setChatFileFilterActive(false);
+    updateFineAiStatusHint(projectPath);
+    if (!projectPath){
+      chatProjectFiles = [];
+      renderFileList();
+      return Promise.resolve();
+    }
+    return refreshProjectFiles(projectPath);
+  }
+
+  // ---- project picker (bound to allProjects, the same data as the Projects
+  // tab -- not the chat_projects "folder" abstraction) ----
+
+  var filesProjectPickerRows = [];
+  var filesProjectPickerQuery = "";
+  var filesProjectPickerOpen = false;
+
+  function renderFilesProjectPicker(){
+    filesProjectPickerRows = allProjects.slice().sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
+    renderFilesProjectPickerLabel();
+    renderFilesProjectPickerOptions();
+  }
+
+  function renderFilesProjectPickerLabel(){
+    var label = document.getElementById("filesProjectPickerLabel");
+    if (!label) return;
+    var p = filesProjectPickerRows.filter(function(x){ return x.path === filesCurrentProjectPath; })[0];
+    label.textContent = p ? p.name : "Select a project…";
+    label.classList.toggle("placeholder", !p);
+  }
+
+  function renderFilesProjectPickerOptions(){
+    var list = document.getElementById("filesProjectPickerOptions");
+    if (!list) return;
+    var q = filesProjectPickerQuery.trim().toLowerCase();
+    var rows = !q ? filesProjectPickerRows : filesProjectPickerRows.filter(function(p){
+      return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
+    });
+    if (!rows.length){
+      list.innerHTML = '<div class="files-picker-empty">No matching projects</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(p){
+      var active = p.path === filesCurrentProjectPath ? " active" : "";
+      return '<div class="files-picker-option' + active + '" data-path="' + escapeHtml(p.path) + '">' +
+        '<div class="files-picker-option-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="files-picker-option-path">' + escapeHtml(p.path) + '</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(list.querySelectorAll(".files-picker-option"), function(opt){
+      opt.addEventListener("click", function(){
+        selectFilesProjectPicker(opt.getAttribute("data-path"));
+      });
+    });
+  }
+
+  function selectFilesProjectPicker(path){
+    closeFilesProjectPickerDropdown();
+    renderFilesPanel(path);
+    applyFineAiCollapsedForProject(path);
+    renderFilesProjectPickerLabel();
+  }
+
+  function openFilesProjectPickerDropdown(){
+    var dd = document.getElementById("filesProjectPickerDropdown");
+    var btn = document.getElementById("filesProjectPickerBtn");
+    var search = document.getElementById("filesProjectPickerSearch");
+    if (!dd || !btn || !search || filesProjectPickerOpen) return;
+    filesProjectPickerOpen = true;
+    dd.hidden = false;
+    btn.classList.add("open");
+    filesProjectPickerQuery = "";
+    search.value = "";
+    renderFilesProjectPickerOptions();
+    setTimeout(function(){ search.focus(); }, 0);
+  }
+
+  function closeFilesProjectPickerDropdown(){
+    var dd = document.getElementById("filesProjectPickerDropdown");
+    var btn = document.getElementById("filesProjectPickerBtn");
+    if (!dd) return;
+    filesProjectPickerOpen = false;
+    dd.hidden = true;
+    if (btn) btn.classList.remove("open");
+  }
+
+  document.getElementById("filesProjectPickerBtn").addEventListener("click", function(){
+    if (filesProjectPickerOpen) closeFilesProjectPickerDropdown(); else openFilesProjectPickerDropdown();
+  });
+  document.getElementById("filesProjectPickerSearch").addEventListener("input", function(e){
+    filesProjectPickerQuery = e.target.value;
+    renderFilesProjectPickerOptions();
+  });
+  document.getElementById("filesProjectPickerSearch").addEventListener("keydown", function(e){
+    if (e.key === "Escape"){ e.preventDefault(); closeFilesProjectPickerDropdown(); }
+  });
+  document.addEventListener("click", function(e){
+    var wrap = document.getElementById("filesProjectPickerWrap");
+    if (filesProjectPickerOpen && wrap && !wrap.contains(e.target)) closeFilesProjectPickerDropdown();
+  });
+
+  // ---- Fine AI collapse/expand, persisted per project path (not one global
+  // flag), plus a separate "auto-collapsed" flag for the narrow-window
+  // behavior below so widening back out only re-expands if the user didn't
+  // explicitly collapse it themselves ----
+
+  var FINE_AI_COLLAPSE_KEY = "arti-fine-ai-collapsed";
+  var fineAiAutoCollapsed = false;
+
+  function loadFineAiCollapsedMap(){
+    try { return JSON.parse(localStorage.getItem(FINE_AI_COLLAPSE_KEY)) || {}; } catch (e){ return {}; }
+  }
+  function saveFineAiCollapsedForProject(projectPath, collapsed){
+    try {
+      var map = loadFineAiCollapsedMap();
+      map[projectPath] = collapsed;
+      localStorage.setItem(FINE_AI_COLLAPSE_KEY, JSON.stringify(map));
+    } catch (e){}
+  }
+  function isFineAiCollapsedForProject(projectPath){
+    if (!projectPath) return true;
+    var map = loadFineAiCollapsedMap();
+    return map.hasOwnProperty(projectPath) ? map[projectPath] : true;
+  }
+
+  function updateFineAiStatusHint(projectPath){
+    var hint = document.getElementById("fineAiStatusHint");
+    if (!hint) return;
+    if (!projectPath){ hint.textContent = ""; return; }
+    var existing = chatSessionsList.filter(function(s){ return s.linked_project_path === projectPath; })[0];
+    hint.textContent = existing ? "" : "Not started";
+  }
+
+  function setFineAiCollapsed(projectPath, collapsed, opts){
+    opts = opts || {};
+    var section = document.getElementById("fineAiSection");
+    section.classList.toggle("fine-ai-collapsed", collapsed);
+    document.getElementById("filesPanel").classList.toggle("fine-ai-collapsed", collapsed);
+    if (!opts.auto && projectPath) saveFineAiCollapsedForProject(projectPath, collapsed);
+    updateFineAiStatusHint(projectPath);
+  }
+
+  function applyFineAiCollapsedForProject(projectPath){
+    var collapsed = isFineAiCollapsedForProject(projectPath);
+    var section = document.getElementById("fineAiSection");
+    section.classList.toggle("fine-ai-collapsed", collapsed);
+    document.getElementById("filesPanel").classList.toggle("fine-ai-collapsed", collapsed);
+    updateFineAiStatusHint(projectPath);
+    if (!collapsed && projectPath){
+      ensureFineAiSession(projectPath, filesProjectNameForPath(projectPath)).then(function(sessionId){
+        if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
+        else renderChatSidebar();
+      });
+    } else {
+      renderChatSidebar();
+    }
+  }
+
+  document.getElementById("fineAiHeader").addEventListener("click", function(){
+    var panel = document.getElementById("filesPanel");
+    if (panel.classList.contains("files-narrow") && !panel.classList.contains("menu-open")) return;
+    if (!filesCurrentProjectPath) return;
+    var section = document.getElementById("fineAiSection");
+    var collapsed = !section.classList.contains("fine-ai-collapsed");
+    fineAiAutoCollapsed = false;
+    setFineAiCollapsed(filesCurrentProjectPath, collapsed);
+    if (!collapsed){
+      ensureFineAiSession(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath)).then(function(sessionId){
+        if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
+        else renderChatSidebar();
+      });
+    }
+  });
+  document.getElementById("fineAiHeader").addEventListener("keydown", function(e){
+    if (e.key === "Enter" || e.key === " "){ e.preventDefault(); this.click(); }
+  });
+
+  document.getElementById("fineAiOpenBtn").addEventListener("click", function(){
+    var panel = document.getElementById("filesPanel");
+    if (panel.classList.contains("files-narrow") && !panel.classList.contains("menu-open")) return;
+    if (!filesCurrentProjectPath) return;
+    fineAiAutoCollapsed = false;
+    setFineAiCollapsed(filesCurrentProjectPath, false);
+    ensureFineAiSession(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath)).then(function(sessionId){
+      if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
+      else renderChatSidebar();
+    });
+  });
+
+  // ---- Fine AI's own session-list sub-panel can be hidden independently,
+  // to give the thread more room without collapsing Fine AI itself ----
+  var SESSIONS_COLLAPSE_KEY = "arti-fine-ai-sessions-collapsed";
+  function setSessionsCollapsed(collapsed){
+    document.getElementById("fineAiBody").classList.toggle("sessions-collapsed", collapsed);
+    try { localStorage.setItem(SESSIONS_COLLAPSE_KEY, collapsed ? "1" : "0"); } catch (e){}
+  }
+  (function(){
+    try {
+      if (localStorage.getItem(SESSIONS_COLLAPSE_KEY) === "1") setSessionsCollapsed(true);
+    } catch (e){}
+  })();
+  document.getElementById("sessionsHideBtn").addEventListener("click", function(){ setSessionsCollapsed(true); });
+  document.getElementById("sessionsOpenBtn").addEventListener("click", function(){ setSessionsCollapsed(false); });
+
+  // ---- responsive half-window collapse: below the breakpoint, the
+  // project/file-list column hides behind a "Menu" toggle and Fine AI
+  // auto-collapses (distinct from the user's manual collapse choice) ----
+
+  var FILES_NARROW_BREAKPOINT = 960;
+  var filesMenuOpenState = false;
+
+  function updateFilesResponsiveState(){
+    var panel = document.getElementById("filesPanel");
+    if (!panel || panel.hidden) return;
+    var width = panel.getBoundingClientRect().width;
+    var narrow = width > 0 && width < FILES_NARROW_BREAKPOINT;
+    panel.classList.toggle("files-narrow", narrow);
+    panel.classList.toggle("menu-open", narrow && filesMenuOpenState);
+    var header = document.getElementById("fineAiHeader");
+    if (header) header.classList.toggle("disabled", narrow && !filesMenuOpenState);
+    var section = document.getElementById("fineAiSection");
+    if (narrow){
+      if (section && !section.classList.contains("fine-ai-collapsed")){
+        fineAiAutoCollapsed = true;
+        setFineAiCollapsed(filesCurrentProjectPath, true, { auto: true });
+      }
+    } else if (fineAiAutoCollapsed){
+      fineAiAutoCollapsed = false;
+      if (filesCurrentProjectPath && !isFineAiCollapsedForProject(filesCurrentProjectPath)){
+        setFineAiCollapsed(filesCurrentProjectPath, false);
+        ensureFineAiSession(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath)).then(function(sessionId){
+          if (chatCurrentSessionId !== sessionId) selectSession(sessionId);
+          else renderChatSidebar();
+        });
+      }
+    }
+  }
+
+  document.getElementById("filesMenuToggleBtn").addEventListener("click", function(){
+    filesMenuOpenState = !filesMenuOpenState;
+    var panel = document.getElementById("filesPanel");
+    panel.classList.toggle("menu-open", filesMenuOpenState);
+    this.classList.toggle("menu-open-icon", filesMenuOpenState);
+    var header = document.getElementById("fineAiHeader");
+    if (header) header.classList.toggle("disabled", panel.classList.contains("files-narrow") && !filesMenuOpenState);
+  });
+
+  if (typeof ResizeObserver !== "undefined"){
+    new ResizeObserver(function(){ updateFilesResponsiveState(); }).observe(document.getElementById("filesPanel"));
+  }
+
+  document.getElementById("chatOpenProjectFolderBtn").addEventListener("click", function(){
+    if (!filesCurrentProjectPath) return;
+    apiRaw("/open-folder", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: filesCurrentProjectPath })
+    }).catch(function(e){ alert("Failed to open folder: " + e.message); });
+  });
+
+  document.getElementById("chatOpenVscodeBtn").addEventListener("click", function(){
+    if (!filesCurrentProjectPath) return;
+    apiRaw("/open-vscode", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: filesCurrentProjectPath })
+    }).catch(function(e){ alert("Failed to open VS Code: " + e.message); });
+  });
+
+  document.getElementById("chatReferencesBtn").addEventListener("click", function(){
+    if (!filesCurrentProjectPath) return;
+    openReferencesModal(filesCurrentProjectPath);
+  });
+
+  document.getElementById("chatRefreshFilesBtn").addEventListener("click", function(){
+    refreshProjectFiles(filesCurrentProjectPath);
+  });
+
+  document.getElementById("chatFileFilterBtn").addEventListener("click", function(){
+    setChatFileFilterActive(!chatFileFilterActive);
+    renderFileList();
+  });
+
+  function refreshProjectFiles(projectPath){
+    if (!projectPath) return Promise.resolve();
+    return apiRaw("/chat/project-files?path=" + encodeURIComponent(projectPath)).then(function(d){
+      chatProjectFiles = d.files || [];
+      renderFileList();
+    });
+  }
+
+  var chatFileSearchQuery = "";
+  document.getElementById("chatFileSearch").addEventListener("input", function(e){
+    chatFileSearchQuery = e.target.value;
+    renderFileList();
+  });
+
+  var TEXT_PREVIEWABLE_EXTS = [".md", ".txt", ".ris", ".bib", ".csv", ".tsv", ".json"];
+  function _isTextPreviewableFile(relPath){
+    var lower = relPath.toLowerCase();
+    return TEXT_PREVIEWABLE_EXTS.some(function(ext){ return lower.endsWith(ext); });
+  }
+
+  function _fileTypeIcon(relPath){
+    var ext = (relPath.split(".").pop() || "").toLowerCase();
+    var glyphs = {
+      md: ["M&#8595;", "#2563eb"],
+      txt: ["&#9636;", "var(--text-muted)"],
+      pdf: ["PDF", "#dc2626"],
+      ris: ["&#128278;", "var(--text-muted)"],
+      bib: ["&#128278;", "var(--text-muted)"],
+      csv: ["&#9638;", "#059669"],
+      tsv: ["&#9638;", "#059669"],
+      json: ["{}", "#d97706"]
+    };
+    var g = glyphs[ext] || ["&#9679;", "var(--text-muted)"];
+    return '<span class="chat-file-type-icon" style="color:' + g[1] + ';font-size:9px;font-weight:700;" title="' +
+      escapeHtml(ext) + '">' + g[0] + '</span>';
+  }
+
+  function renderFileList(){
+    var list = document.getElementById("chatFileList");
+    var q = chatFileSearchQuery.trim().toLowerCase();
+    var attached = getAttachedFilesByRelPath();
+    var files = chatProjectFiles.filter(function(f){
+      if (q && f.rel_path.toLowerCase().indexOf(q) === -1) return false;
+      if (chatFileFilterActive && !attached[f.rel_path]) return false;
+      return true;
+    });
+    document.getElementById("chatProjectFilesCount").textContent = files.length;
+    updateFileSelectionUi(files);
+    if (!chatProjectFiles.length){
+      list.innerHTML = '<div class="hint">No matching files found in this project.</div>';
+      return;
+    }
+    if (!files.length){
+      list.innerHTML = '<div class="hint">' +
+        (chatFileFilterActive ? "No attached files yet." : "No files match your search.") +
+        '</div>';
+      return;
+    }
+    list.innerHTML = files.map(function(f){
+      var isPreviewable = _isTextPreviewableFile(f.rel_path);
+      var isAttached = !!attached[f.rel_path];
+      var checked = chatFileSelection[f.rel_path] ? " checked" : "";
+      var nameAttrs = isPreviewable ? ' data-role="preview-file"' : "";
+      var nameClass = "chat-file-name" + (isPreviewable ? "" : " no-preview");
+      var attachedTag = isAttached
+        ? '<span class="chat-file-attached-tag" title="Attached to chat context">&#10003;</span>' : "";
+      return '<div class="chat-file-item" data-rel="' + escapeHtml(f.rel_path) + '" data-abs="' + escapeHtml(f.abs_path) + '">' +
+        '<input type="checkbox" class="chat-file-select" data-role="select-file"' + checked + ' title="Select for bulk actions" />' +
+        _fileTypeIcon(f.rel_path) +
+        '<span class="' + nameClass + '"' + nameAttrs + ' title="' + escapeHtml(f.rel_path) + '">' + escapeHtml(f.rel_path) + '</span>' +
+        attachedTag +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="preview-file"]'), function(el){
+      el.addEventListener("click", function(){
+        var item = el.closest("[data-abs]");
+        previewProjectFile(filesCurrentProjectPath, item.getAttribute("data-abs"), item.getAttribute("data-rel"));
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="select-file"]'), function(cb){
+      cb.addEventListener("change", function(){
+        var item = cb.closest("[data-rel]");
+        var relPath = item.getAttribute("data-rel");
+        if (cb.checked) chatFileSelection[relPath] = true;
+        else delete chatFileSelection[relPath];
+        updateFileSelectionUi(files);
+      });
+    });
+  }
+
+  // ---- multi-select + "copy selected as Markdown" (bulk-pick from the
+  // current search results, independent of the attach/context flow) ----
+
+  function updateFileSelectionUi(filteredFiles){
+    var selectedCount = filteredFiles.filter(function(f){ return chatFileSelection[f.rel_path]; }).length;
+    var selectAllCb = document.getElementById("chatFileSelectAll");
+    var label = document.getElementById("chatFileSelectAllLabel");
+    selectAllCb.checked = filteredFiles.length > 0 && selectedCount === filteredFiles.length;
+    selectAllCb.indeterminate = selectedCount > 0 && selectedCount < filteredFiles.length;
+    var selectedPaths = Object.keys(chatFileSelection);
+    var totalSelected = selectedPaths.length;
+    label.textContent = totalSelected ? "Select all (" + totalSelected + " selected)" : "Select all";
+
+    var attached = getAttachedFilesByRelPath();
+    var hasSummarizable = selectedPaths.some(function(p){
+      var lower = p.toLowerCase();
+      return lower.endsWith(".pdf") || lower.endsWith(".md");
+    });
+    var hasPdf = selectedPaths.some(function(p){ return p.toLowerCase().endsWith(".pdf"); });
+    var hasAddableToContext = selectedPaths.some(function(p){
+      return !p.toLowerCase().endsWith(".pdf") && !attached[p];
+    });
+
+    document.getElementById("chatFileActionsToggle").disabled = totalSelected === 0;
+    document.getElementById("chatAddToContextBtn").disabled = !hasAddableToContext;
+    document.getElementById("chatCopySelectedBtn").disabled = totalSelected === 0;
+    document.getElementById("chatSummarizeSelectedBtn").disabled = !hasSummarizable;
+    document.getElementById("chatExtractPdfBtn").disabled = !hasPdf;
+  }
+
+  function currentFilteredFiles(){
+    var q = chatFileSearchQuery.trim().toLowerCase();
+    var attached = getAttachedFilesByRelPath();
+    return chatProjectFiles.filter(function(f){
+      if (q && f.rel_path.toLowerCase().indexOf(q) === -1) return false;
+      if (chatFileFilterActive && !attached[f.rel_path]) return false;
+      return true;
+    });
+  }
+
+  document.getElementById("chatFileSelectAll").addEventListener("change", function(e){
+    var checked = e.target.checked;
+    currentFilteredFiles().forEach(function(f){
+      if (checked) chatFileSelection[f.rel_path] = true;
+      else delete chatFileSelection[f.rel_path];
+    });
+    renderFileList();
+  });
+
+  document.getElementById("chatFileActionsToggle").addEventListener("click", function(e){
+    e.stopPropagation();
+    var dropdown = document.getElementById("chatFileActionsDropdown");
+    var wasHidden = dropdown.hidden;
+    closeAllRowMenus();
+    dropdown.hidden = !wasHidden;
+  });
+
+  document.getElementById("chatAddToContextBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    if (!filesCurrentProjectPath) return;
+    var attached = getAttachedFilesByRelPath();
+    var relPaths = Object.keys(chatFileSelection).filter(function(p){
+      return !p.toLowerCase().endsWith(".pdf") && !attached[p];
+    }).sort();
+    if (!relPaths.length) return;
+    relPaths.reduce(function(chain, relPath){
+      return chain.then(function(){
+        var file = chatProjectFiles.filter(function(f){ return f.rel_path === relPath; })[0];
+        if (!file) return Promise.resolve();
+        return attachProjectFile(filesCurrentProjectPath, file.abs_path);
+      });
+    }, Promise.resolve()).catch(function(e){ alert("Failed to add to context: " + e.message); });
+  });
+
+  function mergeFilesAsMarkdown(relPaths){
+    if (!filesCurrentProjectPath || !relPaths.length) return Promise.resolve("");
+    return Promise.all(relPaths.map(function(relPath){
+      var file = chatProjectFiles.filter(function(f){ return f.rel_path === relPath; })[0];
+      if (!file) return Promise.resolve("");
+      var url = "/chat/project-files/read?path=" + encodeURIComponent(filesCurrentProjectPath) +
+        "&file=" + encodeURIComponent(file.abs_path);
+      return apiRaw(url).then(function(d){ return "# File: " + relPath + "\n\n" + d.content; });
+    })).then(function(blocks){ return blocks.filter(Boolean).join("\n\n"); });
+  }
+
+  function copyToClipboardWithFeedback(text, btn){
+    return navigator.clipboard.writeText(text).then(function(){
+      var prev = btn.textContent; btn.textContent = "Copied";
+      setTimeout(function(){ btn.textContent = prev; }, 1200);
+    });
+  }
+
+  document.getElementById("chatCopySelectedBtn").addEventListener("click", function(){
+    var btn = this;
+    var relPaths = Object.keys(chatFileSelection);
+    if (!relPaths.length) return;
+    relPaths.sort();
+    closeAllRowMenus();
+    mergeFilesAsMarkdown(relPaths).then(function(md){ return copyToClipboardWithFeedback(md, btn); })
+      .catch(function(e){ alert("Failed to copy: " + e.message); });
+  });
+
+  // ---- bulk file jobs (extract/summarize) -- shared progress-log modal + SSE runner,
+  // minimizable to a floating pill so the job keeps running (it's a plain fetch/SSE
+  // read loop, independent of the modal's visibility) while the user does other things ----
+
+  var chatBulkJob = null; // { title, total, completed, active }
+
+  function renderBulkJobPill(){
+    var pill = document.getElementById("chatBulkJobPill");
+    var overlay = document.getElementById("chatBulkJobOverlay");
+    if (!chatBulkJob || !overlay.hidden){
+      pill.hidden = true;
+      return;
+    }
+    var text = chatBulkJob.active
+      ? chatBulkJob.title + " (" + chatBulkJob.completed + "/" + chatBulkJob.total + ")"
+      : "Done — " + chatBulkJob.completed + "/" + chatBulkJob.total + " file(s)";
+    document.getElementById("chatBulkJobPillText").textContent = text;
+    pill.classList.toggle("done", !chatBulkJob.active);
+    pill.hidden = false;
+  }
+
+  function runBulkFileJob(title, endpoint, relPaths, formatEvent){
+    if (!filesCurrentProjectPath || !relPaths.length) return;
+    if (chatBulkJob && chatBulkJob.active){
+      alert("A file job is already running — check the progress pill or wait for it to finish.");
+      return;
+    }
+    var overlay = document.getElementById("chatBulkJobOverlay");
+    var log = document.getElementById("chatBulkJobLog");
+    var closeBtn = document.getElementById("chatBulkJobCloseBtn");
+    var doneBtn = document.getElementById("chatBulkJobDoneBtn");
+    chatBulkJob = { title: title, total: relPaths.length, completed: 0, active: true };
+    document.getElementById("chatBulkJobTitle").textContent = title;
+    log.textContent = "";
+    closeBtn.disabled = true;
+    doneBtn.disabled = true;
+    openModal(overlay);
+    renderBulkJobPill();
+
+    function appendLog(text, isError){
+      var line = document.createElement("div");
+      if (isError) line.className = "log-error";
+      line.textContent = text;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function markFileDone(){
+      chatBulkJob.completed++;
+      renderBulkJobPill();
+    }
+
+    function finish(){
+      chatBulkJob.active = false;
+      closeBtn.disabled = false;
+      doneBtn.disabled = false;
+      renderBulkJobPill();
+      refreshProjectFiles(filesCurrentProjectPath);
+    }
+
+    fetch(API + endpoint, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ project_path: filesCurrentProjectPath, rel_paths: relPaths })
+    }).then(function(resp){
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      function pump(){
+        return reader.read().then(function(result){
+          if (result.done){ finish(); return; }
+          buffer += decoder.decode(result.value, { stream: true });
+          var parts = buffer.split("\n\n");
+          buffer = parts.pop();
+          parts.forEach(function(part){
+            var line = part.trim();
+            if (line.slice(0, 5) !== "data:") return;
+            var jsonStr = line.slice(5).trim();
+            if (!jsonStr) return;
+            var evt;
+            try { evt = JSON.parse(jsonStr); } catch (e){ return; }
+            if (evt.type === "log"){
+              appendLog(evt.message);
+            } else if (evt.type === "file_error"){
+              appendLog("✗ " + evt.rel_path + ": " + evt.error, true);
+              markFileDone();
+            } else if (evt.type === "error"){
+              appendLog("✗ " + evt.message, true);
+            } else if (evt.type === "file_done"){
+              appendLog(formatEvent(evt));
+              markFileDone();
+            } else if (evt.type === "done"){
+              appendLog("Done.");
+            }
+          });
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function(e){
+      appendLog("✗ " + e.message, true);
+      finish();
+    });
+  }
+
+  document.getElementById("chatBulkJobMinimizeBtn").addEventListener("click", function(){
+    closeModal(document.getElementById("chatBulkJobOverlay"));
+    renderBulkJobPill();
+  });
+  document.getElementById("chatBulkJobPill").addEventListener("click", function(){
+    openModal(document.getElementById("chatBulkJobOverlay"));
+    renderBulkJobPill();
+  });
+  document.getElementById("chatBulkJobCloseBtn").addEventListener("click", function(){
+    closeModal(document.getElementById("chatBulkJobOverlay"));
+    chatBulkJob = null;
+    renderBulkJobPill();
+  });
+  document.getElementById("chatBulkJobDoneBtn").addEventListener("click", function(){
+    closeModal(document.getElementById("chatBulkJobOverlay"));
+    chatBulkJob = null;
+    renderBulkJobPill();
+  });
+
+  document.getElementById("chatSummarizeSelectedBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    var relPaths = Object.keys(chatFileSelection).filter(function(p){
+      var lower = p.toLowerCase();
+      return lower.endsWith(".pdf") || lower.endsWith(".md");
+    }).sort();
+    if (!relPaths.length) return;
+    runBulkFileJob("Summarizing files…", "/chat/bulk-summarize", relPaths, function(evt){
+      return "✓ Saved: " + evt.output + " (model: " + evt.model + ")";
+    });
+  });
+
+  document.getElementById("chatExtractPdfBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    var relPaths = Object.keys(chatFileSelection).filter(function(p){
+      return p.toLowerCase().endsWith(".pdf");
+    }).sort();
+    if (!relPaths.length) return;
+    runBulkFileJob("Extracting PDF(s)…", "/chat/bulk-extract-pdf", relPaths, function(evt){
+      return "✓ Extracted: " + evt.output;
+    });
+  });
+
+  // ---- attached-file tracking (a "# File: <rel path>" system message with
+  // is_context=1 counts as attached; hidden from the normal thread view and
+  // summarized instead as an "N files attached" pill in the context row) ----
+
+  function parseAttachedFileName(content){
+    var text = typeof content === "string" ? content : "";
+    var m = /^# File: (.+?)\r?\n\r?\n/.exec(text);
+    return m ? m[1] : null;
+  }
+
+  function getAttachedFilesByRelPath(){
+    var map = {};
+    chatCurrentMessages.forEach(function(m){
+      if (!m.is_context) return;
+      var name = parseAttachedFileName(m.content);
+      if (name) map[name] = m;
+    });
+    return map;
+  }
+
+  function detachFileMessage(session, messageId){
+    return apiRaw("/chat/messages/update", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ id: messageId, is_context: 0 })
+    }).then(function(updated){
+      var msg = chatCurrentMessages.filter(function(m){ return m.id === messageId; })[0];
+      if (msg) msg.is_context = 0;
+      renderFileList();
+      renderAttachedFilesPill();
+      updateTokenEstimate();
+    });
+  }
+
+  function renderAttachedFilesPill(){
+    var wrap = document.getElementById("chatAttachedFilesWrap");
+    if (!wrap) return;
+    var session = currentSession();
+    var attached = getAttachedFilesByRelPath();
+    var names = Object.keys(attached);
+    if (!names.length){
+      wrap.hidden = true;
+      document.getElementById("chatAttachedFilesToggle").textContent = "";
+      document.getElementById("chatAttachedFilesDropdown").innerHTML = "";
+      document.getElementById("chatAttachedFilesDropdown").hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    names.sort();
+    var toggle = document.getElementById("chatAttachedFilesToggle");
+    toggle.textContent = names.length + (names.length === 1 ? " file attached" : " files attached");
+    var dropdown = document.getElementById("chatAttachedFilesDropdown");
+    dropdown.innerHTML = names.map(function(name){
+      var msg = attached[name];
+      return '<div class="files-dropdown-item">' +
+        '<span class="files-dropdown-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</span>' +
+        '<button type="button" data-role="detach-file" data-msg-id="' + msg.id + '" title="Remove from context">&times;</button>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(dropdown.querySelectorAll('[data-role="detach-file"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (session) detachFileMessage(session, parseInt(btn.getAttribute("data-msg-id"), 10));
+      });
+    });
+  }
+
+  function toggleSessionSkill(skillId, attach){
+    if (!chatCurrentSessionId) return;
+    var url = "/chat/session-skills/" + (attach ? "attach" : "detach");
+    apiRaw(url, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ session_id: chatCurrentSessionId, skill_id: skillId })
+    }).then(function(){
+      if (attach){
+        if (chatSessionSkillIds.indexOf(skillId) === -1) chatSessionSkillIds.push(skillId);
+      } else {
+        chatSessionSkillIds = chatSessionSkillIds.filter(function(id){ return id !== skillId; });
+      }
+      renderSkillsPill();
+      updateTokenEstimate();
+    });
+  }
+
+  function renderSkillsPill(){
+    var wrap = document.getElementById("chatSkillsWrap");
+    if (!wrap) return;
+    if (!chatSkills.length){
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    var toggle = document.getElementById("chatSkillsToggle");
+    var activeCount = chatSessionSkillIds.length;
+    toggle.textContent = activeCount ? activeCount + (activeCount === 1 ? " skill active" : " skills active") : "Skills";
+    var dropdown = document.getElementById("chatSkillsDropdown");
+    dropdown.innerHTML = chatSkills.map(function(s){
+      var checked = chatSessionSkillIds.indexOf(s.id) !== -1 ? " checked" : "";
+      return '<label class="files-dropdown-item">' +
+        '<input type="checkbox" data-role="skill-cb" value="' + s.id + '"' + checked + '>' +
+        '<span class="files-dropdown-name" title="' + escapeHtml(s.description || s.name) + '">' + escapeHtml(s.name) + '</span>' +
+      '</label>';
+    }).join("");
+    Array.prototype.forEach.call(dropdown.querySelectorAll('[data-role="skill-cb"]'), function(cb){
+      cb.addEventListener("change", function(e){
+        e.stopPropagation();
+        toggleSessionSkill(parseInt(cb.value, 10), cb.checked);
+      });
+    });
+  }
+
+  var chatPreviewRawText = "";
+  var chatPreviewRelPath = "";
+  var chatPreviewMatches = [];
+  var chatPreviewMatchIndex = -1;
+  var MARKDOWN_PREVIEW_EXTENSIONS = [".md"];
+  function isMarkdownPreview(relPath){
+    var m = /\.[^./]+$/.exec(relPath || "");
+    return !!m && MARKDOWN_PREVIEW_EXTENSIONS.indexOf(m[0].toLowerCase()) !== -1;
+  }
+
+  function closePreviewInline(){
+    var empty = document.getElementById("filesPreviewEmpty");
+    var content = document.getElementById("filesPreviewContent");
+    if (empty) empty.hidden = false;
+    if (content) content.hidden = true;
+    var panel = document.getElementById("filesPreviewPanel");
+    if (panel) panel.classList.remove("editing");
+    chatPreviewRawText = "";
+    chatPreviewRelPath = "";
+    closePreviewSearchBar();
+  }
+
+  function previewProjectFile(projectPath, absPath, relPath){
+    var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
+      "&file=" + encodeURIComponent(absPath);
+    apiRaw(url).then(function(d){
+      chatPreviewRawText = d.content;
+      chatPreviewRelPath = relPath;
+      document.getElementById("chatPreviewFileName").textContent = relPath;
+      document.getElementById("filesPreviewPanel").classList.remove("editing");
+      closePreviewSearchBar();
+      renderPreviewView();
+      restorePreviewViewActions(projectPath, absPath);
+      document.getElementById("filesPreviewEmpty").hidden = true;
+      document.getElementById("filesPreviewContent").hidden = false;
+    });
+  }
+
+  function renderPreviewView(){
+    var wrap = document.getElementById("chatPreviewBodyWrap");
+    if (isMarkdownPreview(chatPreviewRelPath)){
+      wrap.innerHTML = '<div class="markdown-body" id="chatPreviewBody"></div>';
+      var body = document.getElementById("chatPreviewBody");
+      body.innerHTML = marked.parse(chatPreviewRawText, { gfm: true });
+      renderMathIn(body);
+    } else {
+      wrap.innerHTML = '<pre class="plain-text-body" id="chatPreviewBody"></pre>';
+      document.getElementById("chatPreviewBody").textContent = chatPreviewRawText;
+    }
+  }
+
+  function renderMathIn(el){
+    if (typeof renderMathInElement !== "function") return;
+    renderMathInElement(el, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false }
+      ],
+      throwOnError: false
+    });
+  }
+
+  // ---- in-file search (highlight + prev/next), scoped to the preview drawer ----
+
+  function openPreviewSearchBar(){
+    var panel = document.getElementById("filesPreviewPanel");
+    if (panel.classList.contains("editing")) return;
+    var bar = document.getElementById("chatPreviewSearchBar");
+    bar.hidden = false;
+    var input = document.getElementById("chatPreviewSearchInput");
+    input.focus();
+    input.select();
+    runPreviewSearch(input.value);
+  }
+
+  function closePreviewSearchBar(){
+    var bar = document.getElementById("chatPreviewSearchBar");
+    bar.hidden = true;
+    document.getElementById("chatPreviewSearchInput").value = "";
+    clearPreviewSearchHighlights();
+    chatPreviewMatches = [];
+    chatPreviewMatchIndex = -1;
+    updatePreviewSearchCount();
+  }
+
+  function clearPreviewSearchHighlights(){
+    var body = document.getElementById("chatPreviewBody");
+    if (!body) return;
+    Array.prototype.forEach.call(body.querySelectorAll("mark.search-hit"), function(mark){
+      var parent = mark.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(mark.textContent), mark);
+      parent.normalize();
+    });
+  }
+
+  function runPreviewSearch(query){
+    clearPreviewSearchHighlights();
+    chatPreviewMatches = [];
+    chatPreviewMatchIndex = -1;
+    var body = document.getElementById("chatPreviewBody");
+    var q = (query || "").trim();
+    if (!body || !q){ updatePreviewSearchCount(); return; }
+    var qLower = q.toLowerCase();
+    var walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
+    var textNodes = [];
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue) textNodes.push(node);
+    }
+    textNodes.forEach(function(textNode){
+      var text = textNode.nodeValue;
+      var lower = text.toLowerCase();
+      if (lower.indexOf(qLower) === -1) return;
+      var frag = document.createDocumentFragment();
+      var lastIndex = 0;
+      var idx = lower.indexOf(qLower);
+      while (idx !== -1) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, idx)));
+        var mark = document.createElement("mark");
+        mark.className = "search-hit";
+        mark.textContent = text.slice(idx, idx + q.length);
+        frag.appendChild(mark);
+        chatPreviewMatches.push(mark);
+        lastIndex = idx + q.length;
+        idx = lower.indexOf(qLower, lastIndex);
+      }
+      frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+      textNode.parentNode.replaceChild(frag, textNode);
+    });
+    updatePreviewSearchCount();
+    if (chatPreviewMatches.length) gotoPreviewMatch(0);
+  }
+
+  function updatePreviewSearchCount(){
+    var el = document.getElementById("chatPreviewSearchCount");
+    if (!el) return;
+    el.textContent = chatPreviewMatches.length
+      ? (chatPreviewMatchIndex + 1) + " / " + chatPreviewMatches.length
+      : "0 / 0";
+  }
+
+  function gotoPreviewMatch(index){
+    if (!chatPreviewMatches.length) return;
+    if (chatPreviewMatchIndex >= 0 && chatPreviewMatches[chatPreviewMatchIndex]){
+      chatPreviewMatches[chatPreviewMatchIndex].classList.remove("active");
+    }
+    chatPreviewMatchIndex = ((index % chatPreviewMatches.length) + chatPreviewMatches.length) % chatPreviewMatches.length;
+    var mark = chatPreviewMatches[chatPreviewMatchIndex];
+    mark.classList.add("active");
+    mark.scrollIntoView({ block: "center", behavior: "smooth" });
+    updatePreviewSearchCount();
+  }
+
+  document.getElementById("chatPreviewSearchToggleBtn").addEventListener("click", function(){
+    var bar = document.getElementById("chatPreviewSearchBar");
+    if (bar.hidden) openPreviewSearchBar();
+    else closePreviewSearchBar();
+  });
+  document.getElementById("chatPreviewSearchCloseBtn").addEventListener("click", closePreviewSearchBar);
+  document.getElementById("chatPreviewSearchPrevBtn").addEventListener("click", function(){ gotoPreviewMatch(chatPreviewMatchIndex - 1); });
+  document.getElementById("chatPreviewSearchNextBtn").addEventListener("click", function(){ gotoPreviewMatch(chatPreviewMatchIndex + 1); });
+  document.getElementById("chatPreviewSearchInput").addEventListener("input", function(e){
+    runPreviewSearch(e.target.value);
+  });
+  document.getElementById("chatPreviewSearchInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter"){
+      e.preventDefault();
+      if (e.shiftKey) gotoPreviewMatch(chatPreviewMatchIndex - 1);
+      else gotoPreviewMatch(chatPreviewMatchIndex + 1);
+    } else if (e.key === "Escape"){
+      e.preventDefault();
+      e.stopPropagation();
+      closePreviewSearchBar();
+    }
+  });
+  document.addEventListener("keydown", function(e){
+    var content = document.getElementById("filesPreviewContent");
+    if (!content || content.hidden) return;
+    if (e.target && e.target.closest && e.target.closest(".chat-msg-edit")) return;
+    var isFind = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f";
+    if (isFind){
+      e.preventDefault();
+      openPreviewSearchBar();
+      return;
+    }
+    if (e.key === "Escape" && document.activeElement !== document.getElementById("chatPreviewSearchInput")){
+      var bar = document.getElementById("chatPreviewSearchBar");
+      if (!bar.hidden) closePreviewSearchBar();
+      else closePreviewInline();
+    }
+  });
+
+  function restorePreviewViewActions(projectPath, absPath){
+    var actions = document.getElementById("chatPreviewActions");
+    actions.innerHTML = '<button class="btn" id="chatPreviewEditBtn" type="button">Edit</button>';
+    document.getElementById("chatPreviewEditBtn").onclick = function(){ enterPreviewEditMode(projectPath, absPath); };
+    var body = document.getElementById("chatPreviewBody");
+    if (body) body.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath); };
+  }
+
+  function enterPreviewEditMode(projectPath, absPath){
+    var panel = document.getElementById("filesPreviewPanel");
+    panel.classList.add("editing");
+    document.getElementById("chatPreviewBodyWrap").innerHTML =
+      '<div class="file-preview-edit"><textarea id="chatPreviewEditInput">' + escapeHtml(chatPreviewRawText) + '</textarea></div>';
+    var actions = document.getElementById("chatPreviewActions");
+    actions.innerHTML =
+      '<span class="chat-msg-edit-badge">Editing</span>' +
+      '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
+      '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Save</button>';
+    var textarea = document.getElementById("chatPreviewEditInput");
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    function cancel(){
+      panel.classList.remove("editing");
+      renderPreviewView();
+      restorePreviewViewActions(projectPath, absPath);
+    }
+    function save(){
+      var next = textarea.value;
+      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      apiRaw("/chat/project-files/write", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: projectPath, file: absPath, content: next })
+      }).then(function(){
+        chatPreviewRawText = next;
+        panel.classList.remove("editing");
+        renderPreviewView();
+        restorePreviewViewActions(projectPath, absPath);
+      }).catch(function(err){
+        alert("Failed to save file: " + (err && err.message ? err.message : "unknown error"));
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save";
+      });
+    }
+    textarea.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
+      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+    });
+    document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
+    document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
+  }
+
+  // New-file creation reuses the same inline preview/edit panel instead of a
+  // modal: an editable filename field in the header + an empty body textarea,
+  // then falls through to the normal read view via previewProjectFile once
+  // /chat/project-files/create succeeds.
+  function enterPreviewCreateMode(projectPath){
+    document.getElementById("filesPreviewEmpty").hidden = true;
+    document.getElementById("filesPreviewContent").hidden = false;
+    closePreviewSearchBar();
+    chatPreviewRawText = "";
+    chatPreviewRelPath = "";
+    var panel = document.getElementById("filesPreviewPanel");
+    panel.classList.add("editing");
+    document.getElementById("chatPreviewFileName").innerHTML =
+      '<input type="text" id="chatPreviewNewFileName" class="preview-filename-input" placeholder="filename.md" />';
+    document.getElementById("chatPreviewBodyWrap").innerHTML =
+      '<div class="file-preview-edit"><textarea id="chatPreviewEditInput" placeholder="Start typing…"></textarea></div>';
+    var actions = document.getElementById("chatPreviewActions");
+    actions.innerHTML =
+      '<span class="chat-msg-edit-badge">New file</span>' +
+      '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Create</button>';
+    var nameInput = document.getElementById("chatPreviewNewFileName");
+    var textarea = document.getElementById("chatPreviewEditInput");
+    nameInput.focus();
+
+    function cancel(){
+      panel.classList.remove("editing");
+      closePreviewInline();
+    }
+    function save(){
+      var name = nameInput.value.trim();
+      if (!name){ nameInput.focus(); return; }
+      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Creating…";
+      apiRaw("/chat/project-files/create", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: projectPath, file: name, content: textarea.value })
+      }).then(function(result){
+        return refreshProjectFiles(projectPath).then(function(){ return result; });
+      }).then(function(result){
+        panel.classList.remove("editing");
+        previewProjectFile(projectPath, result.abs_path, result.rel_path);
+      }).catch(function(err){
+        alert("Failed to create file: " + (err && err.message ? err.message : "unknown error"));
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Create";
+      });
+    }
+    textarea.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
+      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+    });
+    nameInput.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
+      else if (e.key === "Enter"){ e.preventDefault(); textarea.focus(); }
+    });
+    document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
+    document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
+  }
+
+  document.getElementById("chatNewFileBtn").addEventListener("click", function(){
+    if (!filesCurrentProjectPath) return;
+    enterPreviewCreateMode(filesCurrentProjectPath);
+  });
+
+  document.getElementById("chatPreviewCloseBtn").addEventListener("click", function(){
+    closePreviewInline();
+  });
+
+  // Attaches a project file to the Fine AI session for this project, creating
+  // that session (and its chat_projects folder row) lazily on first use --
+  // this is the only path (besides expanding Fine AI itself) that calls
+  // ensureFineAiSession, so simply browsing/previewing files never creates a
+  // chat_projects/chat_sessions row.
+  function attachProjectFile(projectPath, absPath){
+    var projectName = filesProjectNameForPath(projectPath);
+    return ensureFineAiSession(projectPath, projectName).then(function(sessionId){
+      if (chatCurrentSessionId !== sessionId){
+        chatCurrentSessionId = sessionId;
+        chatContextSessionIds = [];
+        renderChatSidebar();
+      }
+      return apiRaw("/chat/attach-file", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ session_id: sessionId, project_path: projectPath, abs_path: absPath })
+      });
+    }).then(function(){
+      return loadChatMessages();
+    }).then(function(){
+      renderChatThread();
+      renderFileList();
+    });
+  }
+
+  function renderMessages(){
+    var list = document.getElementById("chatMessagesList");
+    var visibleMessages = chatCurrentMessages.filter(function(m){ return !parseAttachedFileName(m.content); });
+    if (!visibleMessages.length){
+      list.innerHTML = '<div class="chat-empty">No messages yet. Say something below.</div>';
+      return;
+    }
+    list.innerHTML = visibleMessages.map(function(m){
+      var ctxOff = !m.is_context ? " ctx-off" : "";
+      return '<div class="chat-msg role-' + escapeHtml(m.role) + ctxOff + '" data-msg-id="' + m.id + '">' +
+        '<div class="chat-msg-bubble markdown-body">' + renderMsgContent(m.content) + '</div>' +
+        '<div class="chat-msg-meta">' +
+          '<span>' + escapeHtml(m.role) + '</span>' +
+          '<button type="button" data-role="toggle-ctx" class="' + (m.is_context ? "on" : "") + '">' + (m.is_context ? "in context" : "excluded") + '</button>' +
+          '<button type="button" data-role="copy-msg">Copy</button>' +
+          '<button type="button" data-role="save-msg">Save</button>' +
+          '<button type="button" data-role="edit-msg">Edit</button>' +
+          '<button type="button" data-role="delete-msg">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+    list.scrollTop = list.scrollHeight;
+
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="toggle-ctx"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var msgEl = btn.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        var newVal = msg.is_context ? 0 : 1;
+        apiRaw("/chat/messages/update", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: id, is_context: newVal }) })
+          .then(function(){
+            msg.is_context = newVal;
+            renderMessages();
+            updateTokenEstimate();
+            renderAttachedFilesPill();
+            renderSkillsPill();
+          });
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="delete-msg"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var msgEl = btn.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        apiRaw("/chat/messages/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: id }) })
+          .then(function(){
+            chatCurrentMessages = chatCurrentMessages.filter(function(m){ return m.id !== id; });
+            renderMessages(); updateTokenEstimate();
+          });
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="edit-msg"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var msgEl = btn.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        if (msg) enterEditMode(msgEl, msg);
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="copy-msg"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var msgEl = btn.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        if (!msg) return;
+        var text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+        navigator.clipboard.writeText(text).then(function(){
+          var prev = btn.textContent; btn.textContent = "Copied";
+          setTimeout(function(){ btn.textContent = prev; }, 1200);
+        });
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="save-msg"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var msgEl = btn.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        if (!msg || btn.disabled) return;
+        var text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+        var session = currentSession();
+        var initialDir = filesCurrentProjectPath || (session && session.linked_project_path) || "";
+        var defaultName = (msg.role || "message") + "-" + msg.id + ".md";
+        var prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+        apiRaw("/chat/save-message", {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ content: text, initial_dir: initialDir, default_name: defaultName })
+        }).then(function(d){
+          btn.disabled = false;
+          btn.textContent = d.cancelled ? prev : "Saved";
+          if (!d.cancelled){
+            setTimeout(function(){ btn.textContent = prev; }, 1200);
+            refreshProjectFiles(filesCurrentProjectPath);
+          }
+        }).catch(function(){
+          btn.disabled = false;
+          btn.textContent = prev;
+        });
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll(".chat-msg-bubble"), function(bubble){
+      bubble.addEventListener("dblclick", function(){
+        if (bubble.classList.contains("editing")) return;
+        var msgEl = bubble.closest("[data-msg-id]");
+        var id = parseInt(msgEl.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        if (msg) enterEditMode(msgEl, msg);
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="copy-code"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var code = btn.nextElementSibling.textContent;
+        navigator.clipboard.writeText(code).then(function(){
+          var prev = btn.textContent; btn.textContent = "Copied";
+          setTimeout(function(){ btn.textContent = prev; }, 1200);
+        });
+      });
+    });
+  }
+
+  function enterEditMode(msgEl, msg){
+    var bubble = msgEl.querySelector(".chat-msg-bubble");
+    var original = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+    var rect = bubble.getBoundingClientRect();
+    bubble.style.width = rect.width + "px";
+    bubble.style.minHeight = rect.height + "px";
+    bubble.classList.add("editing");
+    bubble.innerHTML =
+      '<div class="chat-msg-edit">' +
+        '<textarea class="chat-msg-edit-input">' + escapeHtml(original) + '</textarea>' +
+        '<div class="chat-msg-edit-actions">' +
+          '<span class="chat-msg-edit-badge">Editing</span>' +
+          '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
+          '<button type="button" data-role="cancel-edit-msg">Cancel</button>' +
+          '<button type="button" class="primary" data-role="save-edit-msg">Save</button>' +
+        '</div>' +
+      '</div>';
+    var textarea = bubble.querySelector(".chat-msg-edit-input");
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    function releaseDimensions(){
+      bubble.style.width = "";
+      bubble.style.minHeight = "";
+    }
+    function cancel(){
+      bubble.classList.remove("editing");
+      releaseDimensions();
+      bubble.innerHTML = renderMsgContent(msg.content);
+    }
+    function save(){
+      var next = textarea.value;
+      apiRaw("/chat/messages/update", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: msg.id, content: next })
+      }).then(function(updated){
+        msg.content = updated.content;
+        bubble.classList.remove("editing");
+        releaseDimensions();
+        bubble.innerHTML = renderMsgContent(msg.content);
+        updateTokenEstimate();
+      });
+    }
+    textarea.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); cancel(); }
+      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+    });
+    bubble.querySelector('[data-role="cancel-edit-msg"]').addEventListener("click", cancel);
+    bubble.querySelector('[data-role="save-edit-msg"]').addEventListener("click", save);
+  }
+
+  function wireThreadActions(){
+    var thread = document.getElementById("chatThread");
+    var filesToggle = document.getElementById("chatAttachedFilesToggle");
+    if (filesToggle){
+      filesToggle.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = document.getElementById("chatAttachedFilesDropdown");
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+    }
+    var skillsToggle = document.getElementById("chatSkillsToggle");
+    if (skillsToggle){
+      skillsToggle.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = document.getElementById("chatSkillsDropdown");
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+    }
+    var contextToggle = document.getElementById("chatContextToggle");
+    if (contextToggle){
+      contextToggle.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = document.getElementById("chatContextDropdown");
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+      var contextDropdown = document.getElementById("chatContextDropdown");
+      Array.prototype.forEach.call(contextDropdown.querySelectorAll('[data-role="context-session-cb"]'), function(cb){
+        cb.addEventListener("change", function(){
+          chatContextSessionIds = Array.prototype.map.call(
+            contextDropdown.querySelectorAll('[data-role="context-session-cb"]:checked'),
+            function(el){ return parseInt(el.value, 10); }
+          );
+          contextToggle.textContent = chatContextSessionIds.length
+            ? chatContextSessionIds.length + " session" + (chatContextSessionIds.length === 1 ? "" : "s") + " in context"
+            : "Cross-session context";
+          updateTokenEstimate();
+        });
+      });
+    }
+    var modelToggle = document.getElementById("composeModelToggle");
+    if (modelToggle){
+      modelToggle.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = document.getElementById("modelDropdown");
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-role="select-model"]'), function(btn){
+        btn.addEventListener("click", function(){
+          closeAllRowMenus();
+          var modelId = btn.getAttribute("data-model-id") ? parseInt(btn.getAttribute("data-model-id"), 10) : null;
+          apiRaw("/chat/sessions/update", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ id: chatCurrentSessionId, model_id: modelId })
+          }).then(function(updated){
+            var session = chatSessionsList.filter(function(s){ return s.id === chatCurrentSessionId; })[0];
+            if (session){
+              session.model_id = updated.model_id;
+              session.model_name = updated.model_name;
+            }
+            modelToggle.innerHTML = ICON_MODEL + "<span>" + escapeHtml(updated.model_name || "App default") + "</span>";
+            updateTokenEstimate();
+          });
+        });
+      });
+    }
+    var templateToggle = document.querySelector('[data-role="template-toggle"]');
+    if (templateToggle){
+      templateToggle.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = document.getElementById("templateDropdown");
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-role="insert-template"]'), function(btn){
+        btn.addEventListener("click", function(){
+          closeAllRowMenus();
+          var id = parseInt(btn.getAttribute("data-tpl-id"), 10);
+          var tpl = chatTemplates.filter(function(t){ return t.id === id; })[0];
+          if (tpl){
+            var box = document.getElementById("composeText");
+            box.value = box.value ? (box.value + "\n" + tpl.content) : tpl.content;
+            autoResizeComposeText(box);
+            box.focus();
+          }
+        });
+      });
+    }
+    thread.querySelector('[data-role="thread-menu-toggle"]').addEventListener("click", function(e){
+      e.stopPropagation();
+      var dropdown = this.nextElementSibling;
+      var wasHidden = dropdown.hidden;
+      closeAllRowMenus();
+      dropdown.hidden = !wasHidden;
+    });
+    thread.querySelector('[data-role="edit-session"]').addEventListener("click", function(){ closeAllRowMenus(); openSessionModal(currentSession()); });
+    thread.querySelector('[data-role="delete-session"]').addEventListener("click", function(){
+      closeAllRowMenus();
+      if (!confirm("Delete this session and all its messages?")) return;
+      apiRaw("/chat/sessions/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: chatCurrentSessionId }) })
+        .then(function(){
+          chatCurrentSessionId = null;
+          return reloadChatSessions();
+        }).then(function(){
+          if (chatSessionsList.length) selectSession(chatSessionsList[0].id);
+          else renderChatThread();
+        });
+    });
+    thread.querySelector('[data-role="manage-messages"]').addEventListener("click", function(){ closeAllRowMenus(); openContextInspectModal("manage"); });
+    thread.querySelector('[data-role="bulk-inject"]').addEventListener("click", function(){ closeAllRowMenus(); openBulkInjectModal(); });
+    thread.querySelector('[data-role="export-json"]').addEventListener("click", function(){ closeAllRowMenus(); openExportModal(); });
+    document.getElementById("chatInspectContextBtn").addEventListener("click", function(){ openContextInspectModal("readable"); });
+    thread.querySelector('[data-role="open-templates"]').addEventListener("click", function(){ closeAllRowMenus(); openTemplatesModal(); });
+    thread.querySelector('[data-role="open-roles"]').addEventListener("click", function(){ closeAllRowMenus(); openSystemRolesModal(); });
+    thread.querySelector('[data-role="open-skills"]').addEventListener("click", function(){ closeAllRowMenus(); openSkillsModal(); });
+
+    document.getElementById("addQaBtn").addEventListener("click", openQaModal);
+
+    var composeText = document.getElementById("composeText");
+    var sendBtn = document.getElementById("sendChatBtn");
+    sendBtn.addEventListener("click", sendChatMessage);
+    composeText.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); sendChatMessage(); }
+    });
+    composeText.addEventListener("input", function(){ autoResizeComposeText(composeText); });
+    autoResizeComposeText(composeText);
+  }
+
+  function autoResizeComposeText(el){
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 220) + "px";
+  }
+
+  function sendChatMessage(){
+    if (chatSending) return;
+    var box = document.getElementById("composeText");
+    var text = box.value.trim();
+    if (!text || !chatCurrentSessionId) return;
+    chatSending = true;
+    var sendBtn = document.getElementById("sendChatBtn");
+    sendBtn.disabled = true;
+    box.value = "";
+    autoResizeComposeText(box);
+
+    apiRaw("/chat/messages", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ session_id: chatCurrentSessionId, role: "user", content: text })
+    }).then(function(userMsg){
+      chatCurrentMessages.push(userMsg);
+      renderMessages();
+
+      var assistantMsg = { id: "pending", role: "assistant", content: "", is_context: 1 };
+      chatCurrentMessages.push(assistantMsg);
+      renderMessages();
+
+      var fullContent = "";
+      var tokensUsed = 0;
+      fetch(API + "/chat/send", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ session_id: chatCurrentSessionId, message: text, context_sessions: chatContextSessionIds })
+      }).then(function(resp){
+        var reader = resp.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = "";
+        function updateBubble(){
+          var el = document.querySelector('[data-msg-id="pending"] .chat-msg-bubble');
+          if (el) el.innerHTML = renderMsgContent(fullContent);
+          var list = document.getElementById("chatMessagesList");
+          if (list) list.scrollTop = list.scrollHeight;
+        }
+        function pump(){
+          return reader.read().then(function(result){
+            if (result.done) return;
+            buffer += decoder.decode(result.value, { stream: true });
+            var parts = buffer.split("\n\n");
+            buffer = parts.pop();
+            parts.forEach(function(part){
+              var line = part.trim();
+              if (line.slice(0, 5) !== "data:") return;
+              var jsonStr = line.slice(5).trim();
+              if (!jsonStr) return;
+              var obj;
+              try { obj = JSON.parse(jsonStr); } catch (e){ return; }
+              if (obj.error){
+                fullContent += "\n\n[error: " + obj.error + "]";
+                updateBubble();
+              } else if (obj.content){
+                fullContent += obj.content;
+                updateBubble();
+              } else if (obj.tokens_used != null){
+                tokensUsed = obj.tokens_used;
+              }
+            });
+            return pump();
+          });
+        }
+        return pump();
+      }).then(function(){
+        return apiRaw("/chat/messages", {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ session_id: chatCurrentSessionId, role: "assistant", content: fullContent, tokens_used: tokensUsed })
+        });
+      }).then(function(savedMsg){
+        var idx = chatCurrentMessages.indexOf(assistantMsg);
+        if (idx !== -1) chatCurrentMessages[idx] = savedMsg;
+        renderMessages();
+        updateTokenEstimate();
+        return reloadChatSessions();
+      }).catch(function(e){
+        fullContent += "\n\n[error: " + e.message + "]";
+        var el = document.querySelector('[data-msg-id="pending"] .chat-msg-bubble');
+        if (el) el.innerHTML = renderMsgContent(fullContent);
+      }).finally(function(){
+        chatSending = false;
+        sendBtn.disabled = false;
+      });
+    }).catch(function(e){
+      chatSending = false;
+      sendBtn.disabled = false;
+      alert("Failed to send: " + e.message);
+    });
+  }
+
+  // ---- New/Edit Session modal ----
+  var sessionOverlay = document.getElementById("sessionOverlay");
+  var sessionEditingId = null;
+  function openSessionModal(existing){
+    sessionEditingId = existing ? existing.id : null;
+    document.getElementById("sessionModalTitle").textContent = existing ? "Edit Session" : "New Session";
+    document.getElementById("sessionName").value = existing ? existing.name : "";
+    document.getElementById("sessionTemperature").value = existing ? existing.temperature : 0.7;
+    var folderSel = document.getElementById("sessionFolder");
+    folderSel.innerHTML = '<option value="">No folder</option>' +
+      chatFolders.map(function(f){ return '<option value="' + f.id + '">' + escapeHtml(f.name) + '</option>'; }).join("");
+    folderSel.value = existing && existing.project_id ? existing.project_id : "";
+    var roleSel = document.getElementById("sessionSystemRole");
+    roleSel.innerHTML = chatSystemRoles.map(function(r){
+      return '<option value="' + escapeHtml(r.content) + '">' + escapeHtml(r.name) + '</option>';
+    }).join("");
+    if (existing) roleSel.value = existing.system_role;
+    document.getElementById("sessionFilesPosition").value =
+      existing && existing.files_position ? existing.files_position : "before";
+    document.getElementById("sessionCrossSessionPosition").value =
+      existing && existing.cross_session_position ? existing.cross_session_position : "before";
+    document.getElementById("sessionErr").hidden = true;
+    openModal(sessionOverlay);
+  }
+  document.getElementById("newChatSessionBtn").addEventListener("click", function(){ openSessionModal(null); });
+  document.getElementById("closeSessionModal").addEventListener("click", function(){ closeModal(sessionOverlay); });
+  sessionOverlay.addEventListener("click", function(e){ if (e.target === sessionOverlay) closeModal(sessionOverlay); });
+  document.getElementById("sessionConfirmBtn").addEventListener("click", function(){
+    var name = document.getElementById("sessionName").value.trim() || "New Session";
+    var projectId = document.getElementById("sessionFolder").value || null;
+    var systemRole = document.getElementById("sessionSystemRole").value || undefined;
+    var temperature = parseFloat(document.getElementById("sessionTemperature").value) || 0.7;
+    var filesPosition = document.getElementById("sessionFilesPosition").value || "before";
+    var crossSessionPosition = document.getElementById("sessionCrossSessionPosition").value || "before";
+    var errEl = document.getElementById("sessionErr");
+    errEl.hidden = true;
+    var req;
+    if (sessionEditingId){
+      req = apiRaw("/chat/sessions/update", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          id: sessionEditingId, name: name, project_id: projectId ? parseInt(projectId, 10) : null,
+          system_role: systemRole, temperature: temperature,
+          files_position: filesPosition, cross_session_position: crossSessionPosition
+        }) });
+    } else {
+      req = apiRaw("/chat/sessions", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ name: name, project_id: projectId ? parseInt(projectId, 10) : null }) });
+    }
+    req.then(function(session){
+      closeModal(sessionOverlay);
+      return reloadChatSessions().then(function(){ selectSession(session.id); });
+    }).catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- New Folder modal ----
+  var chatFolderOverlay = document.getElementById("chatFolderOverlay");
+  document.getElementById("newChatFolderBtn").addEventListener("click", function(){
+    document.getElementById("chatFolderName").value = "";
+    document.getElementById("chatFolderColor").value = "#2563eb";
+    document.getElementById("chatFolderErr").hidden = true;
+    openModal(chatFolderOverlay);
+  });
+  document.getElementById("closeChatFolderModal").addEventListener("click", function(){ closeModal(chatFolderOverlay); });
+  chatFolderOverlay.addEventListener("click", function(e){ if (e.target === chatFolderOverlay) closeModal(chatFolderOverlay); });
+  document.getElementById("chatFolderConfirmBtn").addEventListener("click", function(){
+    var name = document.getElementById("chatFolderName").value.trim();
+    var color = document.getElementById("chatFolderColor").value;
+    var errEl = document.getElementById("chatFolderErr");
+    apiRaw("/chat/projects", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ name: name, color: color }) })
+      .then(function(){
+        closeModal(chatFolderOverlay);
+        return apiRaw("/chat/projects").then(function(d){ chatFolders = d.projects || []; renderChatSidebar(); });
+      }).catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- Quick Q&A modal ----
+  var qaOverlay = document.getElementById("qaOverlay");
+  function openQaModal(){
+    document.getElementById("qaQuestion").value = "";
+    document.getElementById("qaAnswer").value = "";
+    document.getElementById("qaErr").hidden = true;
+    openModal(qaOverlay);
+  }
+  document.getElementById("closeQaModal").addEventListener("click", function(){ closeModal(qaOverlay); });
+  qaOverlay.addEventListener("click", function(e){ if (e.target === qaOverlay) closeModal(qaOverlay); });
+  document.getElementById("qaConfirmBtn").addEventListener("click", function(){
+    var q = document.getElementById("qaQuestion").value.trim();
+    var a = document.getElementById("qaAnswer").value.trim();
+    var errEl = document.getElementById("qaErr");
+    if (!q || !a){ errEl.textContent = "Both question and answer are required."; errEl.hidden = false; return; }
+    apiRaw("/chat/messages/bulk", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ session_id: chatCurrentSessionId, messages: [{ role: "user", content: q }, { role: "assistant", content: a }] }) })
+      .then(function(){
+        closeModal(qaOverlay);
+        return loadChatMessages();
+      }).then(function(){ renderMessages(); updateTokenEstimate(); return reloadChatSessions(); })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- Bulk Inject modal ----
+  var bulkInjectOverlay = document.getElementById("bulkInjectOverlay");
+  function openBulkInjectModal(){
+    document.getElementById("bulkJsonText").value = "";
+    document.getElementById("bulkJsonFile").value = "";
+    document.getElementById("bulkInjectErr").hidden = true;
+    openModal(bulkInjectOverlay);
+  }
+  document.getElementById("closeBulkInjectModal").addEventListener("click", function(){ closeModal(bulkInjectOverlay); });
+  bulkInjectOverlay.addEventListener("click", function(e){ if (e.target === bulkInjectOverlay) closeModal(bulkInjectOverlay); });
+  document.getElementById("bulkJsonFile").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){ document.getElementById("bulkJsonText").value = reader.result; };
+    reader.readAsText(file);
+  });
+  document.getElementById("bulkInjectConfirmBtn").addEventListener("click", function(){
+    var errEl = document.getElementById("bulkInjectErr");
+    var messages;
+    try { messages = JSON.parse(document.getElementById("bulkJsonText").value); }
+    catch (e){ errEl.textContent = "Invalid JSON: " + e.message; errEl.hidden = false; return; }
+    if (!Array.isArray(messages)){ errEl.textContent = "Expected a JSON array of messages."; errEl.hidden = false; return; }
+    apiRaw("/chat/messages/bulk", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ session_id: chatCurrentSessionId, messages: messages }) })
+      .then(function(){
+        closeModal(bulkInjectOverlay);
+        return loadChatMessages();
+      }).then(function(){ renderMessages(); updateTokenEstimate(); return reloadChatSessions(); })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- context -> Markdown (shared by the export modal's Markdown tab and
+  // the "Copy context as Markdown" quick button near the chat input) ----
+  function contextMessagesAsMarkdown(){
+    var contextMsgs = chatCurrentMessages.filter(function(m){ return m.is_context; });
+    return contextMsgs.map(function(m){
+      var content = typeof m.content === "string" ? m.content : JSON.stringify(m.content, null, 2);
+      var fileName = parseAttachedFileName(m.content);
+      return fileName ? content : "**" + m.role + ":**\n" + content;
+    }).join("\n\n");
+  }
+
+  // ---- full assembled context (system role + skills + cross-session +
+  // this session's messages) -- the same assembly the backend sends to the
+  // model, fetched from the server so "Copy" and "Inspect" can never drift
+  // from what actually gets sent ----
+  function fetchFullContext(){
+    return apiRaw("/chat/context-preview", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ session_id: chatCurrentSessionId, context_session_ids: chatContextSessionIds })
+    }).then(function(d){ return d.messages || []; });
+  }
+
+  function fullContextAsMarkdown(messages){
+    return messages.map(function(m){
+      var content = typeof m.content === "string" ? m.content : JSON.stringify(m.content, null, 2);
+      return "**" + m.role + ":**\n" + content;
+    }).join("\n\n");
+  }
+
+  // ---- Inspect Context modal (Readable / Raw JSON / Manage tabs) ----
+  var contextInspectOverlay = document.getElementById("contextInspectOverlay");
+  var contextInspectFormat = "readable";
+  var contextInspectMessages = [];
+  var mmDragId = null;
+  var mmOrderBeforeDrag = null;
+
+  function renderContextInspectModal(){
+    var isManage = contextInspectFormat === "manage";
+    document.getElementById("contextInspectText").hidden = isManage;
+    document.getElementById("contextInspectManagePane").hidden = !isManage;
+    document.getElementById("contextInspectReadableBtn").classList.toggle("active", contextInspectFormat === "readable");
+    document.getElementById("contextInspectRawBtn").classList.toggle("active", contextInspectFormat === "raw");
+    document.getElementById("contextInspectManageBtn").classList.toggle("active", isManage);
+    document.getElementById("contextInspectCopyBtn").hidden = isManage;
+    if (isManage){
+      renderMmTable();
+      document.getElementById("contextInspectHint").textContent =
+        "Drag rows to reorder, toggle context per row. Scoped to this session's own messages.";
+      return;
+    }
+    var text = contextInspectFormat === "raw"
+      ? JSON.stringify(contextInspectMessages, null, 2)
+      : fullContextAsMarkdown(contextInspectMessages);
+    document.getElementById("contextInspectText").value = text;
+    document.getElementById("contextInspectHint").textContent =
+      contextInspectMessages.length + " message" + (contextInspectMessages.length === 1 ? "" : "s") +
+      " will be sent to the model, in this order.";
+  }
+
+  function switchContextInspectTab(format){
+    var comingFromManage = contextInspectFormat === "manage";
+    contextInspectFormat = format;
+    if (format !== "manage" && (comingFromManage || !contextInspectMessages.length)){
+      fetchFullContext().then(function(messages){
+        contextInspectMessages = messages;
+        renderContextInspectModal();
+      });
+      return;
+    }
+    renderContextInspectModal();
+  }
+
+  function openContextInspectModal(initialTab){
+    contextInspectFormat = initialTab || "readable";
+    var pending = contextInspectFormat === "manage" ? Promise.resolve([]) : fetchFullContext();
+    pending.then(function(messages){
+      if (contextInspectFormat !== "manage") contextInspectMessages = messages;
+      document.getElementById("contextInspectManageErr").hidden = true;
+      renderContextInspectModal();
+      openModal(contextInspectOverlay);
+    });
+  }
+  document.getElementById("contextInspectReadableBtn").addEventListener("click", function(){ switchContextInspectTab("readable"); });
+  document.getElementById("contextInspectRawBtn").addEventListener("click", function(){ switchContextInspectTab("raw"); });
+  document.getElementById("contextInspectManageBtn").addEventListener("click", function(){ switchContextInspectTab("manage"); });
+  document.getElementById("closeContextInspectModal").addEventListener("click", function(){ closeModal(contextInspectOverlay); });
+  contextInspectOverlay.addEventListener("click", function(e){ if (e.target === contextInspectOverlay) closeModal(contextInspectOverlay); });
+  document.getElementById("contextInspectCopyBtn").addEventListener("click", function(){
+    copyToClipboardWithFeedback(document.getElementById("contextInspectText").value, document.getElementById("contextInspectCopyBtn"));
+  });
+
+  function refreshPillsAfterContextChange(){
+    renderMessages();
+    updateTokenEstimate();
+    renderAttachedFilesPill();
+    renderSkillsPill();
+  }
+
+  function renderMmTable(){
+    var body = document.getElementById("mmBody");
+    body.innerHTML = chatCurrentMessages.map(function(m){
+      var text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
+      return '<tr data-msg-id="' + m.id + '" draggable="true">' +
+        '<td class="mm-drag" title="Drag to reorder">&#8942;&#8942;</td>' +
+        '<td><input type="checkbox" class="mm-check" /></td>' +
+        '<td>' + escapeHtml(m.role) + '</td>' +
+        '<td class="mm-content" data-role="mm-content" title="Click to expand">' + escapeHtml(text) + '</td>' +
+        '<td><button type="button" class="mm-ctx-toggle' + (m.is_context ? " on" : "") + '" data-role="mm-ctx-toggle">' +
+          (m.is_context ? "in context" : "excluded") + '</button></td>' +
+        '<td>' + escapeHtml((m.created_at || "").slice(0, 19)) + '</td>' +
+      '</tr>';
+    }).join("");
+
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="mm-content"]'), function(td){
+      td.addEventListener("click", function(){ td.classList.toggle("expanded"); });
+    });
+
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="mm-ctx-toggle"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var tr = btn.closest("[data-msg-id]");
+        var id = parseInt(tr.getAttribute("data-msg-id"), 10);
+        var msg = chatCurrentMessages.filter(function(m){ return m.id === id; })[0];
+        if (!msg) return;
+        var newVal = msg.is_context ? 0 : 1;
+        apiRaw("/chat/messages/update", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: id, is_context: newVal }) })
+          .then(function(){
+            msg.is_context = newVal;
+            renderMmTable();
+            refreshPillsAfterContextChange();
+          });
+      });
+    });
+
+    Array.prototype.forEach.call(body.querySelectorAll("tr"), function(tr){
+      tr.addEventListener("dragstart", function(e){
+        mmDragId = parseInt(tr.getAttribute("data-msg-id"), 10);
+        mmOrderBeforeDrag = chatCurrentMessages.map(function(m){ return m.id; });
+        tr.classList.add("mm-dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+      tr.addEventListener("dragend", function(){
+        tr.classList.remove("mm-dragging");
+        Array.prototype.forEach.call(body.querySelectorAll("tr"), function(t){ t.classList.remove("mm-drop-target"); });
+      });
+      tr.addEventListener("dragover", function(e){
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        tr.classList.add("mm-drop-target");
+      });
+      tr.addEventListener("dragleave", function(){ tr.classList.remove("mm-drop-target"); });
+      tr.addEventListener("drop", function(e){
+        e.preventDefault();
+        tr.classList.remove("mm-drop-target");
+        var targetId = parseInt(tr.getAttribute("data-msg-id"), 10);
+        if (mmDragId == null || targetId === mmDragId) return;
+        var ids = chatCurrentMessages.map(function(m){ return m.id; });
+        var fromIdx = ids.indexOf(mmDragId);
+        var toIdx = ids.indexOf(targetId);
+        if (fromIdx === -1 || toIdx === -1) return;
+        ids.splice(fromIdx, 1);
+        ids.splice(toIdx, 0, mmDragId);
+        chatCurrentMessages.sort(function(a, b){ return ids.indexOf(a.id) - ids.indexOf(b.id); });
+        renderMmTable();
+        apiRaw("/chat/messages/reorder", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ session_id: chatCurrentSessionId, ordered_ids: ids }) })
+          .then(function(d){
+            chatCurrentMessages = d.messages || chatCurrentMessages;
+            renderMmTable();
+          }).catch(function(e){
+            var order = mmOrderBeforeDrag;
+            chatCurrentMessages.sort(function(a, b){ return order.indexOf(a.id) - order.indexOf(b.id); });
+            renderMmTable();
+            var errEl = document.getElementById("contextInspectManageErr");
+            errEl.textContent = "Reorder failed: " + e.message;
+            errEl.hidden = false;
+          });
+      });
+    });
+  }
+
+  function mmSelectedIds(){
+    return Array.prototype.map.call(
+      document.querySelectorAll("#mmBody tr"), function(tr){
+        var checked = tr.querySelector(".mm-check").checked;
+        return checked ? parseInt(tr.getAttribute("data-msg-id"), 10) : null;
+      }
+    ).filter(function(id){ return id != null; });
+  }
+  document.getElementById("mmDeleteBtn").addEventListener("click", function(){
+    var ids = mmSelectedIds();
+    if (!ids.length || !confirm("Delete " + ids.length + " message(s)?")) return;
+    Promise.all(ids.map(function(id){
+      return apiRaw("/chat/messages/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: id }) });
+    })).then(function(){
+      chatCurrentMessages = chatCurrentMessages.filter(function(m){ return ids.indexOf(m.id) === -1; });
+      renderMmTable();
+      refreshPillsAfterContextChange();
+      return reloadChatSessions();
+    });
+  });
+  document.getElementById("mmCopyJsonBtn").addEventListener("click", function(){
+    var ids = mmSelectedIds();
+    var selected = chatCurrentMessages.filter(function(m){ return ids.indexOf(m.id) !== -1; });
+    navigator.clipboard.writeText(JSON.stringify(selected, null, 2)).then(function(){
+      var btn = document.getElementById("mmCopyJsonBtn");
+      var prev = btn.textContent; btn.textContent = "Copied";
+      setTimeout(function(){ btn.textContent = prev; }, 1200);
+    });
+  });
+
+  // ---- Export modal (JSON / Markdown tabs) ----
+  var exportOverlay = document.getElementById("exportOverlay");
+  var chatExportFormat = "json";
+  function renderExportModal(){
+    var contextMsgs = chatCurrentMessages.filter(function(m){ return m.is_context; });
+    var text = chatExportFormat === "markdown"
+      ? contextMessagesAsMarkdown()
+      : JSON.stringify(contextMsgs, null, 2);
+    document.getElementById("exportJsonText").value = text;
+    document.getElementById("exportFormatJsonBtn").classList.toggle("active", chatExportFormat === "json");
+    document.getElementById("exportFormatMdBtn").classList.toggle("active", chatExportFormat === "markdown");
+  }
+  function openExportModal(){
+    chatExportFormat = "json";
+    renderExportModal();
+    openModal(exportOverlay);
+  }
+  document.getElementById("exportFormatJsonBtn").addEventListener("click", function(){ chatExportFormat = "json"; renderExportModal(); });
+  document.getElementById("exportFormatMdBtn").addEventListener("click", function(){ chatExportFormat = "markdown"; renderExportModal(); });
+  document.getElementById("closeExportModal").addEventListener("click", function(){ closeModal(exportOverlay); });
+  exportOverlay.addEventListener("click", function(e){ if (e.target === exportOverlay) closeModal(exportOverlay); });
+  document.getElementById("exportCopyBtn").addEventListener("click", function(){
+    copyToClipboardWithFeedback(document.getElementById("exportJsonText").value, document.getElementById("exportCopyBtn"));
+  });
+
+  // ---- Add File modal (upload -> new project file(s), any type, into a chosen folder) ----
+  var addFileOverlay = document.getElementById("addFileOverlay");
+  function projectFolderOptions(){
+    var dirs = {};
+    chatProjectFiles.forEach(function(f){
+      var parts = f.rel_path.split("/");
+      parts.pop();
+      var path = "";
+      parts.forEach(function(p){
+        path = path ? path + "/" + p : p;
+        dirs[path] = true;
+      });
+    });
+    return Object.keys(dirs).sort();
+  }
+  function populateAddFileFolderSelect(){
+    var sel = document.getElementById("addFileFolderSelect");
+    var opts = ['<option value="">(project root)</option>'];
+    projectFolderOptions().forEach(function(d){
+      opts.push('<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>');
+    });
+    sel.innerHTML = opts.join("");
+  }
+  function openAddFileModal(){
+    if (!filesCurrentProjectPath) return;
+    document.getElementById("addFileUploadInput").value = "";
+    document.getElementById("addFileErr").hidden = true;
+    populateAddFileFolderSelect();
+    openModal(addFileOverlay);
+  }
+  document.getElementById("chatAddFileBtn").addEventListener("click", openAddFileModal);
+  document.getElementById("closeAddFileModal").addEventListener("click", function(){ closeModal(addFileOverlay); });
+  addFileOverlay.addEventListener("click", function(e){ if (e.target === addFileOverlay) closeModal(addFileOverlay); });
+  function readFileAsBase64(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){
+        // reader.result is "data:<mime>;base64,<payload>" -- strip the prefix.
+        var result = reader.result || "";
+        var idx = result.indexOf(",");
+        resolve(idx === -1 ? "" : result.slice(idx + 1));
+      };
+      reader.onerror = function(){ reject(reader.error || new Error("Failed to read file")); };
+      reader.readAsDataURL(file);
+    });
+  }
+  function uploadOneProjectFile(file, folder){
+    var relPath = (folder ? folder + "/" : "") + file.name;
+    return readFileAsBase64(file).then(function(base64){
+      return apiRaw("/chat/project-files/create", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: filesCurrentProjectPath, file: relPath, content: base64, encoding: "base64" })
+      });
+    });
+  }
+  document.getElementById("addFileSubmitBtn").addEventListener("click", function(){
+    var errEl = document.getElementById("addFileErr");
+    errEl.hidden = true;
+    var files = Array.prototype.slice.call(document.getElementById("addFileUploadInput").files);
+    if (!files.length){ errEl.textContent = "Choose at least one file to upload."; errEl.hidden = false; return; }
+    var folder = document.getElementById("addFileFolderSelect").value;
+    var submitBtn = document.getElementById("addFileSubmitBtn");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Uploading…";
+    var errors = [];
+    files.reduce(function(chain, file){
+      return chain.then(function(){
+        return uploadOneProjectFile(file, folder).catch(function(e){
+          errors.push(file.name + ": " + (e && e.message ? e.message : "upload failed"));
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      return refreshProjectFiles(filesCurrentProjectPath);
+    }).then(function(){
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Upload";
+      if (errors.length){
+        errEl.textContent = errors.join("; ");
+        errEl.hidden = false;
+      } else {
+        closeModal(addFileOverlay);
+      }
+    });
+  });
+
+  // ---- Templates modal ----
+  var templatesOverlay = document.getElementById("templatesOverlay");
+  function renderTemplatesList(){
+    var el = document.getElementById("templatesList");
+    el.innerHTML = chatTemplates.map(function(t){
+      return '<div class="model-row"><span class="m-name">' + escapeHtml(t.name) + '</span>' +
+        '<span class="m-url">' + escapeHtml((t.content || "").slice(0, 60)) + '</span>' +
+        '<button class="icon-btn" data-role="copy-template" data-id="' + t.id + '" title="Copy to clipboard">Copy</button>' +
+        '<button class="icon-btn icon-only" data-role="del-template" data-id="' + t.id + '" title="Delete">&times;</button></div>';
+    }).join("") || '<div class="hint">No templates yet.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="copy-template"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var tpl = chatTemplates.filter(function(t){ return t.id === parseInt(btn.getAttribute("data-id"), 10); })[0];
+        if (tpl) copyToClipboardWithFeedback(tpl.content || "", btn);
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="del-template"]'), function(btn){
+      btn.addEventListener("click", function(){
+        apiRaw("/chat/templates/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: parseInt(btn.getAttribute("data-id"), 10) }) })
+          .then(function(){ return apiRaw("/chat/templates"); }).then(function(d){ chatTemplates = d.templates || []; renderTemplatesList(); renderChatThread(); });
+      });
+    });
+  }
+  function openTemplatesModal(){ renderTemplatesList(); openModal(templatesOverlay); }
+  document.getElementById("closeTemplatesModal").addEventListener("click", function(){ closeModal(templatesOverlay); });
+  templatesOverlay.addEventListener("click", function(e){ if (e.target === templatesOverlay) closeModal(templatesOverlay); });
+  document.getElementById("addTemplateBtn").addEventListener("click", function(){
+    var name = document.getElementById("newTemplateName").value.trim();
+    var content = document.getElementById("newTemplateContent").value.trim();
+    var errEl = document.getElementById("templatesErr");
+    apiRaw("/chat/templates", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ name: name, content: content }) })
+      .then(function(){
+        document.getElementById("newTemplateName").value = "";
+        document.getElementById("newTemplateContent").value = "";
+        errEl.hidden = true;
+        return apiRaw("/chat/templates");
+      }).then(function(d){ chatTemplates = d.templates || []; renderTemplatesList(); renderChatThread(); })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- System Roles modal ----
+  var systemRolesOverlay = document.getElementById("systemRolesOverlay");
+  function renderSystemRolesList(){
+    var el = document.getElementById("systemRolesList");
+    el.innerHTML = chatSystemRoles.map(function(r){
+      return '<div class="model-row"><span class="m-name">' + escapeHtml(r.name) + (r.is_default ? " (default)" : "") + '</span>' +
+        '<span class="m-url">' + escapeHtml((r.content || "").slice(0, 50)) + '</span>' +
+        (r.is_default ? "" : '<button class="icon-btn" data-role="make-default" data-id="' + r.id + '">Set default</button>') +
+        '<button class="icon-btn icon-only" data-role="del-role" data-id="' + r.id + '" title="Delete">&times;</button></div>';
+    }).join("") || '<div class="hint">No system roles yet.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="del-role"]'), function(btn){
+      btn.addEventListener("click", function(){
+        apiRaw("/chat/system-roles/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: parseInt(btn.getAttribute("data-id"), 10) }) })
+          .then(function(){ return apiRaw("/chat/system-roles"); }).then(function(d){ chatSystemRoles = d.system_roles || []; renderSystemRolesList(); });
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="make-default"]'), function(btn){
+      btn.addEventListener("click", function(){
+        apiRaw("/chat/system-roles/update", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: parseInt(btn.getAttribute("data-id"), 10), is_default: 1 }) })
+          .then(function(){ return apiRaw("/chat/system-roles"); }).then(function(d){ chatSystemRoles = d.system_roles || []; renderSystemRolesList(); });
+      });
+    });
+  }
+  function openSystemRolesModal(){ renderSystemRolesList(); openModal(systemRolesOverlay); }
+  document.getElementById("closeSystemRolesModal").addEventListener("click", function(){ closeModal(systemRolesOverlay); });
+  systemRolesOverlay.addEventListener("click", function(e){ if (e.target === systemRolesOverlay) closeModal(systemRolesOverlay); });
+  document.getElementById("addRoleBtn").addEventListener("click", function(){
+    var name = document.getElementById("newRoleName").value.trim();
+    var content = document.getElementById("newRoleContent").value.trim();
+    var isDefault = document.getElementById("newRoleDefault").checked ? 1 : 0;
+    var errEl = document.getElementById("systemRolesErr");
+    apiRaw("/chat/system-roles", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ name: name, content: content, is_default: isDefault }) })
+      .then(function(){
+        document.getElementById("newRoleName").value = "";
+        document.getElementById("newRoleContent").value = "";
+        document.getElementById("newRoleDefault").checked = false;
+        errEl.hidden = true;
+        return apiRaw("/chat/system-roles");
+      }).then(function(d){ chatSystemRoles = d.system_roles || []; renderSystemRolesList(); })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // ---- Skills modal ----
+  var skillsOverlay = document.getElementById("skillsOverlay");
+  var editingSkillId = null;
+
+  function refreshSkillsEverywhere(){
+    return apiRaw("/chat/skills").then(function(d){
+      chatSkills = d.skills || [];
+      renderSkillsList();
+      renderSkillsPill();
+    });
+  }
+
+  function resetSkillForm(){
+    editingSkillId = null;
+    document.getElementById("newSkillName").value = "";
+    document.getElementById("newSkillDescription").value = "";
+    document.getElementById("newSkillContent").value = "";
+    document.getElementById("addSkillBtn").textContent = "Add skill";
+  }
+
+  function renderSkillsList(){
+    var el = document.getElementById("skillsList");
+    el.innerHTML = chatSkills.map(function(s){
+      return '<div class="model-row"><span class="m-name">' + escapeHtml(s.name) + '</span>' +
+        '<span class="m-url">' + escapeHtml((s.description || s.content || "").slice(0, 60)) + '</span>' +
+        '<button class="icon-btn" data-role="edit-skill" data-id="' + s.id + '" title="Edit">Edit</button>' +
+        '<button class="icon-btn icon-only" data-role="del-skill" data-id="' + s.id + '" title="Delete">&times;</button></div>';
+    }).join("") || '<div class="hint">No skills yet.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="edit-skill"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var skill = chatSkills.filter(function(s){ return s.id === parseInt(btn.getAttribute("data-id"), 10); })[0];
+        if (!skill) return;
+        editingSkillId = skill.id;
+        document.getElementById("newSkillName").value = skill.name || "";
+        document.getElementById("newSkillDescription").value = skill.description || "";
+        document.getElementById("newSkillContent").value = skill.content || "";
+        document.getElementById("addSkillBtn").textContent = "Save skill";
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="del-skill"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var id = parseInt(btn.getAttribute("data-id"), 10);
+        apiRaw("/chat/skills/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: id }) })
+          .then(function(){
+            if (editingSkillId === id) resetSkillForm();
+            chatSessionSkillIds = chatSessionSkillIds.filter(function(sid){ return sid !== id; });
+            return refreshSkillsEverywhere();
+          });
+      });
+    });
+  }
+  function openSkillsModal(){ resetSkillForm(); document.getElementById("skillsErr").hidden = true; renderSkillsList(); openModal(skillsOverlay); }
+  document.getElementById("closeSkillsModal").addEventListener("click", function(){ closeModal(skillsOverlay); });
+  skillsOverlay.addEventListener("click", function(e){ if (e.target === skillsOverlay) closeModal(skillsOverlay); });
+  document.getElementById("addSkillBtn").addEventListener("click", function(){
+    var name = document.getElementById("newSkillName").value.trim();
+    var description = document.getElementById("newSkillDescription").value.trim();
+    var content = document.getElementById("newSkillContent").value.trim();
+    var errEl = document.getElementById("skillsErr");
+    var isEdit = editingSkillId !== null;
+    var req = isEdit
+      ? apiRaw("/chat/skills/update", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ id: editingSkillId, name: name, description: description, content: content }) })
+      : apiRaw("/chat/skills", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ name: name, description: description, content: content }) });
+    req.then(function(){
+        errEl.hidden = true;
+        resetSkillForm();
+        return refreshSkillsEverywhere();
+      })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+
+  // =====================================================================
+  // Settings panel — models + PDF summarizer prompt
+  // =====================================================================
+
+  var defaultChatModelId = null;
+
+  function loadSettingsPanel(){
+    Promise.all([
+      apiRaw("/chat/models").then(function(d){ chatModels = d.models || []; }),
+      apiRaw("/chat/settings")
+    ]).then(function(results){
+      defaultChatModelId = results[1].chat_model_id ? parseInt(results[1].chat_model_id, 10) : null;
+      renderModelsList();
+      document.getElementById("pdfSummaryPrompt").value = results[1].pdf_summary_prompt || "";
+    });
+  }
+
+  function renderModelsList(){
+    var el = document.getElementById("modelsList");
+    el.innerHTML = chatModels.map(function(m){
+      var isDefault = defaultChatModelId === m.id || (!defaultChatModelId && chatModels[0] && chatModels[0].id === m.id);
+      return '<div class="model-row"><span class="m-name">' + escapeHtml(m.name) + (isDefault ? " (default)" : "") + '</span>' +
+        '<span class="m-url">' + escapeHtml(m.base_url || "default endpoint") + '</span>' +
+        '<span class="hint">key ••••' + escapeHtml((m.api_key || "").slice(-4)) + '</span>' +
+        (isDefault ? "" : '<button class="icon-btn" data-role="make-default-model" data-id="' + m.id + '">Set default</button>') +
+        '<button class="icon-btn icon-only" data-role="dup-model" data-id="' + m.id + '" title="Duplicate">' + ICON_COPY + '</button>' +
+        '<button class="icon-btn icon-only" data-role="del-model" data-id="' + m.id + '" title="Delete">&times;</button></div>';
+    }).join("") || '<div class="hint">No models configured yet — add one below.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="dup-model"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var src = chatModels.filter(function(m){ return m.id === parseInt(btn.getAttribute("data-id"), 10); })[0];
+        if (!src) return;
+        document.getElementById("newModelName").value = src.name + " copy";
+        document.getElementById("newModelUrl").value = src.base_url || "";
+        document.getElementById("newModelKey").value = src.api_key || "";
+        var nameInput = document.getElementById("newModelName");
+        nameInput.focus();
+        nameInput.select();
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="del-model"]'), function(btn){
+      btn.addEventListener("click", function(){
+        apiRaw("/chat/models/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: parseInt(btn.getAttribute("data-id"), 10) }) })
+          .then(function(){ return apiRaw("/chat/models"); }).then(function(d){ chatModels = d.models || []; renderModelsList(); })
+          .catch(function(e){ alert(e.message); });
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="make-default-model"]'), function(btn){
+      btn.addEventListener("click", function(){
+        var id = parseInt(btn.getAttribute("data-id"), 10);
+        apiRaw("/chat/settings", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ chat_model_id: id }) })
+          .then(function(){ defaultChatModelId = id; renderModelsList(); })
+          .catch(function(e){ alert(e.message); });
+      });
+    });
+  }
+  document.getElementById("addModelBtn").addEventListener("click", function(){
+    var name = document.getElementById("newModelName").value.trim();
+    var url = document.getElementById("newModelUrl").value.trim();
+    var key = document.getElementById("newModelKey").value.trim();
+    var errEl = document.getElementById("modelsErr");
+    apiRaw("/chat/models", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ name: name, api_key: key, base_url: url }) })
+      .then(function(){
+        document.getElementById("newModelName").value = "";
+        document.getElementById("newModelUrl").value = "";
+        document.getElementById("newModelKey").value = "";
+        errEl.hidden = true;
+        return apiRaw("/chat/models");
+      }).then(function(d){ chatModels = d.models || []; renderModelsList(); })
+      .catch(function(e){ errEl.textContent = e.message; errEl.hidden = false; });
+  });
+  document.getElementById("savePdfPromptBtn").addEventListener("click", function(){
+    var prompt = document.getElementById("pdfSummaryPrompt").value;
+    apiRaw("/chat/settings", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ pdf_summary_prompt: prompt }) })
+      .then(function(){
+        var btn = document.getElementById("savePdfPromptBtn");
+        var prev = btn.textContent; btn.textContent = "Saved";
+        setTimeout(function(){ btn.textContent = prev; }, 1200);
+      });
   });
 
   window.addEventListener("focus", loadAll);

@@ -364,6 +364,57 @@ if (Test-Path $pythonDir) {
   }
 }
 
+# pywebview's edgechromium backend additionally needs the Evergreen WebView2 Runtime, an OS
+# component pip can't install. app.py's own launch-time check (dashboard/app.py) is the real
+# safety net -- it verifies the actual msedgewebview2.exe binary, not just registry metadata,
+# and falls back to opening the dashboard in the default browser instead of a blank window if
+# it's missing or broken (registry can claim it's installed on a stripped-down/servicing-only
+# image -- e.g. Windows Sandbox -- when the binary itself isn't there). This step tries to make
+# that fallback unnecessary in the first place by silently installing WebView2 if it looks
+# absent, using the same registry-then-binary check so a real, working install is never re-run
+# for nothing.
+function Test-WebView2Present {
+  $guid = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+  $roots = @(
+    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
+    @{ RegPath = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
+    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:ProgramFiles },
+    @{ RegPath = "HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:LocalAppData }
+  )
+  foreach ($r in $roots) {
+    if (-not $r.Base) { continue }
+    if (-not (Test-Path $r.RegPath)) { continue }
+    $pv = (Get-ItemProperty -Path $r.RegPath -Name pv -ErrorAction SilentlyContinue).pv
+    if (-not $pv) { continue }
+    $exe = Join-Path $r.Base "Microsoft\EdgeWebView\Application\$pv\msedgewebview2.exe"
+    if (Test-Path $exe) { return $true }
+  }
+  return $false
+}
+
+if (Test-WebView2Present) {
+  Write-Host "  [ok] WebView2 Runtime already present"
+} else {
+  Write-Host "Installing Microsoft Edge WebView2 Runtime (needed for the dashboard's native window)..."
+  $webview2BootstrapperUrl = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
+  $webview2BootstrapperPath = Join-Path $env:TEMP 'MicrosoftEdgeWebView2Setup.exe'
+  try {
+    Invoke-WebRequest -Uri $webview2BootstrapperUrl -OutFile $webview2BootstrapperPath
+    # No admin required: the bootstrapper detects it can't elevate and falls back to a per-user
+    # install automatically, matching this installer's own no-admin/per-user model.
+    $proc = Start-Process -FilePath $webview2BootstrapperPath -ArgumentList '/silent', '/install' -Wait -PassThru
+    if ($proc.ExitCode -eq 0) {
+      Write-Host "  [ok] WebView2 Runtime installed"
+    } else {
+      Write-Warning "WebView2 Runtime installer exited with code $($proc.ExitCode). The dashboard will still work, just as a browser tab instead of a native window."
+    }
+  } catch {
+    Write-Warning "Could not install WebView2 Runtime ($($_.Exception.Message)). The dashboard will still work, just as a browser tab instead of a native window. Install it manually from $webview2BootstrapperUrl if you want the native window."
+  } finally {
+    Remove-Item $webview2BootstrapperPath -Force -ErrorAction SilentlyContinue
+  }
+}
+
 # --- 4. wire skills into ~/.claude/skills --------------------------------------
 # Junctions, not copies: ~/.arti/skills/<name> is the only place a skill is ever edited.
 # A junction makes ~/.claude/skills/<name> the same directory on disk, so there is no
