@@ -189,6 +189,33 @@ def find_browser():
     return None
 
 
+def html_to_pdf(html_path, pdf_path):
+    """Prints html_path to pdf_path via headless Edge/Chrome. Returns True if
+    the PDF was actually produced, False if no browser was found or printing
+    failed."""
+    browser = find_browser()
+    if not browser:
+        return False
+
+    result = subprocess.run(
+        [
+            browser,
+            "--headless",
+            "--disable-gpu",
+            f"--print-to-pdf={pdf_path}",
+            "--print-to-pdf-no-header",
+            "--no-pdf-header-footer",
+            html_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if not os.path.exists(pdf_path):
+        print(f"  PDF print failed (exit {result.returncode}). stderr:\n{result.stderr}")
+        return False
+    return True
+
+
 def render(md_path, out_dir):
     md_path = os.path.abspath(md_path)
     name = os.path.splitext(os.path.basename(md_path))[0]
@@ -216,23 +243,8 @@ def render(md_path, out_dir):
         return html_path
 
     pdf_path = os.path.join(out_dir, f"{name}.pdf")
-    result = subprocess.run(
-        [
-            browser,
-            "--headless",
-            "--disable-gpu",
-            f"--print-to-pdf={pdf_path}",
-            "--print-to-pdf-no-header",
-            "--no-pdf-header-footer",
-            html_path,
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if os.path.exists(pdf_path):
+    if html_to_pdf(html_path, pdf_path):
         print(f"  [ok] {pdf_path}")
-    else:
-        print(f"  PDF print failed (exit {result.returncode}). stderr:\n{result.stderr}")
     return pdf_path
 
 

@@ -15,6 +15,7 @@ BROWSE_SCRIPT = SCRIPT_DIR / "browse-folder.ps1"
 BROWSE_FILES_SCRIPT = SCRIPT_DIR / "browse-files.ps1"
 SAVE_FILE_SCRIPT = SCRIPT_DIR / "browse-save-file.ps1"
 LAUNCH_SCRIPT = SCRIPT_DIR / "launch-focused.ps1"
+COPY_FILES_SCRIPT = SCRIPT_DIR / "copy-files-to-clipboard.ps1"
 
 
 class NoPickerAvailable(Exception):
@@ -109,6 +110,23 @@ def open_file_with_dialog(path):
         _run_powershell_focused("rundll32.exe", ["shell32.dll,OpenAs_RunDLL", path])
     else:
         open_file_default(path)
+
+
+def copy_files_to_clipboard(paths):
+    """Puts one or more absolute file paths onto the OS clipboard as real
+    files (CF_HDROP), not a text path string -- what a paste into Explorer,
+    WhatsApp Desktop, email clients, etc. expects. Windows only: macOS/Linux
+    have no single cross-app-compatible equivalent (pbcopy/xclip only put
+    text on the clipboard), so this raises NotImplementedError there rather
+    than silently copying the wrong thing."""
+    if platform.system() != "Windows":
+        raise NotImplementedError("Copying files to the clipboard is only supported on Windows")
+    payload_b64 = base64.b64encode(json.dumps(list(paths)).encode("utf-8")).decode("ascii")
+    subprocess.run(
+        ["powershell.exe", "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass",
+         "-File", str(COPY_FILES_SCRIPT), "-PayloadB64", payload_b64],
+        capture_output=True, timeout=15, creationflags=subprocess.CREATE_NO_WINDOW,
+    )
 
 
 def browse_folder():

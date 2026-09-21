@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -60,7 +61,16 @@ def _load_arti_db():
     return module
 
 
+def _load_arti_pdf():
+    path = ARTI_HOME / "tools" / "arti-pdf" / "render.py"
+    spec = importlib.util.spec_from_file_location("arti_pdf", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 arti_db = _load_arti_db()
+arti_pdf = _load_arti_pdf()
 
 _UNSET = object()
 
@@ -440,6 +450,25 @@ def reveal_project_file(project_path, abs_path):
     platform_ops.reveal_file_in_file_manager(target)
 
 
+def copy_project_files_to_clipboard(project_path, abs_paths):
+    """Puts one or more project files onto the OS clipboard as real files
+    (the Project Files panel's "Copy" row action and bulk "Copy files"
+    action) -- so pasting into Explorer, WhatsApp Desktop, etc. pastes the
+    files themselves, distinct from the client-side-only "Copy full path"
+    action, which just puts the path string on the clipboard via
+    navigator.clipboard and never reaches the server."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    if not abs_paths:
+        raise ValueError("No files given")
+    targets = [str(_resolve_under_project(project_path, p)) for p in abs_paths]
+    platform_ops.copy_files_to_clipboard(targets)
+
+
 def write_project_file(project_path, abs_path, content):
     with arti_db._lock:
         conn = arti_db._connect()
@@ -450,6 +479,35 @@ def write_project_file(project_path, abs_path, content):
     target = _resolve_under_project(project_path, abs_path)
     target.write_text(content, encoding="utf-8")
     return target.stat().st_mtime
+
+
+def export_project_file_pdf(project_path, abs_path, html):
+    """Prints an already-rendered HTML document (built client-side from the
+    same marked.js/KaTeX pipeline the preview panel uses) to PDF via the
+    arti-pdf tool's headless-browser print step, writing the result directly
+    next to the source file (same convention as the arti-pdf CLI) rather than
+    streaming it back for a browser download -- the dashboard runs inside a
+    pywebview/WebView2 shell where downloads are non-trivial (disabled by
+    default, and even enabled, save to wherever the OS picks rather than the
+    project folder). Scoped to a known project path the same way every other
+    project-files call is, even though the file itself is never read
+    server-side -- this stays "export a file that belongs to a known
+    project", not an open HTML-to-PDF proxy."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    dest_pdf_path = target.with_suffix(".pdf")
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        html_path = os.path.join(tmp_dir, "export.html")
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html)
+        if not arti_pdf.html_to_pdf(html_path, str(dest_pdf_path)):
+            raise RuntimeError("No headless Edge or Chrome found on this machine — cannot export to PDF.")
+    return str(dest_pdf_path)
 
 
 def create_project_file(project_path, rel_path, content, encoding=None):
@@ -484,6 +542,48 @@ def create_project_file(project_path, rel_path, content, encoding=None):
     else:
         target.write_text(content or "", encoding="utf-8")
     return {"rel_path": rel_path, "abs_path": str(target)}
+
+
+def rename_project_file(project_path, abs_path, new_rel_path):
+    """Renames/moves an existing project file to new_rel_path (relative to
+    project_path). No extension allowlist here -- unlike create_project_file,
+    this operates on files that already exist on disk (including binary
+    types uploaded via the base64 path), so restricting extensions would
+    block legitimate renames of e.g. images."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    source = _resolve_under_project(project_path, abs_path)
+    if not source.exists():
+        raise ValueError("File not found")
+    new_rel_path = (new_rel_path or "").strip().lstrip("/\\")
+    if not new_rel_path:
+        raise ValueError("File name is required")
+    target = _resolve_under_project(project_path, str(Path(project_path) / new_rel_path))
+    if target.exists():
+        raise ValueError("A file with this name already exists")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    source.rename(target)
+    return {"rel_path": new_rel_path, "abs_path": str(target)}
+
+
+def delete_project_file(project_path, abs_path):
+    """Deletes an existing project file. Confirmation is the client's
+    responsibility (this performs the deletion unconditionally once called)."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    target = _resolve_under_project(project_path, abs_path)
+    if not target.exists():
+        raise ValueError("File not found")
+    target.unlink()
+    return {"deleted": True}
 
 
 def attach_file_as_context(session_id, project_path, abs_path):

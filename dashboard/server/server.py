@@ -243,16 +243,16 @@ class Handler(BaseHTTPRequestHandler):
 
         if pathname == "/api/new-project" and method == "POST":
             body = self._read_body()
-            parent_path, name = body.get("parentPath"), body.get("name")
+            selected_path, name = body.get("path"), body.get("name")
             category = body.get("category") or "Paper"
             tags = body.get("tags") or []
-            if not parent_path or not name:
-                return self._send_json(400, {"error": "parentPath and name required"})
+            if not selected_path or not name:
+                return self._send_json(400, {"error": "path and name required"})
+            project_path = Path(selected_path)
             try:
-                project_path = Path(parent_path) / name
-                project_path.mkdir(parents=True, exist_ok=False)
-            except FileExistsError:
-                return self._send_json(400, {"error": "a folder with that name already exists there"})
+                if project_path.is_dir() and any(project_path.iterdir()):
+                    return self._send_json(400, {"error": "that folder already has files in it — pick an empty or new folder"})
+                project_path.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 return self._send_json(500, {"error": str(e)})
             if category == "Paper":
@@ -262,7 +262,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send_json(500, {"error": f"created folder but scaffolding failed: {e}"})
             else:
                 db.upsert_project(project_path, name=name, category=category, tags=tags, touch_opened=True)
-            platform_ops.open_in_vscode(project_path)
+            if body.get("open", True):
+                platform_ops.open_in_vscode(project_path)
             return self._send_json(200, {"path": str(project_path)})
 
         if pathname == "/api/projects/register" and method == "POST":
@@ -277,7 +278,8 @@ class Handler(BaseHTTPRequestHandler):
             category = body.get("category") or "Other"
             tags = body.get("tags") or []
             db.upsert_project(project_path, name=name, category=category, tags=tags, touch_opened=True)
-            platform_ops.open_in_vscode(project_path)
+            if body.get("open", True):
+                platform_ops.open_in_vscode(project_path)
             return self._send_json(200, {"path": str(project_path)})
 
         if pathname == "/api/projects/update" and method == "POST":
@@ -737,6 +739,39 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return None
 
+        if pathname == "/api/chat/project-files/export-pdf" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            file_path = body.get("file")
+            html = body.get("html")
+            if not project_path or not file_path or html is None:
+                return self._send_json(400, {"error": "path, file, and html required"})
+            try:
+                pdf_path = chat.export_project_file_pdf(project_path, file_path, html)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            except RuntimeError as e:
+                return self._send_json(501, {"error": str(e)})
+            return self._send_json(200, {"path": pdf_path})
+
+        if pathname == "/api/chat/project-files/copy-to-clipboard" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            file_paths = body.get("files")
+            if not project_path or not file_paths:
+                return self._send_json(400, {"error": "path and files required"})
+            try:
+                chat.copy_project_files_to_clipboard(project_path, file_paths)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            except NotImplementedError as e:
+                return self._send_json(501, {"error": str(e)})
+            return self._send_json(200, {"ok": True})
+
         if pathname == "/api/chat/project-files/open" and method == "POST":
             body = self._read_body()
             project_path = body.get("path")
@@ -804,6 +839,35 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": "path, file, and content required"})
             try:
                 result = chat.create_project_file(project_path, rel_path, content, encoding=encoding)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, result)
+
+        if pathname == "/api/chat/project-files/rename" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            abs_path = body.get("file")
+            new_rel_path = body.get("new_file")
+            if not project_path or not abs_path or not new_rel_path:
+                return self._send_json(400, {"error": "path, file, and new_file required"})
+            try:
+                result = chat.rename_project_file(project_path, abs_path, new_rel_path)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, result)
+
+        if pathname == "/api/chat/project-files/delete" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            abs_path = body.get("file")
+            if not project_path or not abs_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                result = chat.delete_project_file(project_path, abs_path)
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
