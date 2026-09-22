@@ -117,6 +117,19 @@ Section "Install" SEC01
     IntFmt $0 "0x%08X" $0
     WriteRegDWORD HKCU "${UNINSTALL_KEY}" "EstimatedSize" "$0"
 
+    ; Explorer folder context menu: "Register as ARTi Project" -- both when
+    ; right-clicking a folder itself and when right-clicking inside one (its
+    ; background). Per-user install (no admin), so these go under
+    ; HKCU\Software\Classes rather than HKCR (writing HKCR directly is
+    ; unreliable without admin rights).
+    WriteRegStr HKCU "Software\Classes\Directory\shell\RegisterArtiProject" "" "Register as ARTi Project"
+    WriteRegStr HKCU "Software\Classes\Directory\shell\RegisterArtiProject" "Icon" "$INSTDIR\logo\export\icon\arti-launcher.ico"
+    WriteRegStr HKCU "Software\Classes\Directory\shell\RegisterArtiProject\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\dashboard\server\register_project_cli.py" "%1"'
+
+    WriteRegStr HKCU "Software\Classes\Directory\Background\shell\RegisterArtiProject" "" "Register as ARTi Project"
+    WriteRegStr HKCU "Software\Classes\Directory\Background\shell\RegisterArtiProject" "Icon" "$INSTDIR\logo\export\icon\arti-launcher.ico"
+    WriteRegStr HKCU "Software\Classes\Directory\Background\shell\RegisterArtiProject\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\dashboard\server\register_project_cli.py" "%V"'
+
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 SectionEnd
 
@@ -145,4 +158,6 @@ Section "Uninstall"
 
     DeleteRegKey HKCU "${UNINSTALL_KEY}"
     DeleteRegKey HKCU "Software\${APP_NAME}"
+    DeleteRegKey HKCU "Software\Classes\Directory\shell\RegisterArtiProject"
+    DeleteRegKey HKCU "Software\Classes\Directory\Background\shell\RegisterArtiProject"
 SectionEnd
