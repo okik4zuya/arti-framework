@@ -1244,6 +1244,7 @@
               <button type="button" id="chatAddToContextBtn">Add to chat context</button>
               <button type="button" id="chatCopySelectedBtn">Copy as MD</button>
               <button type="button" id="chatCopySelectedFilesBtn">Copy files</button>
+              <button type="button" id="chatCopyFullpathsBtn">Copy Fullpaths</button>
               <button type="button" id="chatExtractPdfBtn">Extract PDF(s)</button>
               <button type="button" id="chatSummarizePdfBtn">Summarize PDF(s)</button>
               <button type="button" id="chatMoveSelectedBtn">Move to&hellip;</button>
@@ -4325,6 +4326,7 @@
     document.getElementById("chatAddToContextBtn").disabled = !hasAddableToContext;
     document.getElementById("chatCopySelectedBtn").disabled = totalSelected === 0;
     document.getElementById("chatCopySelectedFilesBtn").disabled = totalSelected === 0;
+    document.getElementById("chatCopyFullpathsBtn").disabled = totalSelected === 0;
     document.getElementById("chatExtractPdfBtn").disabled = !hasPdf;
     var summarizeBtn = document.getElementById("chatSummarizePdfBtn");
     if (summarizeBtn) summarizeBtn.disabled = !hasSummarizable;
@@ -4414,6 +4416,18 @@
   document.getElementById("chatCopySelectedFilesBtn").addEventListener("click", function(){
     closeAllRowMenus();
     copyProjectFilesToClipboard(selectedFileEntries());
+  });
+
+  document.getElementById("chatCopyFullpathsBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    var entries = selectedFileEntries();
+    if (!entries.length) return;
+    var text = entries.map(function(e){ return e.absPath; }).join("\n");
+    navigator.clipboard.writeText(text).then(function(){
+      showToast(entries.length === 1 ? "Full path copied to clipboard" : "Copied " + entries.length + " full paths");
+    }).catch(function(err){
+      alert("Failed to copy paths: " + (err && err.message ? err.message : "unknown error"));
+    });
   });
 
   document.getElementById("chatMoveSelectedBtn").addEventListener("click", function(){
