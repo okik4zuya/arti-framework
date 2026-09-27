@@ -57,6 +57,7 @@ def _parse_journal_from_citation(citation):
 CLAUDE_TEMPLATE_PATH = (
     ARTI_HOME / "skills" / "ARTi-setup" / "references" / "project-claude-template.md"
 )
+GENERAL_CLAUDE_TEMPLATE_PATH = ARTI_HOME / "scaffold_general_CLAUDE.md"
 
 # Set by app.py once it creates the native window, so /api/focus (below) has
 # something to bring forward. Stays None when server.py is run standalone
@@ -74,15 +75,54 @@ def _write_if_missing(path, content):
         path.write_text(content, encoding="utf-8")
 
 
-def scaffold_project(project_path, name):
-    """Creates the standard ARTi paper-project boilerplate (folders, memory
-    scaffold, root CLAUDE.md) for a freshly-created project folder -- the same
-    layout ARTi-setup's Workflow B produces, so a project created from the
-    dashboard is immediately usable without a researcher running that skill
-    by hand first. See skills/ARTi-setup/references/project-scaffold-template.md."""
+def _memory_frontmatter(slug, description, tier, now):
+    return (
+        "---\n"
+        f"name: {slug}\n"
+        f"description: {description}\n"
+        "metadata:\n"
+        "  type: project\n"
+        f"  tier: {tier}\n"
+        f"  created: {now}\n"
+        f"  updated: {now}\n"
+        "---\n\n"
+    )
+
+
+def _scaffold_memory_files(project_path, name):
+    """Writes the T0 memory/ trio (MEMORY.md, todo-list.md, status.md) if
+    missing -- shared by both the full paper scaffold and the memory-only
+    general-project scaffold. Never overwrites an existing file."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     today = datetime.now().strftime("%Y-%m-%d")
+    (project_path / "memory").mkdir(parents=True, exist_ok=True)
 
+    _write_if_missing(
+        project_path / "memory" / "MEMORY.md",
+        _memory_frontmatter("memory-index", f"Index of {name}'s memory files", "T0", now)
+        + "Pointers only -- one line per memory file, added as topic files are created.\n\n"
+        "## Change log\n"
+        f"- {today}: project scaffolded\n",
+    )
+    _write_if_missing(
+        project_path / "memory" / "todo-list.md",
+        _memory_frontmatter("todo-list", f"Checklist of outstanding tasks for {name}", "T0", now)
+        + "- [ ] \n",
+    )
+    _write_if_missing(
+        project_path / "memory" / "status.md",
+        _memory_frontmatter("status", f"Living current-state pointer for {name}", "T0", now)
+        + "## Current state\n"
+        f"Project scaffolded {today}.\n",
+    )
+
+
+def _scaffold_paper_folders(project_path, name):
+    """Creates the standard ARTi paper-project folders, literature stubs,
+    memory/ trio, and root CLAUDE.md -- the layout ARTi-setup's Workflow B
+    produces. Every write is missing-only (mkdir(exist_ok=True) +
+    _write_if_missing), so this is safe to run both on a freshly-created
+    empty folder and to retrofit onto an already-populated project."""
     for folder in ("idea", "writing", "literature/exports", "literature/fulltext",
                    "data", "figures", "submission", "inbox", "memory"):
         (project_path / folder).mkdir(parents=True, exist_ok=True)
@@ -98,44 +138,46 @@ def scaffold_project(project_path, name):
         "|---|---|---|---|---|---|\n",
     )
 
-    def frontmatter(slug, description, tier):
-        return (
-            "---\n"
-            f"name: {slug}\n"
-            f"description: {description}\n"
-            "metadata:\n"
-            "  type: project\n"
-            f"  tier: {tier}\n"
-            f"  created: {now}\n"
-            f"  updated: {now}\n"
-            "---\n\n"
-        )
-
-    _write_if_missing(
-        project_path / "memory" / "MEMORY.md",
-        frontmatter("memory-index", f"Index of {name}'s memory files", "T0")
-        + "Pointers only -- one line per memory file, added as topic files are created.\n\n"
-        "## Change log\n"
-        f"- {today}: project scaffolded\n",
-    )
-    _write_if_missing(
-        project_path / "memory" / "todo-list.md",
-        frontmatter("todo-list", f"Checklist of outstanding tasks for {name}", "T0")
-        + "- [ ] Run ARTi-idea to develop the research idea\n",
-    )
-    _write_if_missing(
-        project_path / "memory" / "status.md",
-        frontmatter("status", f"Living current-state pointer for {name}", "T0")
-        + "## Current state\n"
-        f"Project scaffolded {today}. No idea work started yet.\n",
-    )
-
+    _scaffold_memory_files(project_path, name)
     _write_if_missing(project_path / "CLAUDE.md", _claude_md(name))
 
+
+def scaffold_project(project_path, name):
+    """Full paper-project scaffold for a freshly-created, empty project
+    folder (the /api/new-project "Paper" category path) -- sets stage/status
+    on the new arti.db row since there's no prior state to disturb. For
+    retrofitting the same layout onto an already-registered project, use
+    scaffold_paper_boilerplate instead, which leaves stage/status alone."""
+    _scaffold_paper_folders(project_path, name)
     arti_db.project_upsert(
         project_path=str(project_path), topic=name, stage="Not started", status="Scaffolded"
     )
     db.upsert_project(project_path, name=name, category="Paper", touch_opened=True)
+
+
+def scaffold_paper_boilerplate(project_path, name):
+    """Retrofits the full paper-project layout (dashboard "Scaffold Paper
+    Project" action) onto an already-registered project folder, without
+    disturbing its existing arti.db stage/status -- db.upsert_project's
+    update path only ever touches topic/category/tags/last_opened_at, never
+    stage/status (see db.py), unlike scaffold_project's arti_db.project_upsert
+    call above, which is only safe on a genuinely new row."""
+    _scaffold_paper_folders(project_path, name)
+    db.upsert_project(project_path, name=name, category="Paper", touch_opened=True)
+
+
+def scaffold_general_boilerplate(project_path, name):
+    """Adds the memory/ scaffold (MEMORY.md, todo-list.md, status.md) plus
+    CLAUDE.md to an already-registered non-paper project (dashboard "Scaffold
+    General Project" action) -- the general-project subset of ARTi-setup's
+    Workflow B, per the researcher's own scoping. CLAUDE.md is rendered from
+    the same scaffold_general_CLAUDE.md template as the standalone "Add
+    CLAUDE.md" action (_general_claude_md), so the two actions can never
+    produce divergent CLAUDE.md content. Missing-only writes; never overwrites
+    an existing file or touches stage/status."""
+    _scaffold_memory_files(project_path, name)
+    _write_if_missing(project_path / "CLAUDE.md", _general_claude_md(name))
+    db.upsert_project(project_path, name=name, touch_opened=True)
 
 
 def _claude_md(name):
@@ -152,13 +194,25 @@ def _claude_md(name):
             "truth -- never read or write the default `~/.claude/projects/.../memory/` for "
             "it.\n\n"
             "Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, "
-            "`memory/status.md`, `~/.arti/memory/working-preferences.md`. Glob `inbox/*.md` "
-            "for anything sitting untriaged.\n\n"
+            "`memory/status.md`, `~/.arti/memory/working-preferences.md`, `inbox/index.md`.\n\n"
+            "Never invoke a bare `python`/`python3`/`py` -- call the vendored interpreter by "
+            "full path: `\"~/.arti/python/python.exe\" <script>.py ...` (Windows) or "
+            "`~/.arti/python/bin/python3 <script>.py ...` (Mac/Linux).\n\n"
             "> Canonical template missing at "
             f"`{CLAUDE_TEMPLATE_PATH}` -- regenerate this file once it is restored.\n\n"
             "<!-- arti: local additions below -- preserved on regeneration -->\n"
         )
     return tmpl.replace("{{PROJECT_NAME}}", name)
+
+
+def _general_claude_md(name):
+    """Renders CLAUDE.md from the general (non-ARTi-paper) scaffold template,
+    for the dashboard's "Add CLAUDE.md" row action on any workspace project."""
+    tmpl = GENERAL_CLAUDE_TEMPLATE_PATH.read_text(encoding="utf-8")
+    return (
+        tmpl.replace("{{PROJECT_NAME}}", name)
+        .replace("{{Brief description}}", "_Describe this project's purpose here._")
+    )
 
 
 def _read_framework_version():
@@ -317,6 +371,47 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": "path required"})
             platform_ops.open_in_vscode(p)
             db.upsert_project(p, touch_opened=True)
+            return self._send_json(200, {"ok": True})
+
+        if pathname == "/api/projects/add-claude-md" and method == "POST":
+            body = self._read_body()
+            p = body.get("path")
+            name = body.get("name")
+            overwrite = bool(body.get("overwrite"))
+            if not p or not name:
+                return self._send_json(400, {"error": "path and name required"})
+            project_path = Path(p)
+            claude_path = project_path / "CLAUDE.md"
+            if claude_path.exists() and not overwrite:
+                return self._send_json(200, {"ok": True, "exists": True})
+            try:
+                claude_path.write_text(_general_claude_md(name), encoding="utf-8")
+            except OSError as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, {"ok": True, "written": True})
+
+        if pathname == "/api/projects/scaffold-paper" and method == "POST":
+            body = self._read_body()
+            p = body.get("path")
+            name = body.get("name")
+            if not p or not name:
+                return self._send_json(400, {"error": "path and name required"})
+            try:
+                scaffold_paper_boilerplate(Path(p), name)
+            except OSError as e:
+                return self._send_json(500, {"error": str(e)})
+            return self._send_json(200, {"ok": True})
+
+        if pathname == "/api/projects/scaffold-general" and method == "POST":
+            body = self._read_body()
+            p = body.get("path")
+            name = body.get("name")
+            if not p or not name:
+                return self._send_json(400, {"error": "path and name required"})
+            try:
+                scaffold_general_boilerplate(Path(p), name)
+            except OSError as e:
+                return self._send_json(500, {"error": str(e)})
             return self._send_json(200, {"ok": True})
 
         if pathname == "/api/open-external" and method == "POST":
@@ -687,10 +782,10 @@ class Handler(BaseHTTPRequestHandler):
             if not project_path:
                 return self._send_json(400, {"error": "path required"})
             try:
-                files = chat.list_project_files(project_path)
+                result = chat.list_project_files(project_path)
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
-            return self._send_json(200, {"files": files})
+            return self._send_json(200, result)
 
         if pathname == "/api/chat/project-files/read" and method == "GET":
             query = parse_qs(urlsplit(self.path).query)
@@ -839,6 +934,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": "path, file, and content required"})
             try:
                 result = chat.create_project_file(project_path, rel_path, content, encoding=encoding)
+            except ValueError as e:
+                return self._send_json(400, {"error": str(e)})
+            except OSError as e:
+                return self._send_json(404, {"error": str(e)})
+            return self._send_json(200, result)
+
+        if pathname == "/api/chat/project-files/create-folder" and method == "POST":
+            body = self._read_body()
+            project_path = body.get("path")
+            rel_path = body.get("file")
+            if not project_path or not rel_path:
+                return self._send_json(400, {"error": "path and file required"})
+            try:
+                result = chat.create_project_folder(project_path, rel_path)
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:

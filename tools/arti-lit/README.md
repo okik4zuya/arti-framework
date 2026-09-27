@@ -35,16 +35,22 @@ init [--project PATH]                   # explicit init/migration trigger; also 
 
 library add --key KEY --citation TEXT [--doi TEXT] [--local-file TEXT]
             [--status export-only|abstract|fulltext|read] [--used-in TEXT] [--summary TEXT]
-            [--abstract TEXT] [--project PATH]
+            [--abstract TEXT] [--search-source TEXT] [--screening-stage TEXT]
+            [--exclusion-reason TEXT] [--project PATH]
     # rejects (does not insert) if --doi is given and already exists on a different key,
     # surfacing that key so Claude can dedupe instead of creating a near-duplicate row.
-library update --key KEY [--citation TEXT] [--doi TEXT] [--local-file TEXT] [--status TEXT] [--used-in TEXT] [--summary TEXT] [--abstract TEXT] [--project PATH]
+    # --search-source/--screening-stage/--exclusion-reason are ARTi-SLR's PRISMA fields -- see
+    # Schema; most non-SLR projects never set them.
+library update --key KEY [--citation TEXT] [--doi TEXT] [--local-file TEXT] [--status TEXT] [--used-in TEXT] [--summary TEXT] [--abstract TEXT] [--search-source TEXT] [--screening-stage TEXT] [--exclusion-reason TEXT] [--project PATH]
     # for bulk export-only/abstract -> fulltext conversion, see tools/arti-pdf-ingest -- it
     # converts a batch of PDFs to Markdown and calls this same update itself, row by row
 library get --key KEY [--project PATH]
-library list [--status TEXT] [--journal TEXT] [--article-type TEXT] [--project PATH]
+library list [--status TEXT] [--journal TEXT] [--article-type TEXT] [--screening-stage TEXT] [--project PATH]
     # --journal and --article-type are substring (LIKE) filters on journal_name/article_type --
     # only rows added via import-ris have those columns populated (see Schema)
+    # --screening-stage is an exact match on screening_stage -- one `list` call per stage value is
+    # how ARTi-SLR's PRISMA Flow Diagram gets its counts (identified/title_abstract/eligible/
+    # included/excluded_title_abstract/excluded_eligibility)
 library search KEYWORDS... [--project PATH]   # LIKE-match over citation/key/used_in -- cheap dedup check before adding
 library remove --key KEY [--project PATH]
 library export [--project PATH]         # regenerates literature\library.md
@@ -104,6 +110,19 @@ import-ris`. It is the source's own abstract (what the database wrote), distinct
 -- `library add`/`library update` have no flags for them today, so a manually-added row leaves
 these unset unless the caller extends those commands. `library list --journal`/`--article-type`
 filter on them (substring match); manually-added rows simply won't match either filter.
+
+`sources.search_source`, `sources.screening_stage`, and `sources.exclusion_reason` are the
+`ARTi-SLR` skill's additive PRISMA fields — free text/enum on the same `sources` row, not a
+separate table, since a screened source is still one bibliography row. Any `arti-lit` project not
+running an SLR simply never sets them (all three default NULL). `screening_stage` is a closed
+vocabulary (`db.SCREENING_STAGES`): `identified | title_abstract | eligible | included |
+excluded_title_abstract | excluded_eligibility` — validated by both `library add`/`update`, which
+raise rather than silently accept an unlisted value. `exclusion_reason` is only meaningful once
+`screening_stage` is one of the two `excluded_*` values, but is not enforced as such — ARTi-SLR's
+own stage protocol is what requires a reason be given on every reject, not this tool. See
+`ARTi-SLR/references/stage2-search-and-screening.md` for how these fields are populated stage by
+stage, and `stage4-synthesis-and-handoff.md` for how `library list --screening-stage X` (one call
+per stage value) becomes the PRISMA Flow Diagram's counts.
 
 ## Not in this tool
 

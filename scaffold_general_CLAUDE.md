@@ -1,11 +1,15 @@
 <!-- arti-claude-template: v1 -->
 # {{PROJECT_NAME}} — Project Instructions
 
-ARTi research-paper project. This project's `memory/` is the single source of truth — never read
+{{Brief description}}
+
+This project's `memory/` is the single source of truth — never read
 or write the default `~/.claude/projects/.../memory/` for it.
 
 Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, `memory/status.md`,
-`~/.arti/memory/working-preferences.md`, `inbox/index.md`.
+`~/.arti/memory/working-preferences.md`. If an `inbox/` folder exists, glob `inbox/*.md` at
+session start and surface whatever is sitting there — presence in the folder is the "still open"
+signal, no index file to keep in sync.
 
 **Never invoke a bare `python`/`python3`/`py`** — nothing on this machine puts it on `PATH`. Always
 call the vendored interpreter by full path: `"~/.arti/python/python.exe" <script>.py ...`
@@ -58,9 +62,7 @@ and the like:
    overwrite `status.md`'s "Current state" pointer and/or check off / add `todo-list.md` items. A
    session that was pure discussion, research, or Q&A with no checklist or state change skips both
    files entirely — there is nothing to overwrite.
-3. If a phase boundary was crossed (idea complete / writing started / submitted / published),
-   run `project upsert` for this project's row.
-4. Write any correction on *how* to work straight into `~/.arti/memory/working-preferences.md`, the
+3. Write any correction on *how* to work straight into `~/.arti/memory/working-preferences.md`, the
    same turn it's given — never deferred to session end.
 
 <!-- arti: local additions below — preserved on regeneration -->

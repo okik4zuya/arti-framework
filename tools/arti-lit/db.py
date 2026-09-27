@@ -51,6 +51,14 @@ CREATE TABLE IF NOT EXISTS sources (
 
 READ_STATUSES = ("export-only", "abstract", "fulltext", "read")
 
+# ARTi-SLR's PRISMA screening pipeline -- `sources.screening_stage`. Additive to the
+# `read_status` vocabulary above (a source has both a read status and, only when tracked as
+# part of an SLR, a screening stage); most `arti-lit` projects never set this column at all.
+SCREENING_STAGES = (
+    "identified", "title_abstract", "eligible", "included",
+    "excluded_title_abstract", "excluded_eligibility",
+)
+
 
 def _now():
     return datetime.now().isoformat(timespec="seconds")
@@ -105,6 +113,15 @@ def init_db(project=None):
                 conn.commit()
             if "article_type" not in cols:
                 conn.execute("ALTER TABLE sources ADD COLUMN article_type TEXT")
+                conn.commit()
+            if "search_source" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN search_source TEXT")
+                conn.commit()
+            if "screening_stage" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN screening_stage TEXT")
+                conn.commit()
+            if "exclusion_reason" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN exclusion_reason TEXT")
                 conn.commit()
             if is_new:
                 _migrate_legacy(conn, paths["legacy_library"])
@@ -168,8 +185,11 @@ def _parse_library_md(path):
 # ---------------------------------------------------------------------------
 
 def library_add(project, key, citation, doi=None, local_file=None,
-                 read_status="export-only", used_in=None, summary=None, abstract=None):
+                 read_status="export-only", used_in=None, summary=None, abstract=None,
+                 search_source=None, screening_stage=None, exclusion_reason=None):
     key = key.lower()
+    if screening_stage and screening_stage not in SCREENING_STAGES:
+        raise ValueError(f"screening_stage must be one of {SCREENING_STAGES}, got {screening_stage!r}")
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
@@ -185,9 +205,11 @@ def library_add(project, key, citation, doi=None, local_file=None,
                     )
             now = _now()
             conn.execute(
-                "INSERT INTO sources (key, citation, doi, local_file, read_status, used_in, summary, abstract, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (key, citation, doi, local_file, read_status, used_in, summary, abstract, now, now),
+                "INSERT INTO sources (key, citation, doi, local_file, read_status, used_in, summary, abstract, "
+                "search_source, screening_stage, exclusion_reason, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (key, citation, doi, local_file, read_status, used_in, summary, abstract,
+                 search_source, screening_stage, exclusion_reason, now, now),
             )
             conn.commit()
             row = _row_to_dict(conn.execute("SELECT * FROM sources WHERE key = ?", (key,)).fetchone())
@@ -198,7 +220,10 @@ def library_add(project, key, citation, doi=None, local_file=None,
 
 
 def library_update(project, key, citation=None, doi=None, local_file=None,
-                    read_status=None, used_in=None, summary=None, abstract=None):
+                    read_status=None, used_in=None, summary=None, abstract=None,
+                    search_source=None, screening_stage=None, exclusion_reason=None):
+    if screening_stage and screening_stage not in SCREENING_STAGES:
+        raise ValueError(f"screening_stage must be one of {SCREENING_STAGES}, got {screening_stage!r}")
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
@@ -223,10 +248,14 @@ def library_update(project, key, citation=None, doi=None, local_file=None,
             new_used_in = used_in if used_in is not None else entry["used_in"]
             new_summary = summary if summary is not None else entry["summary"]
             new_abstract = abstract if abstract is not None else entry["abstract"]
+            new_search_source = search_source if search_source is not None else entry["search_source"]
+            new_screening_stage = screening_stage if screening_stage is not None else entry["screening_stage"]
+            new_exclusion_reason = exclusion_reason if exclusion_reason is not None else entry["exclusion_reason"]
             conn.execute(
-                "UPDATE sources SET citation=?, doi=?, local_file=?, read_status=?, used_in=?, summary=?, abstract=?, updated_at=? "
-                "WHERE key=?",
-                (new_citation, new_doi, new_local_file, new_read_status, new_used_in, new_summary, new_abstract, _now(), key),
+                "UPDATE sources SET citation=?, doi=?, local_file=?, read_status=?, used_in=?, summary=?, abstract=?, "
+                "search_source=?, screening_stage=?, exclusion_reason=?, updated_at=? WHERE key=?",
+                (new_citation, new_doi, new_local_file, new_read_status, new_used_in, new_summary, new_abstract,
+                 new_search_source, new_screening_stage, new_exclusion_reason, _now(), key),
             )
             conn.commit()
             result = _row_to_dict(conn.execute("SELECT * FROM sources WHERE key = ?", (key,)).fetchone())
@@ -246,7 +275,7 @@ def library_get(project, key):
             conn.close()
 
 
-def library_list(project, status=None, journal=None, article_type=None):
+def library_list(project, status=None, journal=None, article_type=None, screening_stage=None):
     paths = _paths(project)
     with _lock:
         conn = _connect(paths["db"])
@@ -262,6 +291,9 @@ def library_list(project, status=None, journal=None, article_type=None):
             if article_type:
                 clauses.append("article_type LIKE ?")
                 params.append(f"%{article_type}%")
+            if screening_stage:
+                clauses.append("screening_stage = ?")
+                params.append(screening_stage)
             query = "SELECT * FROM sources"
             if clauses:
                 query += " WHERE " + " AND ".join(clauses)

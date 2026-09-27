@@ -191,6 +191,7 @@
   .icon-btn.icon-only:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
   .icon-btn.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
   .icon-btn.icon-only svg{ width:16px; height:16px; }
+  .icon-btn:disabled{ opacity:.4; cursor:not-allowed; pointer-events:none; }
   .empty{ padding:36px 20px; text-align:center; color:var(--text-muted); font-size:14px; }
   .empty.loading{ animation:pulse 1.1s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{ opacity:0.45; } 50%{ opacity:1; } }
@@ -310,6 +311,7 @@
     padding:9px 14px; border:none; background:none; color:var(--text); cursor:pointer; white-space:nowrap;
   }
   .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
+  .menu-dropdown button.menu-item-active{ background:var(--accent-soft); color:var(--accent); }
   .menu-dropdown button:disabled{ opacity:.4; cursor:default; }
   .menu-dropdown button:disabled:hover{ background:none; color:var(--text); }
 
@@ -745,6 +747,17 @@
   }
   .chat-file-rename-input.error{ border-color:#d9534f; }
   .chat-file-type-icon{ flex:none; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
+  .tree-inline-create-icon svg{ width:15px; height:15px; display:block; }
+  .tree-inline-create-row{ background:var(--surface-2); border-radius:6px; }
+  .tree-inline-create-input{
+    padding:4px 8px; border-radius:6px; font-size:12.5px;
+    transition:border-color .12s ease, box-shadow .12s ease;
+  }
+  .tree-inline-create-input:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .tree-inline-create-input.error:focus{ box-shadow:0 0 0 3px rgba(217,83,79,0.18); }
+  .tree-inline-create-input::placeholder{ color:var(--text-muted); opacity:0.75; }
   .chat-file-attached-tag{ flex:none; color:var(--accent); font-size:12px; font-weight:700; }
   .chat-file-item .row-menu{ flex:none; }
   .chat-file-item .menu-toggle{
@@ -757,6 +770,24 @@
   }
   .chat-project-files-select-row .btn:disabled,
   .chat-project-files-select-row .menu-toggle:disabled{ opacity:.5; cursor:default; }
+  .tree-folder-group{ margin-bottom:0; }
+  .tree-folder-label{
+    text-transform:none; font-weight:600; font-size:12.5px; letter-spacing:normal;
+    padding:6px 8px; background:transparent; margin-bottom:2px; border-radius:6px;
+  }
+  .tree-folder-label:hover{ background:var(--surface-2); filter:none; }
+  .tree-folder-label .row-menu{ flex:none; margin-left:auto; }
+  .tree-folder-label .menu-toggle{ opacity:0; pointer-events:none; transition:opacity .1s ease; }
+  .tree-folder-label:hover .menu-toggle,
+  .tree-folder-label:focus-within .menu-toggle,
+  .tree-folder-label .row-menu:has(.menu-dropdown:not([hidden])) .menu-toggle{
+    opacity:1; pointer-events:auto;
+  }
+  .tree-folder-label.keynav-active{ background:var(--accent-soft); }
+  .tree-folder-label.keynav-active .chat-folder-name,
+  .tree-folder-label.keynav-active .chat-folder-chevron{ color:var(--accent); }
+  .tree-folder-group .chat-folder-items{ padding-left:0; gap:2px; }
+  .tree-folder-group .chat-folder-count{ background:transparent; }
   .chat-bulk-job-modal{ width:480px; max-width:90vw; }
   .chat-bulk-job-log{
     font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; line-height:1.6;
@@ -785,6 +816,82 @@
   }
   @keyframes chat-bulk-job-spin{ to{ transform:rotate(360deg); } }
 
+  /* Side note: a free-floating scratch pad, independent of the Workspace's
+     file-list/preview/Fine-AI column row -- position:fixed so it never
+     participates in that flex layout. Square corners throughout (no
+     border-radius), unlike the rounded bulk-job pill it otherwise borrows
+     its collapsed-pill shape from. Sticky-note-yellow palette, distinct
+     from the app's neutral surface tokens, so it reads as a Post-it. */
+  :root{
+    --note-bg:#fff9c4; --note-bg-2:#fff59d; --note-border:#e6d270; --note-text:#5c4a00;
+  }
+  .side-note-panel{
+    position:fixed; right:22px; bottom:22px; z-index:60;
+    width:280px; height:220px; min-width:200px; min-height:140px;
+    max-width:80vw; max-height:80vh;
+    display:flex; flex-direction:column;
+    background:var(--note-bg); border:1px solid var(--note-border); border-radius:0;
+    box-shadow:0 6px 20px rgba(16,24,40,0.18);
+    resize:both; overflow:hidden;
+  }
+  .side-note-panel[hidden]{ display:none; }
+  .side-note-head{
+    flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:3px 8px; border-bottom:1px solid var(--note-border);
+    background:var(--note-bg-2); cursor:grab; user-select:none;
+  }
+  .side-note-head.dragging{ cursor:grabbing; }
+  .side-note-title{
+    font-size:11.5px; font-weight:600; color:var(--note-text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .side-note-head-actions{ display:flex; align-items:center; gap:2px; flex:none; }
+  .side-note-head-actions .icon-btn.icon-only{
+    width:20px; height:20px; border:none; background:transparent; border-radius:0;
+    font-size:15px; line-height:1; color:var(--note-text);
+  }
+  .side-note-head-actions .icon-btn.icon-only:hover{ background:rgba(0,0,0,0.08); color:var(--note-text); }
+  .side-note-head-actions .icon-btn.icon-only svg{ width:13px; height:13px; }
+  .side-note-save-copy-bar{
+    flex:none; display:flex; align-items:center; gap:4px;
+    padding:4px 6px; border-bottom:1px solid var(--note-border);
+    background:var(--note-bg-2);
+  }
+  .side-note-save-copy-bar[hidden]{ display:none; }
+  .side-note-save-copy-bar input{
+    flex:1; min-width:0; font-size:11.5px; padding:3px 6px; height:22px;
+    border:1px solid var(--note-border); border-radius:0;
+    background:var(--note-bg); color:var(--note-text);
+  }
+  .side-note-save-copy-bar .btn{
+    border-radius:0; font-size:11.5px; font-weight:500; padding:3px 8px; height:22px;
+    background:var(--note-bg); border-color:var(--note-border); color:var(--note-text);
+  }
+  .side-note-save-copy-bar .icon-btn.icon-only{
+    width:22px; height:22px; border:none; background:transparent; border-radius:0; font-size:14px;
+    color:var(--note-text);
+  }
+  .side-note-save-copy-bar .icon-btn.icon-only:hover{ background:rgba(0,0,0,0.08); color:var(--note-text); }
+  .side-note-status{
+    flex:none; padding:2px 8px 0; font-size:11px; color:var(--note-text); opacity:0.7; min-height:13px;
+  }
+  .side-note-status.error{ color:var(--red); opacity:1; }
+  .side-note-body{
+    flex:1; width:100%; border:none; outline:none; resize:none;
+    padding:10px; font-family:"Inter",system-ui,sans-serif; font-size:13px; line-height:1.5;
+    color:var(--note-text); background:var(--note-bg);
+  }
+  .side-note-body::placeholder{ color:var(--note-text); opacity:0.5; }
+  .side-note-pill{
+    position:fixed; right:22px; bottom:22px; z-index:60;
+    display:flex; align-items:center; gap:8px;
+    background:var(--note-bg); border:1px solid var(--note-border); border-radius:0;
+    padding:9px 16px; box-shadow:0 6px 20px rgba(16,24,40,0.18);
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--note-text); cursor:pointer;
+  }
+  .side-note-pill:hover{ border-color:var(--note-text); }
+  .side-note-pill[hidden]{ display:none; }
+
   /* Project-file preview: an inline column next to the file list (not a modal),
      so the file list and Fine AI section stay visible while a file is open. */
   .files-preview-head{
@@ -804,8 +911,25 @@
   .preview-filename-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .preview-filename-input.error{ border-color:#d9534f; }
   .files-preview-content .modal-body{ flex:1; overflow-y:auto; padding:20px 22px; }
-  .files-preview-content .modal-body.flush{ display:block; padding:0; overflow:hidden; }
+  .files-preview-content .modal-body.flush{ display:block; padding:0 2px; overflow:hidden; }
+  /* .flush strips the body's own padding/gap so CodeMirror can fill the
+     panel edge-to-edge, but that leaves .modal-actions (padding-top:0 by
+     design, since normally the body's own bottom padding provides the gap)
+     sitting flush against the editor's last line with no separator. */
+  .files-preview-panel.editing .modal-actions{
+    padding-top:10px; border-top:1px solid var(--border);
+  }
   #chatPreviewBody.markdown-body{ font-size:14px; }
+  #chatPreviewBody.markdown-body pre{ position:relative; }
+  #chatPreviewBody.markdown-body pre .code-copy-btn{
+    position:absolute; top:6px; right:6px; opacity:0; transition:opacity .12s ease;
+    padding:3px 9px; font-size:11.5px; line-height:1.5; border:1px solid var(--border);
+    border-radius:6px; background:var(--surface); color:var(--text-muted, var(--text));
+    cursor:pointer;
+  }
+  #chatPreviewBody.markdown-body pre:hover .code-copy-btn{ opacity:1; }
+  #chatPreviewBody.markdown-body pre .code-copy-btn:hover{ background:var(--accent-soft); color:var(--text); }
+  #chatPreviewBody.markdown-body pre .code-copy-btn.copied{ opacity:1; border-color:var(--accent); color:var(--accent); }
   #chatPreviewBody.plain-text-body{
     font-family:"SFMono-Regular",Consolas,monospace; font-size:13px; line-height:1.6;
     white-space:pre-wrap; word-break:break-word; margin:0; color:var(--text);
@@ -1179,6 +1303,9 @@
         <button type="button" id="fineAiToggleBtn" class="icon-btn" title="Toggle Fine AI (Ctrl+Alt+I)">
           <span>Fine AI</span>
         </button>
+        <button type="button" id="sideNoteToggleBtn" class="icon-btn" title="Toggle side note (Ctrl+Alt+N)">
+          <span>Note</span>
+        </button>
       </div>
       <div class="files-content-row">
     <div class="chat-project-files" id="chatProjectFiles">
@@ -1223,10 +1350,24 @@
                 <path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
               </svg>
             </button>
+            <span class="row-menu">
+              <button type="button" class="menu-toggle" id="chatFilesMoreToggle" title="More actions (Ctrl+Shift+M)" aria-label="More actions">&#8942;</button>
+              <div class="menu-dropdown" id="chatFilesMoreDropdown" hidden>
+                <button type="button" id="chatAddClaudeMdBtn">Add CLAUDE.md</button>
+                <button type="button" id="chatScaffoldPaperBtn">Scaffold Paper Project</button>
+                <button type="button" id="chatScaffoldGeneralBtn">Scaffold General Project</button>
+              </div>
+            </span>
           </div>
         </div>
         <div class="chat-project-files-search-row">
           <input class="search-input" id="chatFileSearch" placeholder="Search files…" />
+          <button type="button" class="icon-btn icon-only" id="chatFileTreeToggleBtn" title="Expand/collapse all folders">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M4 9l4-4 4 4M4 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 6h6M14 12h6M14 18h6" stroke-linecap="round"/>
+            </svg>
+          </button>
           <button type="button" class="icon-btn icon-only" id="chatFileFilterBtn" title="Show only attached files">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
               <path d="M4 5h16l-6.5 7.5V18l-3 1.5v-7z" stroke-linejoin="round" stroke-linecap="round"/>
@@ -1245,6 +1386,7 @@
               <button type="button" id="chatCopySelectedBtn">Copy as MD</button>
               <button type="button" id="chatCopySelectedFilesBtn">Copy files</button>
               <button type="button" id="chatCopyFullpathsBtn">Copy Fullpaths</button>
+              <button type="button" id="chatCopyPathsBtn">Copy Paths</button>
               <button type="button" id="chatExtractPdfBtn">Extract PDF(s)</button>
               <button type="button" id="chatSummarizePdfBtn">Summarize PDF(s)</button>
               <button type="button" id="chatMoveSelectedBtn">Move to&hellip;</button>
@@ -1349,6 +1491,34 @@
       <span class="chat-bulk-job-pill-spinner" id="chatBulkJobPillSpinner"></span>
       <span id="chatBulkJobPillText">Working…</span>
     </button>
+
+    <button type="button" class="side-note-pill" id="sideNotePill" title="Open side note (Ctrl+Alt+N)" hidden>
+      <span>Note</span>
+    </button>
+
+    <div class="side-note-panel" id="sideNotePanel" hidden>
+      <div class="side-note-head" id="sideNoteHead">
+        <span class="side-note-title" id="sideNoteTitle">Side note</span>
+        <div class="side-note-head-actions">
+          <button type="button" class="icon-btn icon-only" id="sideNoteSaveCopyBtn" title="Save copy as…">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke-linejoin="round"/>
+              <path d="M8 4v5h8V4" stroke-linejoin="round"/>
+              <path d="M8 20v-6h8v6" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn icon-only" id="sideNoteCollapseBtn" title="Collapse">&#8211;</button>
+          <button type="button" class="icon-btn icon-only" id="sideNoteCloseBtn" title="Close">&times;</button>
+        </div>
+      </div>
+      <div class="side-note-save-copy-bar" id="sideNoteSaveCopyBar" hidden>
+        <input type="text" id="sideNoteSaveCopyInput" placeholder="filename.md" autocomplete="off" />
+        <button type="button" class="btn" id="sideNoteSaveCopyConfirmBtn">Save</button>
+        <button type="button" class="icon-btn icon-only" id="sideNoteSaveCopyCancelBtn" title="Cancel">&times;</button>
+      </div>
+      <div class="side-note-status" id="sideNoteStatus"></div>
+      <textarea class="side-note-body" id="sideNoteBody" placeholder="Jot an idea…"></textarea>
+    </div>
   </div>
 
   <div class="panel" id="searchPanel" hidden>
@@ -1988,16 +2158,20 @@
       var lifecycle = r.lifecycle || "active";
       var doneTag = lifecycle === "complete" ? '<span class="lifecycle-tag">Done</span>' : '';
       var editBtn = '<button type="button" data-role="edit-project" data-path="' + escapeHtml(r.path) + '">Edit</button>';
+      var addClaudeMdBtn = '<button type="button" data-role="add-claude-md" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '">Add CLAUDE.md</button>';
+      var scaffoldPaperBtn = '<button type="button" data-role="scaffold-paper" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '">Scaffold Paper Project</button>';
+      var scaffoldGeneralBtn = '<button type="button" data-role="scaffold-general" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '">Scaffold General Project</button>';
+      var scaffoldBtns = addClaudeMdBtn + scaffoldPaperBtn + scaffoldGeneralBtn;
       var lifecycleBtns;
       if (lifecycle === "complete"){
-        lifecycleBtns = editBtn +
+        lifecycleBtns = editBtn + scaffoldBtns +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Reopen</button>' +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
       } else if (lifecycle === "archived"){
-        lifecycleBtns = editBtn +
+        lifecycleBtns = editBtn + scaffoldBtns +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="active">Restore</button>';
       } else {
-        lifecycleBtns = editBtn +
+        lifecycleBtns = editBtn + scaffoldBtns +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="complete">Mark complete</button>' +
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
       }
@@ -2044,6 +2218,24 @@
         openEditProjectModal(btn.getAttribute("data-path"));
       });
     });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="add-claude-md"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        addClaudeMdToProject(btn.getAttribute("data-path"), btn.getAttribute("data-name"));
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="scaffold-paper"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        scaffoldPaperProject(btn.getAttribute("data-path"), btn.getAttribute("data-name"));
+      });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('[data-role="scaffold-general"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        scaffoldGeneralProject(btn.getAttribute("data-path"), btn.getAttribute("data-name"));
+      });
+    });
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="lifecycle"]'), function(btn){
       btn.addEventListener("click", function(){
         api("/projects/lifecycle", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: btn.getAttribute("data-path"), lifecycle: btn.getAttribute("data-lifecycle") }) }).then(loadAll);
@@ -2058,6 +2250,33 @@
         dropdown.hidden = !wasHidden;
       });
     });
+  }
+
+  function addClaudeMdToProject(path, name){
+    api("/projects/add-claude-md", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: name }) })
+      .then(function(res){
+        if (res.exists){
+          if (!confirm("CLAUDE.md already exists in " + name + ". Overwrite it?")) return;
+          return api("/projects/add-claude-md", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: name, overwrite: true }) })
+            .then(function(){ showToast("CLAUDE.md overwritten for " + name); });
+        }
+        showToast("CLAUDE.md added to " + name);
+      })
+      .catch(function(err){ showToast(err.message || "Failed to add CLAUDE.md", true); });
+  }
+
+  function scaffoldPaperProject(path, name){
+    if (!confirm("Scaffold full ARTi paper-project boilerplate (idea/, writing/, literature/, data/, figures/, submission/, inbox/, memory/, CLAUDE.md) in " + name + "? Existing files are never overwritten.")) return;
+    api("/projects/scaffold-paper", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: name }) })
+      .then(function(){ showToast("Paper project boilerplate added to " + name); loadAll(); })
+      .catch(function(err){ showToast(err.message || "Failed to scaffold paper project", true); });
+  }
+
+  function scaffoldGeneralProject(path, name){
+    if (!confirm("Scaffold a memory/ folder (MEMORY.md, todo-list.md, status.md) and CLAUDE.md in " + name + "? Existing files are never overwritten.")) return;
+    api("/projects/scaffold-general", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: name }) })
+      .then(function(){ showToast("Memory scaffold added to " + name); loadAll(); })
+      .catch(function(err){ showToast(err.message || "Failed to scaffold general project", true); });
   }
 
   function closeAllRowMenus(){
@@ -2583,6 +2802,7 @@
   var chatSearchQuery = "";
   var chatSending = false;
   var chatProjectFiles = [];
+  var chatProjectFolders = [];
 
   var chatFolderCollapsed = {};
   try { chatFolderCollapsed = JSON.parse(localStorage.getItem("chatFolderCollapsed") || "{}"); } catch(e){ chatFolderCollapsed = {}; }
@@ -2590,9 +2810,39 @@
     try { localStorage.setItem("chatFolderCollapsed", JSON.stringify(chatFolderCollapsed)); } catch(e){}
   }
 
+  // CommonMark treats a backslash before another backslash as an escape
+  // sequence, collapsing the literal "\\" row-separator inside LaTeX
+  // cases/array/aligned environments (e.g. "$$\begin{cases} ... \\ ... \\
+  // ... \end{cases}$$") down to a single "\" -- which KaTeX then reads as
+  // the "\ " control-space command instead of a line break, so a 3-row
+  // system renders as one crammed row. Pulling math spans out before
+  // marked.parse and splicing the untouched source back in afterwards (as
+  // escaped text, for KaTeX's own auto-render pass to find) avoids this and
+  // any other markdown-inline mangling of LaTeX source.
+  var MATH_PLACEHOLDER_RE = /\u0000MATH(\d+)\u0000/g;
+  function protectMathSegments(text){
+    var segments = [];
+    var protectedText = text.replace(/\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^\n$]+?\$/g, function(m){
+      var idx = segments.length;
+      segments.push(m);
+      return "\u0000MATH" + idx + "\u0000";
+    });
+    return { text: protectedText, segments: segments };
+  }
+  function restoreMathSegments(html, segments){
+    return html.replace(MATH_PLACEHOLDER_RE, function(_, idx){
+      return escapeHtml(segments[Number(idx)]);
+    });
+  }
+  function parseMarkdownWithMath(text){
+    var protectedMath = protectMathSegments(text || "");
+    var html = marked.parse(protectedMath.text, { gfm: true, breaks: true });
+    return restoreMathSegments(html, protectedMath.segments);
+  }
+
   function renderMsgContent(content){
     var text = typeof content === "string" ? content : JSON.stringify(content);
-    var html = marked.parse(text, { gfm: true, breaks: true });
+    var html = parseMarkdownWithMath(text);
     var tmp = document.createElement("div");
     tmp.innerHTML = html;
     Array.prototype.forEach.call(tmp.querySelectorAll("pre"), function(pre){
@@ -2995,6 +3245,7 @@
     chatFileSelection = {};
     setChatFileFilterActive(false);
     updateFineAiStatusHint(projectPath);
+    loadSideNoteForProject(projectPath);
     if (!projectPath){
       chatProjectFiles = [];
       renderFileList();
@@ -3002,6 +3253,258 @@
     }
     return refreshProjectFiles(projectPath);
   }
+
+  // ---- side note: a free-floating per-project scratch pad, autosaved to a
+  // hidden ".side-note.md" file at the project root via the same
+  // project-files read/write API the file preview/editor uses. Persists
+  // across app restarts because it's a real file, unlike the panel's own
+  // open/collapsed/position chrome below, which lives in localStorage. ----
+
+  var SIDE_NOTE_FILE = ".side-note.md";
+  var SIDE_NOTE_UI_KEY = "arti-side-note-ui";
+  var sideNoteProjectPath = null;
+  var sideNoteLoadToken = 0;
+  var sideNoteSaveTimer = null;
+  var sideNoteDragState = null;
+
+  function sideNoteFileAbsPath(projectPath){
+    return projectPath.replace(/[\\/]+$/, "") + "/" + SIDE_NOTE_FILE;
+  }
+
+  function loadSideNoteUiState(){
+    try { return JSON.parse(localStorage.getItem(SIDE_NOTE_UI_KEY)) || {}; }
+    catch (e){ return {}; }
+  }
+
+  function saveSideNoteUiState(patch){
+    try {
+      var state = loadSideNoteUiState();
+      Object.keys(patch).forEach(function(k){ state[k] = patch[k]; });
+      localStorage.setItem(SIDE_NOTE_UI_KEY, JSON.stringify(state));
+    } catch (e){ /* private mode / storage unavailable -- panel still works this session */ }
+  }
+
+  function setSideNoteStatus(text, isError){
+    var el = document.getElementById("sideNoteStatus");
+    if (!el) return;
+    el.textContent = text || "";
+    el.classList.toggle("error", !!isError);
+  }
+
+  function loadSideNoteForProject(projectPath){
+    sideNoteProjectPath = projectPath;
+    var body = document.getElementById("sideNoteBody");
+    var title = document.getElementById("sideNoteTitle");
+    if (title) title.textContent = projectPath ? "Side note — " + filesProjectNameForPath(projectPath) : "Side note";
+    if (!body) return;
+    if (!projectPath){
+      body.value = "";
+      body.disabled = true;
+      setSideNoteStatus("No project selected");
+      return;
+    }
+    body.disabled = false;
+    var token = ++sideNoteLoadToken;
+    setSideNoteStatus("Loading…");
+    var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
+      "&file=" + encodeURIComponent(sideNoteFileAbsPath(projectPath));
+    apiRaw(url).then(function(d){
+      if (token !== sideNoteLoadToken) return; // project switched again before this resolved
+      body.value = d.content || "";
+      setSideNoteStatus("");
+    }).catch(function(){
+      if (token !== sideNoteLoadToken) return;
+      body.value = ""; // no note saved yet for this project
+      setSideNoteStatus("");
+    });
+  }
+
+  // Writes the note to disk. `announce` controls whether a "Saved" status is
+  // shown on success -- the debounced autosave path stays silent (per the
+  // user's ask to only surface "Saved" when they actually asked for it),
+  // while an explicit save (Ctrl+S) always announces. Failures are always
+  // shown either way, since a silently-lost note would be worse.
+  function writeSideNote(announce){
+    if (!sideNoteProjectPath) return;
+    var projectPath = sideNoteProjectPath;
+    var body = document.getElementById("sideNoteBody");
+    if (!body) return;
+    apiRaw("/chat/project-files/write", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: projectPath, file: sideNoteFileAbsPath(projectPath), content: body.value })
+    }).then(function(){
+      if (sideNoteProjectPath !== projectPath) return;
+      if (announce){
+        setSideNoteStatus("Saved");
+        clearTimeout(sideNoteSaveTimer);
+        sideNoteSaveTimer = setTimeout(function(){ setSideNoteStatus(""); }, 1500);
+      }
+    }).catch(function(err){
+      if (sideNoteProjectPath === projectPath) setSideNoteStatus("Failed to save: " + (err && err.message ? err.message : "unknown error"), true);
+    });
+  }
+
+  function scheduleSideNoteSave(){
+    if (!sideNoteProjectPath) return;
+    clearTimeout(sideNoteSaveTimer);
+    sideNoteSaveTimer = setTimeout(function(){ writeSideNote(false); }, 800);
+  }
+
+  function saveSideNoteNow(){
+    if (!sideNoteProjectPath) return;
+    clearTimeout(sideNoteSaveTimer);
+    writeSideNote(true);
+  }
+
+  function isSideNoteOpen(){
+    var panel = document.getElementById("sideNotePanel");
+    return !!(panel && !panel.hidden);
+  }
+
+  function setSideNoteCollapsed(collapsed){
+    var panel = document.getElementById("sideNotePanel");
+    var pill = document.getElementById("sideNotePill");
+    if (!panel || !pill) return;
+    panel.hidden = collapsed;
+    pill.hidden = !collapsed;
+    saveSideNoteUiState({ collapsed: collapsed });
+  }
+
+  function openSideNote(){
+    var panel = document.getElementById("sideNotePanel");
+    if (!panel) return;
+    applySideNotePosition();
+    setSideNoteCollapsed(false);
+    saveSideNoteUiState({ open: true });
+    document.getElementById("sideNoteBody").focus();
+  }
+
+  function closeSideNote(){
+    var panel = document.getElementById("sideNotePanel");
+    var pill = document.getElementById("sideNotePill");
+    if (panel) panel.hidden = true;
+    if (pill) pill.hidden = true;
+    saveSideNoteUiState({ open: false });
+  }
+
+  function toggleSideNote(){
+    if (isSideNoteOpen() || !document.getElementById("sideNotePill").hidden){
+      closeSideNote();
+    } else {
+      openSideNote();
+    }
+  }
+
+  function applySideNotePosition(){
+    var panel = document.getElementById("sideNotePanel");
+    if (!panel) return;
+    var ui = loadSideNoteUiState();
+    if (ui.left != null && ui.top != null){
+      panel.style.left = ui.left + "px";
+      panel.style.top = ui.top + "px";
+      panel.style.right = "auto";
+      panel.style.bottom = "auto";
+    }
+    if (ui.width) panel.style.width = ui.width + "px";
+    if (ui.height) panel.style.height = ui.height + "px";
+  }
+
+  function initSideNoteDrag(){
+    var head = document.getElementById("sideNoteHead");
+    var panel = document.getElementById("sideNotePanel");
+    if (!head || !panel) return;
+    head.addEventListener("mousedown", function(e){
+      if (e.target.closest(".side-note-head-actions")) return;
+      e.preventDefault();
+      var rect = panel.getBoundingClientRect();
+      var startX = e.clientX, startY = e.clientY;
+      var startLeft = rect.left, startTop = rect.top;
+      head.classList.add("dragging");
+      function onMove(ev){
+        var left = startLeft + (ev.clientX - startX);
+        var top = startTop + (ev.clientY - startY);
+        left = Math.max(0, Math.min(left, window.innerWidth - 60));
+        top = Math.max(0, Math.min(top, window.innerHeight - 40));
+        panel.style.left = left + "px";
+        panel.style.top = top + "px";
+        panel.style.right = "auto";
+        panel.style.bottom = "auto";
+      }
+      function onUp(){
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        head.classList.remove("dragging");
+        var r = panel.getBoundingClientRect();
+        saveSideNoteUiState({ left: Math.round(r.left), top: Math.round(r.top) });
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+    // Panel is CSS resize:both -- persist the size once dragging finishes.
+    new ResizeObserver(function(){
+      if (panel.hidden) return;
+      saveSideNoteUiState({ width: panel.offsetWidth, height: panel.offsetHeight });
+    }).observe(panel);
+  }
+
+  function initSideNote(){
+    var body = document.getElementById("sideNoteBody");
+    var toggleBtn = document.getElementById("sideNoteToggleBtn");
+    var pill = document.getElementById("sideNotePill");
+    var closeBtn = document.getElementById("sideNoteCloseBtn");
+    var collapseBtn = document.getElementById("sideNoteCollapseBtn");
+    var saveCopyBtn = document.getElementById("sideNoteSaveCopyBtn");
+    var saveCopyBar = document.getElementById("sideNoteSaveCopyBar");
+    var saveCopyInput = document.getElementById("sideNoteSaveCopyInput");
+    var saveCopyConfirmBtn = document.getElementById("sideNoteSaveCopyConfirmBtn");
+    var saveCopyCancelBtn = document.getElementById("sideNoteSaveCopyCancelBtn");
+    if (!body || !toggleBtn || !pill) return;
+
+    initSideNoteDrag();
+
+    body.addEventListener("input", scheduleSideNoteSave);
+    toggleBtn.addEventListener("click", toggleSideNote);
+    pill.addEventListener("click", function(){ setSideNoteCollapsed(false); saveSideNoteUiState({ open: true }); });
+    closeBtn.addEventListener("click", closeSideNote);
+    collapseBtn.addEventListener("click", function(){ setSideNoteCollapsed(true); });
+
+    saveCopyBtn.addEventListener("click", function(){
+      saveCopyBar.hidden = false;
+      saveCopyInput.value = "";
+      saveCopyInput.focus();
+    });
+    saveCopyCancelBtn.addEventListener("click", function(){ saveCopyBar.hidden = true; });
+    function confirmSaveCopy(){
+      var name = saveCopyInput.value.trim();
+      if (!name || !sideNoteProjectPath) return;
+      saveCopyConfirmBtn.disabled = true;
+      apiRaw("/chat/project-files/create", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: sideNoteProjectPath, file: name, content: body.value })
+      }).then(function(){
+        saveCopyBar.hidden = true;
+        saveCopyConfirmBtn.disabled = false;
+        if (sideNoteProjectPath === filesCurrentProjectPath) refreshProjectFiles(sideNoteProjectPath);
+        setSideNoteStatus("Saved copy as " + name);
+      }).catch(function(err){
+        saveCopyConfirmBtn.disabled = false;
+        setSideNoteStatus("Failed to save copy: " + (err && err.message ? err.message : "unknown error"), true);
+      });
+    }
+    saveCopyConfirmBtn.addEventListener("click", confirmSaveCopy);
+    saveCopyInput.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){ e.preventDefault(); confirmSaveCopy(); }
+      if (e.key === "Escape"){ e.preventDefault(); saveCopyBar.hidden = true; }
+    });
+
+    var ui = loadSideNoteUiState();
+    if (ui.open){
+      applySideNotePosition();
+      setSideNoteCollapsed(!!ui.collapsed);
+    }
+  }
+
+  initSideNote();
 
   // ---- project picker (bound to allProjects, the same data as the Projects
   // tab -- not the chat_projects "folder" abstraction) ----
@@ -3832,6 +4335,26 @@
       return;
     }
 
+    // Ctrl+Alt+N -- toggle the floating side note panel, only while the
+    // Workspace panel is open (matches the Ctrl+Alt+I Fine AI convention).
+    if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey && (e.key === "n" || e.key === "N" || e.code === "KeyN")){
+      var sideNoteHostPanel = document.getElementById("filesPanel");
+      if (sideNoteHostPanel && !sideNoteHostPanel.hidden){
+        e.preventDefault();
+        toggleSideNote();
+      }
+      return;
+    }
+
+    // Ctrl+S -- explicit save of the side note, only while it's open (the
+    // note otherwise autosaves silently on a debounce; this both forces an
+    // immediate write and is the one path that shows a "Saved" status).
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && isSideNoteOpen()){
+      e.preventDefault();
+      saveSideNoteNow();
+      return;
+    }
+
     var ctrlShift = (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey;
 
     // Ctrl+Shift+P -- open the Workspace project picker, focused and ready
@@ -3879,6 +4402,11 @@
         if (e.key === "o" || e.key === "O"){
           e.preventDefault();
           document.getElementById("chatOpenProjectFolderBtn").click();
+          return;
+        }
+        if (e.key === "m" || e.key === "M"){
+          e.preventDefault();
+          document.getElementById("chatAddClaudeMdBtn").click();
           return;
         }
       }
@@ -3929,6 +4457,32 @@
     openReferencesModal(filesCurrentProjectPath);
   });
 
+  document.getElementById("chatFilesMoreToggle").addEventListener("click", function(e){
+    e.stopPropagation();
+    var dropdown = document.getElementById("chatFilesMoreDropdown");
+    var wasHidden = dropdown.hidden;
+    closeAllRowMenus();
+    dropdown.hidden = !wasHidden;
+  });
+
+  document.getElementById("chatAddClaudeMdBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    if (!filesCurrentProjectPath) return;
+    addClaudeMdToProject(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath));
+  });
+
+  document.getElementById("chatScaffoldPaperBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    if (!filesCurrentProjectPath) return;
+    scaffoldPaperProject(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath));
+  });
+
+  document.getElementById("chatScaffoldGeneralBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    if (!filesCurrentProjectPath) return;
+    scaffoldGeneralProject(filesCurrentProjectPath, filesProjectNameForPath(filesCurrentProjectPath));
+  });
+
   document.getElementById("chatRefreshFilesBtn").addEventListener("click", function(){
     refreshProjectFiles(filesCurrentProjectPath);
   });
@@ -3938,10 +4492,48 @@
     renderFileList();
   });
 
+  var chatFileTreeCollapsed = {};
+  try { chatFileTreeCollapsed = JSON.parse(localStorage.getItem("chatFileTreeCollapsed") || "{}"); } catch(e){ chatFileTreeCollapsed = {}; }
+  function saveChatFileTreeCollapsed(){
+    try { localStorage.setItem("chatFileTreeCollapsed", JSON.stringify(chatFileTreeCollapsed)); } catch(e){}
+  }
+  function isFileTreeFolderCollapsed(path){
+    return chatFileTreeCollapsed.hasOwnProperty(path) ? !!chatFileTreeCollapsed[path] : true;
+  }
+  function allFileTreeFolderPaths(){
+    var paths = {};
+    chatProjectFiles.forEach(function(f){
+      var parts = f.rel_path.split("/");
+      var pathSoFar = "";
+      for (var i = 0; i < parts.length - 1; i++){
+        pathSoFar = pathSoFar ? pathSoFar + "/" + parts[i] : parts[i];
+        paths[pathSoFar] = true;
+      }
+    });
+    chatProjectFolders.forEach(function(fo){
+      var parts = fo.rel_path.split("/");
+      var pathSoFar = "";
+      for (var i = 0; i < parts.length; i++){
+        pathSoFar = pathSoFar ? pathSoFar + "/" + parts[i] : parts[i];
+        paths[pathSoFar] = true;
+      }
+    });
+    return Object.keys(paths);
+  }
+  document.getElementById("chatFileTreeToggleBtn").addEventListener("click", function(){
+    if (chatFileSearchQuery.trim()) return;
+    var paths = allFileTreeFolderPaths();
+    var anyExpanded = paths.some(function(p){ return !isFileTreeFolderCollapsed(p); });
+    paths.forEach(function(p){ chatFileTreeCollapsed[p] = anyExpanded; });
+    saveChatFileTreeCollapsed();
+    renderFileList();
+  });
+
   function refreshProjectFiles(projectPath){
     if (!projectPath) return Promise.resolve();
     return apiRaw("/chat/project-files?path=" + encodeURIComponent(projectPath)).then(function(d){
       chatProjectFiles = d.files || [];
+      chatProjectFolders = d.folders || [];
       renderFileList();
     });
   }
@@ -3954,14 +4546,78 @@
     chatFileListActiveIndex = e.target.value ? 0 : -1;
     renderFileList();
   });
+  var chatFileRowMenuActiveIndex = -1;
+  function getOpenChatFileRowMenu(){
+    return document.querySelector("#chatFileList .menu-dropdown:not([hidden])");
+  }
+  function chatFileRowMenuButtons(dropdown){
+    return Array.prototype.filter.call(dropdown.querySelectorAll("button"), function(b){ return !b.disabled; });
+  }
+  function highlightChatFileRowMenuButton(btns){
+    btns.forEach(function(b, i){
+      var isActive = i === chatFileRowMenuActiveIndex;
+      b.classList.toggle("menu-item-active", isActive);
+      if (isActive) b.scrollIntoView({ block: "nearest" });
+    });
+  }
   document.getElementById("chatFileSearch").addEventListener("keydown", function(e){
+    // While a file row's context menu is open, arrow/enter/escape drive the menu
+    // instead of the file-tree selection underneath it.
+    var openMenu = getOpenChatFileRowMenu();
+    if (openMenu){
+      var menuNavKeys = ["ArrowDown", "ArrowUp", "Enter", "Escape", "ArrowLeft", "ArrowRight"];
+      if (menuNavKeys.indexOf(e.key) === -1){
+        // Any other key (typing to keep searching, etc.) closes the menu and
+        // falls through to its normal handling below.
+        closeAllRowMenus();
+        chatFileRowMenuActiveIndex = -1;
+      } else {
+        var btns = chatFileRowMenuButtons(openMenu);
+        if (e.key === "ArrowDown"){
+          e.preventDefault();
+          if (btns.length) chatFileRowMenuActiveIndex = (chatFileRowMenuActiveIndex + 1 + btns.length) % btns.length;
+          highlightChatFileRowMenuButton(btns);
+          return;
+        }
+        if (e.key === "ArrowUp"){
+          e.preventDefault();
+          if (btns.length) chatFileRowMenuActiveIndex = (chatFileRowMenuActiveIndex - 1 + btns.length) % btns.length;
+          highlightChatFileRowMenuButton(btns);
+          return;
+        }
+        if (e.key === "Enter"){
+          e.preventDefault();
+          var idx = chatFileRowMenuActiveIndex >= 0 ? chatFileRowMenuActiveIndex : 0;
+          if (btns[idx]) btns[idx].click();
+          chatFileRowMenuActiveIndex = -1;
+          return;
+        }
+        if (e.key === "Escape"){
+          e.preventDefault();
+          closeAllRowMenus();
+          chatFileRowMenuActiveIndex = -1;
+          return;
+        }
+        // ArrowLeft/ArrowRight: swallow so the folder collapse/expand shortcut
+        // underneath doesn't fire while the menu is open.
+        e.preventDefault();
+        return;
+      }
+    }
     if (e.key === "ArrowDown"){ e.preventDefault(); moveChatFileListSelection(1); return; }
     if (e.key === "ArrowUp"){ e.preventDefault(); moveChatFileListSelection(-1); return; }
+    if (e.key === "ArrowRight"){ e.preventDefault(); setActiveFolderCollapsed(false); return; }
+    if (e.key === "ArrowLeft"){ e.preventDefault(); setActiveFolderCollapsed(true); return; }
     if (e.key === "Enter"){
       e.preventDefault();
       var idx = chatFileListActiveIndex >= 0 ? chatFileListActiveIndex : 0;
       var pick = chatFileListFiltered[idx];
-      if (pick) previewProjectFile(filesCurrentProjectPath, pick.abs_path, pick.rel_path);
+      if (!pick) return;
+      if (pick.type === "folder"){
+        setActiveFolderCollapsed(!isFileTreeFolderCollapsed(pick.path));
+        return;
+      }
+      previewProjectFile(filesCurrentProjectPath, pick.file.abs_path, pick.file.rel_path);
       return;
     }
     // Keyboard "context menu" key (and its Shift+F10 alias) -- opens the
@@ -3975,12 +4631,13 @@
   function openChatFileRowMenuForActiveIndex(){
     if (chatFileListActiveIndex < 0) return;
     var list = document.getElementById("chatFileList");
-    var item = list && list.querySelectorAll(".chat-file-item")[chatFileListActiveIndex];
+    var item = list && list.querySelector('[data-row-index="' + chatFileListActiveIndex + '"]');
     var dropdown = item && item.querySelector(".menu-dropdown");
     if (!dropdown) return;
     var wasHidden = dropdown.hidden;
     closeAllRowMenus();
     dropdown.hidden = !wasHidden;
+    chatFileRowMenuActiveIndex = -1;
   }
 
   function moveChatFileListSelection(delta){
@@ -3992,11 +4649,24 @@
   function highlightChatFileListItem(){
     var list = document.getElementById("chatFileList");
     if (!list) return;
-    Array.prototype.forEach.call(list.querySelectorAll(".chat-file-item"), function(item, i){
-      var isActive = i === chatFileListActiveIndex;
+    Array.prototype.forEach.call(list.querySelectorAll("[data-row-index]"), function(item){
+      var isActive = parseInt(item.getAttribute("data-row-index"), 10) === chatFileListActiveIndex;
       item.classList.toggle("keynav-active", isActive);
       if (isActive) item.scrollIntoView({ block: "nearest" });
     });
+  }
+
+  // Expand/collapse the currently keynav-highlighted folder row (ArrowRight/ArrowLeft
+  // in the file search box). No-op while a search query is active, since folder
+  // expansion is force-driven by the query then (see renderFileTreeNode's forceExpand).
+  function setActiveFolderCollapsed(collapsed){
+    if (chatFileSearchQuery.trim()) return;
+    var row = chatFileListFiltered[chatFileListActiveIndex];
+    if (!row || row.type !== "folder") return;
+    chatFileTreeCollapsed[row.path] = collapsed;
+    saveChatFileTreeCollapsed();
+    renderFileList();
+    highlightChatFileListItem();
   }
 
   var IMAGE_PREVIEWABLE_EXTS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
@@ -4034,6 +4704,109 @@
       escapeHtml(ext) + '">' + g[0] + '</span>';
   }
 
+  function buildFileTree(files, folders){
+    var root = { name: "", path: "", folders: {}, folderOrder: [], files: [] };
+    function ensurePath(pathStr){
+      var parts = pathStr.split("/");
+      var node = root;
+      var pathSoFar = "";
+      for (var i = 0; i < parts.length; i++){
+        var seg = parts[i];
+        pathSoFar = pathSoFar ? pathSoFar + "/" + seg : seg;
+        if (!node.folders[seg]){
+          node.folders[seg] = { name: seg, path: pathSoFar, folders: {}, folderOrder: [], files: [] };
+          node.folderOrder.push(seg);
+        }
+        node = node.folders[seg];
+      }
+      return node;
+    }
+    (folders || []).forEach(function(fo){ ensurePath(fo.rel_path); });
+    files.forEach(function(f){
+      var parts = f.rel_path.split("/");
+      var node = parts.length > 1 ? ensurePath(parts.slice(0, -1).join("/")) : root;
+      node.files.push(f);
+    });
+    return root;
+  }
+
+  function _fileTreeCountFiles(node){
+    var n = node.files.length;
+    node.folderOrder.forEach(function(seg){ n += _fileTreeCountFiles(node.folders[seg]); });
+    return n;
+  }
+
+  function renderFileTreeItemHtml(f, i, depth, attached){
+    var isPreviewable = _isPreviewableFile(f.rel_path);
+    var isAttached = !!attached[f.rel_path];
+    var checked = chatFileSelection[f.rel_path] ? " checked" : "";
+    var nameAttrs = isPreviewable ? ' data-role="preview-file"' : "";
+    var nameClass = "chat-file-name" + (isPreviewable ? "" : " no-preview");
+    var displayName = f.rel_path.split("/").pop();
+    var attachedTag = isAttached
+      ? '<span class="chat-file-attached-tag" title="Attached to chat context">&#10003;</span>' : "";
+    var activeClass = i === chatFileListActiveIndex ? " keynav-active" : "";
+    return '<div class="chat-file-item' + activeClass + '" style="padding-left:' + (8 + depth * 14) + 'px" data-row-index="' + i + '" data-rel="' + escapeHtml(f.rel_path) + '" data-abs="' + escapeHtml(f.abs_path) + '">' +
+      '<input type="checkbox" class="chat-file-select" data-role="select-file"' + checked + ' title="Select for bulk actions" />' +
+      _fileTypeIcon(f.rel_path) +
+      '<span class="' + nameClass + '"' + nameAttrs + ' title="' + escapeHtml(f.rel_path) + '">' + escapeHtml(displayName) + '</span>' +
+      attachedTag +
+      '<span class="row-menu">' +
+        '<button type="button" class="menu-toggle" data-role="file-menu-toggle" aria-label="File actions">&#8942;</button>' +
+        '<div class="menu-dropdown" hidden>' +
+          '<button type="button" data-role="open-file">Open</button>' +
+          '<button type="button" data-role="open-file-with">Open with&hellip;</button>' +
+          '<button type="button" data-role="reveal-file">Open file location</button>' +
+          '<button type="button" data-role="copy-file">Copy</button>' +
+          '<button type="button" data-role="copy-path-file">Copy full path</button>' +
+          '<button type="button" data-role="copy-relpath-file">Copy Path</button>' +
+          (_isImagePreviewableFile(f.rel_path) || _isPdfPreviewableFile(f.rel_path) ? "" :
+            '<button type="button" data-role="export-pdf-file">Export PDF</button>') +
+          '<button type="button" data-role="rename-file">Rename</button>' +
+          '<button type="button" data-role="move-file">Move to&hellip;</button>' +
+          '<button type="button" data-role="delete-file">Delete</button>' +
+        '</div>' +
+      '</span>' +
+    '</div>';
+  }
+
+  function renderFileTreeNode(node, depth, forceExpand, attached, rows, html){
+    node.folderOrder.slice().sort(function(a, b){ return a.localeCompare(b); }).forEach(function(name){
+      var child = node.folders[name];
+      var collapsed = forceExpand ? false : isFileTreeFolderCollapsed(child.path);
+      var count = _fileTreeCountFiles(child);
+      var rowIndex = rows.length;
+      rows.push({ type: "folder", path: child.path, name: child.name });
+      var activeClass = rowIndex === chatFileListActiveIndex ? " keynav-active" : "";
+      html.push(
+        '<div class="chat-folder-group tree-folder-group' + (collapsed ? " collapsed" : "") + '" style="margin-left:' + (depth * 14) + 'px" data-tree-path="' + escapeHtml(child.path) + '" data-depth="' + depth + '">' +
+          '<div class="chat-folder-label tree-folder-label' + activeClass + '" data-row-index="' + rowIndex + '" data-tree-toggle="' + escapeHtml(child.path) + '">' +
+            '<span class="chat-folder-chevron">' + ICON_CHEVRON + '</span>' +
+            '<span class="chat-folder-name" title="' + escapeHtml(child.path) + '">' + escapeHtml(child.name) + '</span>' +
+            '<span class="row-menu">' +
+              '<button type="button" class="menu-toggle" data-role="folder-menu-toggle" aria-label="Folder actions">&#8942;</button>' +
+              '<div class="menu-dropdown" hidden>' +
+                '<button type="button" data-role="new-file-in-folder">New file</button>' +
+                '<button type="button" data-role="new-folder-in-folder">New folder</button>' +
+              '</div>' +
+            '</span>' +
+            '<span class="chat-folder-count">' + count + '</span>' +
+          '</div>'
+      );
+      if (!collapsed){
+        html.push('<div class="chat-folder-items">');
+        renderFileTreeNode(child, depth + 1, forceExpand, attached, rows, html);
+        html.push('</div>');
+      }
+      html.push('</div>');
+    });
+    node.files.slice().sort(function(a, b){ return a.rel_path.localeCompare(b.rel_path); }).forEach(function(f){
+      var rowIndex = rows.length;
+      rows.push({ type: "file", file: f });
+      html.push(renderFileTreeItemHtml(f, rowIndex, depth, attached));
+    });
+  }
+
   function renderFileList(){
     var list = document.getElementById("chatFileList");
     var q = chatFileSearchQuery.trim().toLowerCase();
@@ -4043,59 +4816,50 @@
       if (chatFileFilterActive && !attached[f.rel_path]) return false;
       return true;
     });
+    var folders = chatFileFilterActive ? [] : chatProjectFolders.filter(function(fo){
+      if (q && fo.rel_path.toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
     document.getElementById("chatProjectFilesCount").textContent = files.length;
     updateFileSelectionUi(files);
-    chatFileListFiltered = files;
-    if (chatFileListActiveIndex >= files.length) chatFileListActiveIndex = files.length - 1;
-    if (!chatProjectFiles.length){
+    var treeToggleBtn = document.getElementById("chatFileTreeToggleBtn");
+    if (treeToggleBtn) treeToggleBtn.disabled = !!q;
+    if (!chatProjectFiles.length && !chatProjectFolders.length){
+      chatFileListFiltered = [];
       list.innerHTML = '<div class="hint">No matching files found in this project.</div>';
       return;
     }
-    if (!files.length){
+    if (!files.length && !folders.length){
+      chatFileListFiltered = [];
       list.innerHTML = '<div class="hint">' +
         (chatFileFilterActive ? "No attached files yet." : "No files match your search.") +
         '</div>';
       return;
     }
-    list.innerHTML = files.map(function(f, i){
-      var isPreviewable = _isPreviewableFile(f.rel_path);
-      var isAttached = !!attached[f.rel_path];
-      var checked = chatFileSelection[f.rel_path] ? " checked" : "";
-      var nameAttrs = isPreviewable ? ' data-role="preview-file"' : "";
-      var nameClass = "chat-file-name" + (isPreviewable ? "" : " no-preview");
-      var attachedTag = isAttached
-        ? '<span class="chat-file-attached-tag" title="Attached to chat context">&#10003;</span>' : "";
-      var activeClass = i === chatFileListActiveIndex ? " keynav-active" : "";
-      return '<div class="chat-file-item' + activeClass + '" data-rel="' + escapeHtml(f.rel_path) + '" data-abs="' + escapeHtml(f.abs_path) + '">' +
-        '<input type="checkbox" class="chat-file-select" data-role="select-file"' + checked + ' title="Select for bulk actions" />' +
-        _fileTypeIcon(f.rel_path) +
-        '<span class="' + nameClass + '"' + nameAttrs + ' title="' + escapeHtml(f.rel_path) + '">' + escapeHtml(f.rel_path) + '</span>' +
-        attachedTag +
-        '<span class="row-menu">' +
-          '<button type="button" class="menu-toggle" data-role="file-menu-toggle" aria-label="File actions">&#8942;</button>' +
-          '<div class="menu-dropdown" hidden>' +
-            '<button type="button" data-role="open-file">Open</button>' +
-            '<button type="button" data-role="open-file-with">Open with&hellip;</button>' +
-            '<button type="button" data-role="reveal-file">Open file location</button>' +
-            '<button type="button" data-role="copy-file">Copy</button>' +
-            '<button type="button" data-role="copy-path-file">Copy full path</button>' +
-            (_isImagePreviewableFile(f.rel_path) || _isPdfPreviewableFile(f.rel_path) ? "" :
-              '<button type="button" data-role="export-pdf-file">Export PDF</button>') +
-            '<button type="button" data-role="rename-file">Rename</button>' +
-            '<button type="button" data-role="move-file">Move to&hellip;</button>' +
-            '<button type="button" data-role="delete-file">Delete</button>' +
-          '</div>' +
-        '</span>' +
-      '</div>';
-    }).join("");
-    Array.prototype.forEach.call(list.querySelectorAll(".chat-file-item"), function(item, i){
+    var tree = buildFileTree(files, folders);
+    var rows = [];
+    var htmlParts = [];
+    renderFileTreeNode(tree, 0, !!q, attached, rows, htmlParts);
+    chatFileListFiltered = rows;
+    if (chatFileListActiveIndex >= rows.length) chatFileListActiveIndex = rows.length - 1;
+    list.innerHTML = htmlParts.join("");
+    Array.prototype.forEach.call(list.querySelectorAll("[data-tree-toggle]"), function(head){
+      head.addEventListener("click", function(){
+        var path = head.getAttribute("data-tree-toggle");
+        chatFileTreeCollapsed[path] = !isFileTreeFolderCollapsed(path);
+        saveChatFileTreeCollapsed();
+        renderFileList();
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-row-index]"), function(item){
+      var idx = parseInt(item.getAttribute("data-row-index"), 10);
       item.addEventListener("mouseenter", function(){
-        chatFileListActiveIndex = i;
+        chatFileListActiveIndex = idx;
         highlightChatFileListItem();
       });
       item.addEventListener("contextmenu", function(e){
         e.preventDefault();
-        chatFileListActiveIndex = i;
+        chatFileListActiveIndex = idx;
         highlightChatFileListItem();
         openChatFileRowMenuForActiveIndex();
       });
@@ -4122,6 +4886,31 @@
         var wasHidden = dropdown.hidden;
         closeAllRowMenus();
         dropdown.hidden = !wasHidden;
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="folder-menu-toggle"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        var dropdown = btn.nextElementSibling;
+        var wasHidden = dropdown.hidden;
+        closeAllRowMenus();
+        dropdown.hidden = !wasHidden;
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="new-file-in-folder"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        closeAllRowMenus();
+        var folderPath = btn.closest(".tree-folder-group").getAttribute("data-tree-path");
+        startInlineTreeCreate(folderPath, "file");
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="new-folder-in-folder"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        closeAllRowMenus();
+        var folderPath = btn.closest(".tree-folder-group").getAttribute("data-tree-path");
+        startInlineTreeCreate(folderPath, "folder");
       });
     });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="open-file"]'), function(btn){
@@ -4155,6 +4944,17 @@
         var absPath = btn.closest("[data-abs]").getAttribute("data-abs");
         navigator.clipboard.writeText(absPath).then(function(){
           showToast("Full path copied to clipboard");
+        }).catch(function(err){
+          alert("Failed to copy path: " + (err && err.message ? err.message : "unknown error"));
+        });
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="copy-relpath-file"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        var relPath = btn.closest("[data-rel]").getAttribute("data-rel");
+        navigator.clipboard.writeText(relPath).then(function(){
+          showToast("Path copied to clipboard");
         }).catch(function(err){
           alert("Failed to copy path: " + (err && err.message ? err.message : "unknown error"));
         });
@@ -4299,6 +5099,79 @@
     });
   }
 
+  // Inline "New file" / "New folder" row, created directly under a folder's
+  // ⋮ menu (or its right-click equivalent). Uses lightweight DOM surgery
+  // (insert/remove one temp row) rather than a full renderFileList() pass,
+  // since the temp row has no backing state in chatProjectFiles/Folders --
+  // threading a "pending create" placeholder through buildFileTree would be
+  // more complex than just inserting/removing a node directly, matching how
+  // startInlineFileRename above already treats this as DOM-local, not
+  // state-driven.
+  function startInlineTreeCreate(folderPath, kind){
+    var group = document.querySelector('.tree-folder-group[data-tree-path="' + CSS.escape(folderPath) + '"]');
+    if (!group) return;
+    if (isFileTreeFolderCollapsed(folderPath)){
+      chatFileTreeCollapsed[folderPath] = false;
+      saveChatFileTreeCollapsed();
+      renderFileList();
+      group = document.querySelector('.tree-folder-group[data-tree-path="' + CSS.escape(folderPath) + '"]');
+      if (!group) return;
+    }
+    var existing = document.querySelector(".tree-inline-create-row");
+    if (existing) existing.remove();
+
+    var itemsWrap = group.querySelector(":scope > .chat-folder-items");
+    if (!itemsWrap) return;
+    var depth = parseInt(group.getAttribute("data-depth"), 10) || 0;
+
+    var row = document.createElement("div");
+    row.className = "chat-file-item tree-inline-create-row";
+    row.style.paddingLeft = (8 + (depth + 1) * 14) + "px";
+    var icon = kind === "file" ? _fileTypeIcon("") : '<span class="chat-file-type-icon tree-inline-create-icon">' + ICON_FOLDER + '</span>';
+    row.innerHTML = icon +
+      '<input type="text" class="chat-file-rename-input tree-inline-create-input" placeholder="' +
+      (kind === "file" ? "filename.md" : "New folder name") + '" autocomplete="off" spellcheck="false" />';
+    itemsWrap.insertBefore(row, itemsWrap.firstChild);
+    var input = row.querySelector("input");
+    input.focus();
+
+    function cancel(){ row.remove(); }
+    function commit(){
+      var name = input.value.trim();
+      if (!name){ cancel(); return; }
+      input.disabled = true;
+      var relPath = folderPath + "/" + name;
+      var endpoint = kind === "file" ? "/chat/project-files/create" : "/chat/project-files/create-folder";
+      var payload = kind === "file"
+        ? { path: filesCurrentProjectPath, file: relPath, content: "" }
+        : { path: filesCurrentProjectPath, file: relPath };
+      apiRaw(endpoint, {
+        method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload)
+      }).then(function(result){
+        chatFileTreeCollapsed[folderPath] = false;
+        saveChatFileTreeCollapsed();
+        return refreshProjectFiles(filesCurrentProjectPath).then(function(){ return result; });
+      }).then(function(result){
+        if (kind === "file"){
+          previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path);
+        }
+      }).catch(function(err){
+        input.disabled = false;
+        input.classList.add("error");
+        input.title = err && err.message ? err.message : "Failed to create";
+        input.focus();
+        input.select();
+      });
+    }
+    input.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
+      else if (e.key === "Enter"){ e.preventDefault(); commit(); }
+    });
+    input.addEventListener("blur", function(){
+      if (!input.disabled) cancel();
+    });
+  }
+
   // ---- multi-select + "copy selected as Markdown" (bulk-pick from the
   // current search results, independent of the attach/context flow) ----
 
@@ -4327,6 +5200,7 @@
     document.getElementById("chatCopySelectedBtn").disabled = totalSelected === 0;
     document.getElementById("chatCopySelectedFilesBtn").disabled = totalSelected === 0;
     document.getElementById("chatCopyFullpathsBtn").disabled = totalSelected === 0;
+    document.getElementById("chatCopyPathsBtn").disabled = totalSelected === 0;
     document.getElementById("chatExtractPdfBtn").disabled = !hasPdf;
     var summarizeBtn = document.getElementById("chatSummarizePdfBtn");
     if (summarizeBtn) summarizeBtn.disabled = !hasSummarizable;
@@ -4425,6 +5299,18 @@
     var text = entries.map(function(e){ return e.absPath; }).join("\n");
     navigator.clipboard.writeText(text).then(function(){
       showToast(entries.length === 1 ? "Full path copied to clipboard" : "Copied " + entries.length + " full paths");
+    }).catch(function(err){
+      alert("Failed to copy paths: " + (err && err.message ? err.message : "unknown error"));
+    });
+  });
+
+  document.getElementById("chatCopyPathsBtn").addEventListener("click", function(){
+    closeAllRowMenus();
+    var entries = selectedFileEntries();
+    if (!entries.length) return;
+    var text = entries.map(function(e){ return e.relPath; }).join("\n");
+    navigator.clipboard.writeText(text).then(function(){
+      showToast(entries.length === 1 ? "Path copied to clipboard" : "Copied " + entries.length + " paths");
     }).catch(function(err){
       alert("Failed to copy paths: " + (err && err.message ? err.message : "unknown error"));
     });
@@ -5008,6 +5894,38 @@
     });
   }
 
+  function addCodeCopyButtons(body){
+    Array.prototype.forEach.call(body.querySelectorAll("pre"), function(pre){
+      var codeEl = pre.querySelector("code") || pre;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "code-copy-btn";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", function(){
+        var text = codeEl.textContent || "";
+        var done = function(){
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(function(){ btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(done).catch(done);
+        } else {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); } catch (e){}
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+      pre.appendChild(btn);
+    });
+  }
+
   // Links inside rendered markdown (file preview and chat messages) must
   // never navigate this window -- there's no address bar or back button in
   // this shell, so an in-app navigation strands the user on a dead page.
@@ -5067,12 +5985,55 @@
     ':root { --font-sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; } ' +
     'pre.plain-text-export { white-space: pre-wrap; word-break: break-word; font-family: "SFMono-Regular", Consolas, monospace; font-size: 10pt; line-height: 1.4; }';
 
+  // The exported PDF is printed by a *separate* headless browser process (see
+  // buildPreviewExportHtml's comment) that has to re-resolve katex.min.css's
+  // @font-face url()s over the network via <base href> before it can paint --
+  // and unlike an interactive tab, a one-shot --print-to-pdf pass does not
+  // wait for a late-arriving webfont and repaint; it prints with whatever
+  // fallback glyph was available at that instant. For the KaTeX_Size1-4 fonts
+  // that assemble a stretchy delimiter (e.g. the brace on a `cases` block)
+  // out of stacked glyph pieces, a fallback glyph on even one piece leaves a
+  // visibly broken/notched bracket. Inlining those fonts as data: URIs here
+  // removes the network round-trip (and the race) entirely.
+  function _inlineFontUrls(cssText, baseUrl){
+    var re = /url\((fonts\/[^)]+?)\)/g;
+    var paths = [];
+    var seen = {};
+    var m;
+    while ((m = re.exec(cssText))){
+      if (!seen[m[1]]){ seen[m[1]] = true; paths.push(m[1]); }
+    }
+    return Promise.all(paths.map(function(p){
+      return fetch(baseUrl + p).then(function(r){
+        if (!r.ok) return null;
+        return r.blob();
+      }).then(function(blob){
+        if (!blob) return null;
+        return new Promise(function(resolve){
+          var reader = new FileReader();
+          reader.onload = function(){ resolve(reader.result); };
+          reader.onerror = function(){ resolve(null); };
+          reader.readAsDataURL(blob);
+        });
+      }).catch(function(){ return null; });
+    })).then(function(dataUris){
+      paths.forEach(function(p, i){
+        if (!dataUris[i]) return;
+        cssText = cssText.split("url(" + p + ")").join("url(" + dataUris[i] + ")");
+      });
+      return cssText;
+    });
+  }
+
   var _exportCssCache = null;
   function _fetchExportCss(){
     if (_exportCssCache) return _exportCssCache;
+    var libBase = location.origin + "/lib/";
     _exportCssCache = Promise.all([
-      fetch(location.origin + "/lib/github-markdown.min.css").then(function(r){ return r.text(); }),
-      fetch(location.origin + "/lib/katex.min.css").then(function(r){ return r.text(); })
+      fetch(libBase + "github-markdown.min.css").then(function(r){ return r.text(); }),
+      fetch(libBase + "katex.min.css").then(function(r){ return r.text(); }).then(function(css){
+        return _inlineFontUrls(css, libBase);
+      })
     ]).then(function(parts){ return parts.join("\n"); }).catch(function(){ return ""; });
     return _exportCssCache;
   }
@@ -5114,7 +6075,7 @@
     // "content" alongside "markdown-body" so a source file's own embedded
     // <style> block (see EXPORT_PAGE_STYLE's comment) has something to match.
     body.className = "markdown-body content";
-    body.innerHTML = marked.parse(rawText || "", { gfm: true });
+    body.innerHTML = parseMarkdownWithMath(rawText);
     var prevProjectPath = chatPreviewProjectPath, prevAbsPath = chatPreviewAbsPath;
     chatPreviewProjectPath = projectPath;
     chatPreviewAbsPath = absPath;
@@ -5210,9 +6171,10 @@
       // and apply normally, same as the PDF export now does.
       wrap.innerHTML = '<div class="markdown-body content" id="chatPreviewBody"></div>';
       var body = document.getElementById("chatPreviewBody");
-      body.innerHTML = marked.parse(chatPreviewRawText, { gfm: true });
+      body.innerHTML = parseMarkdownWithMath(chatPreviewRawText);
       resolveMarkdownPreviewImages(body);
       renderMathIn(body);
+      addCodeCopyButtons(body);
     } else {
       wrap.innerHTML = '<pre class="plain-text-body" id="chatPreviewBody"></pre>';
       document.getElementById("chatPreviewBody").textContent = chatPreviewRawText;
@@ -5632,7 +6594,20 @@
     chatPreviewMatchIndex = ((index % chatPreviewMatches.length) + chatPreviewMatches.length) % chatPreviewMatches.length;
     var mark = chatPreviewMatches[chatPreviewMatchIndex];
     mark.classList.add("active");
-    mark.scrollIntoView({ block: "center", behavior: "smooth" });
+    // A plain mark.scrollIntoView() walks every scrollable ancestor, not just
+    // #chatPreviewBodyWrap -- on a long file this also nudges #filesPanel
+    // (overflow:hidden, but still a valid scrollIntoView target), which has no
+    // visible scrollbar, so the whole Workspace topbar silently scrolls out of
+    // view above the clipped viewport. Scroll only the intended container.
+    var wrap = document.getElementById("chatPreviewBodyWrap");
+    if (wrap){
+      var wrapRect = wrap.getBoundingClientRect();
+      var markRect = mark.getBoundingClientRect();
+      var delta = (markRect.top - wrapRect.top) - (wrap.clientHeight / 2 - markRect.height / 2);
+      wrap.scrollTo({ top: wrap.scrollTop + delta, behavior: "smooth" });
+    } else {
+      mark.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
     updatePreviewSearchCount();
   }
 
@@ -5714,15 +6689,17 @@
       exportProjectFileToPdf(projectPath, absPath, chatPreviewRelPath, chatPreviewRawText, e.currentTarget);
     };
     document.getElementById("chatPreviewEditBtn").onclick = function(){ enterPreviewEditMode(projectPath, absPath); };
-    var body = document.getElementById("chatPreviewBody");
-    if (body) body.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath); };
+    var wrap = document.getElementById("chatPreviewBodyWrap");
+    if (wrap) wrap.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath); };
   }
 
   function enterPreviewEditMode(projectPath, absPath){
     if (_isImagePreviewableFile(chatPreviewRelPath) || _isPdfPreviewableFile(chatPreviewRelPath)) return;
     var panel = document.getElementById("filesPreviewPanel");
     panel.classList.add("editing");
-    document.getElementById("chatPreviewBodyWrap").innerHTML =
+    var wrapEl = document.getElementById("chatPreviewBodyWrap");
+    wrapEl.classList.add("flush");
+    wrapEl.innerHTML =
       '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
     var actions = document.getElementById("chatPreviewActions");
     actions.innerHTML =
@@ -5802,7 +6779,7 @@
     panel.classList.add("editing");
     document.getElementById("chatPreviewFileName").innerHTML =
       '<input type="text" id="chatPreviewNewFileName" class="preview-filename-input" placeholder="filename.md" />';
-    document.getElementById("chatPreviewBodyWrap").classList.remove("flush");
+    document.getElementById("chatPreviewBodyWrap").classList.add("flush");
     document.getElementById("chatPreviewBodyWrap").innerHTML =
       '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
     var actions = document.getElementById("chatPreviewActions");
@@ -6734,6 +7711,9 @@
   }
   function projectFolderOptions(){
     var dirs = {};
+    chatProjectFolders.forEach(function(fo){
+      dirs[fo.rel_path] = true;
+    });
     chatProjectFiles.forEach(function(f){
       var parts = f.rel_path.split("/");
       parts.pop();

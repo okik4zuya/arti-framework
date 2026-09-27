@@ -45,6 +45,9 @@ def build_parser():
     la.add_argument("--used-in")
     la.add_argument("--summary")
     la.add_argument("--abstract")
+    la.add_argument("--search-source", help="which database/search string surfaced this record (ARTi-SLR)")
+    la.add_argument("--screening-stage", choices=db.SCREENING_STAGES, help="PRISMA screening stage (ARTi-SLR)")
+    la.add_argument("--exclusion-reason", help="why a screening stage rejected this record (ARTi-SLR)")
     la.add_argument("--project")
 
     lu = libsub.add_parser("update")
@@ -56,6 +59,9 @@ def build_parser():
     lu.add_argument("--used-in")
     lu.add_argument("--summary")
     lu.add_argument("--abstract")
+    lu.add_argument("--search-source", help="which database/search string surfaced this record (ARTi-SLR)")
+    lu.add_argument("--screening-stage", choices=db.SCREENING_STAGES, help="PRISMA screening stage (ARTi-SLR)")
+    lu.add_argument("--exclusion-reason", help="why a screening stage rejected this record (ARTi-SLR)")
     lu.add_argument("--project")
 
     lg = libsub.add_parser("get")
@@ -66,6 +72,7 @@ def build_parser():
     ll.add_argument("--status", choices=db.READ_STATUSES)
     ll.add_argument("--journal", help="substring match on journal_name")
     ll.add_argument("--article-type", help="substring match on article_type")
+    ll.add_argument("--screening-stage", choices=db.SCREENING_STAGES, help="exact match, for PRISMA counts (ARTi-SLR)")
     ll.add_argument("--project")
 
     ls = libsub.add_parser("search")
@@ -110,6 +117,8 @@ def main():
                     args.project, key=args.key, citation=args.citation, doi=args.doi,
                     local_file=args.local_file, read_status=args.status, used_in=args.used_in,
                     summary=args.summary, abstract=args.abstract,
+                    search_source=args.search_source, screening_stage=args.screening_stage,
+                    exclusion_reason=args.exclusion_reason,
                 )
                 _ok(row=row)
             elif args.library_cmd == "update":
@@ -117,6 +126,8 @@ def main():
                     args.project, key=args.key, citation=args.citation, doi=args.doi,
                     local_file=args.local_file, read_status=args.status, used_in=args.used_in,
                     summary=args.summary, abstract=args.abstract,
+                    search_source=args.search_source, screening_stage=args.screening_stage,
+                    exclusion_reason=args.exclusion_reason,
                 )
                 _ok(row=row)
             elif args.library_cmd == "get":
@@ -127,7 +138,7 @@ def main():
             elif args.library_cmd == "list":
                 _ok(rows=db.library_list(
                     args.project, status=args.status, journal=args.journal,
-                    article_type=args.article_type,
+                    article_type=args.article_type, screening_stage=args.screening_stage,
                 ))
             elif args.library_cmd == "search":
                 _ok(rows=db.library_search(args.project, args.keywords))

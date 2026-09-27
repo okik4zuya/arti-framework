@@ -315,10 +315,17 @@ def list_project_files(project_path):
 
     root = Path(project_path)
     files = []
+    folders = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
             d for d in dirnames if d not in PROJECT_FILE_SKIP_DIRS and not d.startswith(".")
         ]
+        for d in dirnames:
+            dpath = Path(dirpath) / d
+            folders.append({
+                "rel_path": str(dpath.relative_to(root)).replace("\\", "/"),
+                "abs_path": str(dpath),
+            })
         for fn in filenames:
             if fn.startswith("."):
                 continue
@@ -328,7 +335,8 @@ def list_project_files(project_path):
                 "abs_path": str(abs_path),
             })
     files.sort(key=lambda f: f["rel_path"])
-    return files
+    folders.sort(key=lambda f: f["rel_path"])
+    return {"files": files, "folders": folders}
 
 
 def _resolve_under_project(project_path, abs_path):
@@ -544,6 +552,27 @@ def create_project_file(project_path, rel_path, content, encoding=None):
     return {"rel_path": rel_path, "abs_path": str(target)}
 
 
+def create_project_folder(project_path, rel_path):
+    """Creates a new empty folder under project_path (Project Files panel's
+    folder-row "New folder" action). Mirrors create_project_file's guard
+    chain but has no extension allowlist and creates a directory instead of
+    writing content."""
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    rel_path = (rel_path or "").strip().lstrip("/\\")
+    if not rel_path:
+        raise ValueError("Folder name is required")
+    target = _resolve_under_project(project_path, str(Path(project_path) / rel_path))
+    if target.exists():
+        raise ValueError("A folder with this name already exists")
+    target.mkdir(parents=True, exist_ok=False)
+    return {"rel_path": rel_path, "abs_path": str(target)}
+
+
 def rename_project_file(project_path, abs_path, new_rel_path):
     """Renames/moves an existing project file to new_rel_path (relative to
     project_path). No extension allowlist here -- unlike create_project_file,
@@ -750,7 +779,7 @@ def _search_filenames(project_path, terms_lower, combine, max_file_results, incl
     files_out = []
     files_truncated = False
     needs_content = bool(include_lower) or bool(exclude_lower)
-    for f in list_project_files(project_path):
+    for f in list_project_files(project_path)["files"]:
         rel_path_lower = f["rel_path"].lower()
         name_lower = Path(f["rel_path"]).name.lower()
         if not combine(term in name_lower for term in terms_lower):
