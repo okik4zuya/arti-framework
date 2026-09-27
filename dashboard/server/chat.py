@@ -1635,8 +1635,23 @@ def _get_session_model_row(conn, session_model_id):
 
 
 def _make_client(model_row):
+    # Explicit timeout: the SDK default is 10 minutes with 2 retries (up to ~30
+    # min of silent blocking on a stalled connection, with zero feedback), which
+    # is what produced the bulk-summarize hangs -- a stale/half-dead keep-alive
+    # connection blocks the read with no way to fail fast. This is deliberately
+    # still generous (5 min per attempt, 1 retry -> ~10 min worst case) because
+    # a genuinely slow-but-alive response must still be allowed to come back and
+    # get written (see bulk_summarize_files's heartbeat loop, which does NOT
+    # abandon a call early) -- only a truly dead connection should ever hit this
+    # bound. A short connect timeout still fails fast on a refused/unreachable
+    # connection.
+    import httpx
     from openai import OpenAI
-    kwargs = {"api_key": model_row["api_key"]}
+    kwargs = {
+        "api_key": model_row["api_key"],
+        "timeout": httpx.Timeout(300.0, connect=10.0),
+        "max_retries": 1,
+    }
     if model_row["base_url"]:
         kwargs["base_url"] = model_row["base_url"]
     return OpenAI(**kwargs)
@@ -1929,10 +1944,22 @@ def bulk_extract_pdfs(project_path, rel_paths):
     yield {"type": "done"}
 
 
+# Heartbeat interval only -- NOT a give-up deadline. A file's model call is
+# never abandoned while it could still legitimately succeed; the only thing
+# allowed to end it early is the OpenAI client's own configured timeout
+# (_make_client), which exists specifically to detect a truly dead connection.
+# A late-but-real response must still get written, so this loop just polls for
+# visibility and keeps waiting until the call actually resolves one way or the
+# other.
+SUMMARY_HEARTBEAT_INTERVAL = 30
+
+
 def bulk_summarize_files(project_path, rel_paths):
     """Generator yielding ready-made SSE event dicts, same shape convention as
     bulk_extract_pdfs. Summarizes each selected .pdf/.md file, extracting the
     PDF to markdown first (reusing a cached extraction) when needed."""
+    import concurrent.futures
+
     with arti_db._lock:
         conn = arti_db._connect()
         try:
@@ -1950,7 +1977,6 @@ def bulk_summarize_files(project_path, rel_paths):
 
     prompt = prompt_setting["value"] if prompt_setting and prompt_setting["value"] else DEFAULT_PDF_SUMMARY_PROMPT
     model_name = model_row["name"]
-    client = _make_client(model_row)
 
     root = Path(project_path)
     for rel_path in rel_paths:
@@ -1972,7 +1998,32 @@ def bulk_summarize_files(project_path, rel_paths):
                 text = abs_path.read_text(encoding="utf-8", errors="replace")
 
             yield {"type": "log", "message": f"Summarizing {rel_path} with {model_name}..."}
-            summary, tokens_used = _run_summary_completion(client, model_name, prompt, text)
+            # A fresh client per file, not one shared across the whole batch --
+            # reusing one client's pooled keep-alive connection across many
+            # sequential slow requests is what let a stale/dead connection get
+            # reused and block a read indefinitely (see _make_client).
+            client = _make_client(model_row)
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            try:
+                future = executor.submit(_run_summary_completion, client, model_name, prompt, text)
+                elapsed = 0
+                while True:
+                    try:
+                        summary, tokens_used = future.result(timeout=SUMMARY_HEARTBEAT_INTERVAL)
+                        break
+                    except concurrent.futures.TimeoutError:
+                        elapsed += SUMMARY_HEARTBEAT_INTERVAL
+                        yield {
+                            "type": "log",
+                            "message": f"Still waiting on {model_name} for {rel_path} ({elapsed}s)...",
+                        }
+                        # No give-up branch here: we keep waiting past this
+                        # point too. The call only ends when it actually
+                        # resolves, or when the client's own configured
+                        # timeout (_make_client) decides the connection is
+                        # dead and raises -- caught below like any other error.
+            finally:
+                executor.shutdown(wait=False)
             summary_path = abs_path.with_name(
                 abs_path.stem + "_summary_" + _safe_model_slug(model_name) + ".md"
             )

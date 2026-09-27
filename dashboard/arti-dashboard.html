@@ -54,6 +54,12 @@
     width:26px; height:26px; border-radius:0;
   }
   body.sidebar-collapsed #mainSidebarExpandBtn{ display:flex; }
+  /* Files view has its own sidebar toggle in the topbar strip
+     (#filesSidebarToggleBtn) -- hide the sidebar's own header button and
+     the floating collapsed-state button while that view is active, so
+     there is only ever one sidebar control on screen. */
+  body.files-view-active #mainSidebarCollapseBtn,
+  body.files-view-active #mainSidebarExpandBtn{ display:none !important; }
   .brand{ display:flex; flex-direction:row; align-items:center; gap:10px; margin-bottom:26px; }
   .brand h1{ flex:1; min-width:0; }
   .brand .mark{
@@ -239,10 +245,11 @@
   .doi-row a{ color:var(--accent); text-decoration:none; }
   .doi-row a:hover{ text-decoration:underline; }
   .copy-doi-btn{
-    font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600; padding:2px 8px;
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; padding:0;
     border-radius:6px; border:1px solid var(--border); background:var(--surface);
-    color:var(--text-muted); cursor:pointer; line-height:1.6;
+    color:var(--text-muted); cursor:pointer; flex:none;
   }
+  .copy-doi-btn svg{ width:13px; height:13px; }
   .copy-doi-btn:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
   .copy-doi-btn.copied{ border-color:var(--green); color:var(--green); background:var(--green-soft); }
 
@@ -391,44 +398,49 @@
      Fine AI column: a topbar (Workspace toggle [narrow-only] + project
      picker) stacked above the project-files / preview content row. */
   .files-main{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; background:var(--surface); }
+  /* Flush, square-cornered segmented strip -- sidebar toggle, project
+     picker, file-list toggle, Fine AI toggle, Note toggle all sit in one
+     continuous row with shared borders and no rounding, in every layout
+     state (full width, collapsed sidebar, narrow). The old floating
+     #mainSidebarExpandBtn / sidebar-header #mainSidebarCollapseBtn are
+     hidden while Files view is active -- see body.files-view-active below
+     -- so filesSidebarToggleBtn is the sole sidebar control here. */
   .files-topbar{
-    flex:none; display:flex; align-items:center; gap:12px;
-    padding:10px 14px; border-bottom:1px solid var(--border); background:var(--surface);
+    flex:none; display:flex; align-items:stretch; gap:0;
+    border-bottom:1px solid var(--border); background:var(--surface);
   }
-  /* Files view is full-bleed (main.files-full has no padding), so when the
-     main app sidebar is collapsed its fixed-position expand button (top:0
-     left:0, 26px square) sits directly over the project picker -- reserve
-     room for it. */
-  body.sidebar-collapsed .files-topbar{ padding-left:30px; }
-  .files-content-row{ flex:1; display:flex; min-height:0; }
+  .files-topbar .files-picker-btn{ border-radius:0; height:38px; }
+  .files-topbar .icon-btn.icon-only{
+    width:38px; height:38px; border-radius:0; flex:none;
+  }
+  .files-topbar .icon-btn.icon-only svg{ width:16px; height:16px; }
+  .files-topbar .fine-ai-icon-accent{ color:var(--accent); }
+  #filesMenuToggleBtn.menu-open-icon{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .files-content-row{ flex:1; display:flex; min-height:0; position:relative; }
   .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles{ display:none; }
   .files-narrow.menu-open #chatProjectFiles, .files-narrow.menu-open #chatResizerFiles{ display:flex; }
-  #filesMenuToggleBtn{
-    display:none; align-items:center; gap:4px; height:26px; padding:0 8px;
-    border-radius:0; font-size:11.5px; flex:none;
+  /* At full width the file list is visible by default; the same toggle
+     button hides it instead -- inverse of the narrow-mode default. */
+  #filesPanel.menu-open:not(.files-narrow) #chatProjectFiles,
+  #filesPanel.menu-open:not(.files-narrow) #chatResizerFiles{ display:none; }
+  .files-narrow .references-drawer{
+    position:absolute; top:34px; left:0; right:0; bottom:0; z-index:5; width:100% !important; border-right:none;
   }
-  #filesMenuToggleBtn svg{ width:12px; height:12px; transition:transform .12s ease; }
-  #filesMenuToggleBtn.menu-open-icon svg{ transform:rotate(180deg); }
-  .files-narrow #filesMenuToggleBtn{ display:inline-flex; }
-  /* Narrow Files view: the topbar shrinks into a small flush corner strip
-     (Workspace toggle + project picker, both borderless-radius rectangles
-     stuck together, no padding) pinned over the top-left of the now
-     full-bleed content, instead of the normal full-width padded bar. */
+  .files-narrow #chatResizerReferences{ display:none; }
+  /* Narrow Files view: the topbar becomes a small flush corner strip
+     pinned over the top-left of the now full-bleed content, instead of
+     the normal full-width in-flow bar. */
   .files-narrow .files-topbar{
     position:absolute; top:0; left:0; z-index:6; width:auto;
-    padding:0; border-bottom:none; background:var(--surface); gap:0; align-items:stretch;
+    border-bottom:none;
   }
-  /* Flush against #mainSidebarExpandBtn's 26px-square corner button (no gap,
-     no overlap) when narrow Files view + collapsed main sidebar coincide --
-     together they read as small rectangles stuck to the top-left corner
-     instead of floating rounded pills. */
-  body.sidebar-collapsed .files-narrow .files-topbar{ left:26px; padding-left:0; }
   .files-narrow .files-project-picker-wrap{ flex:0 0 150px; max-width:150px; }
   .files-narrow .files-picker-btn{
-    height:26px; padding:0 8px; border-radius:0; font-size:11.5px; gap:5px;
+    height:26px; padding:0 8px; font-size:11.5px; gap:5px;
   }
   .files-narrow .files-picker-chevron{ width:11px; height:11px; }
-  .files-narrow #fineAiToggleBtn{ height:26px; padding:0 8px; border-radius:0; font-size:11.5px; flex:none; }
+  .files-narrow .files-topbar .icon-btn.icon-only{ width:26px; height:26px; }
+  .files-narrow .files-topbar .icon-btn.icon-only svg{ width:14px; height:14px; }
   /* The corner strip is position:absolute, so it no longer occupies flow
      height above .files-content-row (unlike the normal in-flow topbar) --
      without this, its content starts right under the strip and gets covered
@@ -591,6 +603,65 @@
     flex:none; display:flex; flex-direction:column; min-height:0; background:var(--surface);
     width:640px; min-width:380px; max-width:960px;
   }
+  .references-drawer{
+    flex:none; width:420px; min-width:320px; max-width:720px; display:flex;
+    flex-direction:column; min-height:0; border-right:1px solid var(--border); background:var(--surface);
+    transition:width .15s ease, opacity .15s ease;
+  }
+  .references-drawer[hidden]{ display:none; }
+  .references-drawer-head{
+    flex:none; padding:12px 14px; border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .references-drawer-title-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .references-drawer-title-row h2{ font-size:15px; margin:0; display:flex; align-items:center; gap:6px; }
+  .references-drawer-body{
+    flex:1; min-height:0; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:10px;
+  }
+  .references-drawer-actions{ flex:none; padding:10px 14px; border-top:1px solid var(--border); }
+  .references-filter-bar{ display:flex; flex-wrap:wrap; gap:6px; position:relative; }
+  .ref-filter-chip{
+    position:relative; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600; padding:4px 10px;
+    border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    cursor:pointer; display:inline-flex; align-items:center; gap:4px;
+  }
+  .ref-filter-chip:hover{ border-color:var(--accent); color:var(--accent); }
+  .ref-filter-chip.active{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  .ref-filter-popover{
+    position:absolute; top:100%; margin-top:4px; z-index:10; min-width:180px;
+    border:1px solid var(--border); border-radius:8px; background:var(--surface);
+    box-shadow:0 4px 16px rgba(0,0,0,.16); padding:6px; display:flex; flex-direction:column; gap:2px;
+    max-height:260px; overflow-y:auto;
+  }
+  .ref-filter-popover button{
+    text-align:left; padding:6px 8px; border-radius:6px; border:none; background:transparent;
+    font-size:12.5px; color:var(--text); cursor:pointer; font-family:inherit;
+  }
+  .ref-filter-popover button:hover{ background:var(--surface-2); }
+  .ref-filter-popover button.selected{ color:var(--accent); font-weight:600; }
+  .ref-filter-popover .ref-filter-popover-divider{ height:1px; background:var(--border); margin:4px 2px; cursor:default; padding:0; }
+  .ref-filter-popover-refine{ width:100%; min-width:0; font-size:12.5px; padding:6px 8px; margin-bottom:4px; }
+  .ref-filter-popover-list{ display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; }
+  .references-active-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .references-active-pills:empty{ display:none; }
+  .ref-active-pill{
+    display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+    padding:2px 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent);
+  }
+  .ref-active-pill button{
+    border:none; background:transparent; color:inherit; cursor:pointer; padding:0; line-height:1; font-size:13px;
+  }
+  .references-sort-select{
+    padding:6px 8px; font-size:12.5px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text);
+  }
+  .avail-badge.avail-stage-included{ color:var(--green); background:var(--green-soft); cursor:default; }
+  .avail-badge.avail-stage-progress{ color:var(--amber); background:var(--amber-soft); cursor:default; }
+  .avail-badge.avail-stage-excluded{
+    color:var(--red); background:var(--red-soft); cursor:pointer; font-family:inherit; border:none;
+  }
+  .avail-badge.avail-stage-excluded.expanded{ box-shadow:0 0 0 1px currentColor; }
+  .ref-expand-exclusion{ background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:12.5px; }
   .fine-ai-section.fine-ai-collapsed{ display:none; }
   #filesPanel.fine-ai-collapsed #chatResizerFineAi{ display:none; }
   /* "Enable Fine AI" Settings toggle -- fully hides the Fine AI column (and
@@ -1284,6 +1355,11 @@
   <div class="panel fine-ai-collapsed" id="filesPanel" hidden>
     <div class="files-main" id="filesMain">
       <div class="files-topbar">
+        <button type="button" id="filesSidebarToggleBtn" class="icon-btn icon-only" title="Hide sidebar (Ctrl+B)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+          </svg>
+        </button>
         <div class="files-project-picker-wrap" id="filesProjectPickerWrap">
           <button type="button" class="files-picker-btn" id="filesProjectPickerBtn" title="Switch project (Ctrl+Shift+P)">
             <span id="filesProjectPickerLabel" class="placeholder">Select a project…</span>
@@ -1294,17 +1370,27 @@
             <div class="files-picker-options" id="filesProjectPickerOptions"></div>
           </div>
         </div>
-        <button type="button" id="filesMenuToggleBtn" class="icon-btn" title="Show project / file list (Ctrl+P)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        <button type="button" id="filesMenuToggleBtn" class="icon-btn icon-only" title="Show/hide project file list (Ctrl+P)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 7a2 2 0 0 1 2-2h4.2l1.8 2H18a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" stroke-linejoin="round"/>
           </svg>
-          <span>Workspace</span>
         </button>
-        <button type="button" id="fineAiToggleBtn" class="icon-btn" title="Toggle Fine AI (Ctrl+Alt+I)">
-          <span>Fine AI</span>
+        <button type="button" id="fineAiToggleBtn" class="icon-btn icon-only" title="Toggle Fine AI (Ctrl+Alt+I)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <circle cx="10" cy="14" r="7"/>
+            <circle cx="10" cy="14" r="4"/>
+            <circle cx="10" cy="14" r="1.8" class="fine-ai-icon-accent" fill="currentColor" stroke="none"/>
+            <path class="fine-ai-icon-accent" fill="currentColor" stroke="none"
+                  d="M 18,2.5 Q 18.5,5.3 20.8,5.8 Q 18.5,6.3 18,9.1 Q 17.5,6.3 15.2,5.8 Q 17.5,5.3 18,2.5 Z"/>
+          </svg>
         </button>
-        <button type="button" id="sideNoteToggleBtn" class="icon-btn" title="Toggle side note (Ctrl+Alt+N)">
-          <span>Note</span>
+        <button type="button" id="sideNoteToggleBtn" class="icon-btn icon-only" title="Toggle side note (Ctrl+Alt+N)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="18" rx="1.5"/>
+            <path d="M8 8h8" stroke-linecap="round"/>
+            <path d="M8 12h8" stroke-linecap="round"/>
+            <path d="M8 16h5" stroke-linecap="round"/>
+          </svg>
         </button>
       </div>
       <div class="files-content-row">
@@ -1334,7 +1420,7 @@
               </button>
             </span>
             <span class="files-action-divider"></span>
-            <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="References (Ctrl+Shift+F)">
+            <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="Toggle references (Ctrl+Shift+F)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                 <path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/>
               </svg>
@@ -1398,6 +1484,29 @@
       <div class="chat-file-list" id="chatFileList"></div>
     </div>
     <div class="chat-resizer" id="chatResizerFiles" data-target="chatProjectFiles" title="Drag to resize"></div>
+
+    <div class="references-drawer" id="referencesDrawer" hidden>
+      <div class="references-drawer-head">
+        <div class="references-drawer-title-row">
+          <h2>References <span class="count-badge" id="referencesCount">0</span></h2>
+          <button class="icon-btn icon-only" id="closeReferencesDrawerBtn" type="button" title="Close references">&times;</button>
+        </div>
+        <div class="ref-project-name" id="referencesProjectName"></div>
+      </div>
+      <div class="references-drawer-body">
+        <input class="search-input" id="referencesSearch" placeholder="Search references…" />
+        <div class="references-filter-bar" id="referencesFilterBar"></div>
+        <div class="references-active-pills" id="referencesActivePills"></div>
+        <select class="references-sort-select" id="referencesSort"></select>
+        <div class="hint" id="referencesSummary"></div>
+        <div class="err" id="referencesErr" hidden></div>
+        <div class="ref-list" id="referencesBody"></div>
+      </div>
+      <div class="references-drawer-actions">
+        <button class="btn primary" id="addReferencesBtn">Add references…</button>
+      </div>
+    </div>
+    <div class="chat-resizer" id="chatResizerReferences" data-target="referencesDrawer" title="Drag to resize" hidden></div>
 
     <div class="files-preview-panel" id="filesPreviewPanel">
       <div class="files-preview-empty" id="filesPreviewEmpty">No file selected.</div>
@@ -1668,24 +1777,6 @@
     </div>
     <div class="modal-actions">
       <button class="btn primary" id="editProjectConfirmBtn">Save</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="referencesOverlay" hidden>
-  <div class="modal fullsize">
-    <div class="modal-head">
-      <h2>References <span class="count-badge" id="referencesCount">0</span><span class="ref-project-name" id="referencesProjectName"></span></h2>
-      <button class="modal-close" id="closeReferencesModal">&times;</button>
-    </div>
-    <div class="modal-body">
-      <input class="search-input" id="referencesSearch" placeholder="Search references…" style="width:100%;" />
-      <div class="hint" id="referencesSummary"></div>
-      <div class="err" id="referencesErr" hidden></div>
-      <div class="ref-list" id="referencesBody"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn primary" id="addReferencesBtn">Add references…</button>
     </div>
   </div>
 </div>
@@ -1995,6 +2086,8 @@
     '<path d="M9 12h6M9 16h6" stroke-linecap="round"/></svg>';
   var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' +
     '<rect x="9" y="9" width="12" height="12" rx="1.5"/><path d="M6 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V6"/></svg>';
+  var ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+    '<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">' +
     '<path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_PLUS_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">' +
@@ -2182,7 +2275,7 @@
         '<td><div class="row-actions">' +
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">' + ICON_FOLDER + '<span>Open folder</span></button>' +
           '<button class="icon-btn icon-only" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '" title="Open VS Code">' + ICON_VSCODE + '</button>' +
-          '<button class="icon-btn icon-only" data-role="references" data-path="' + escapeHtml(r.path) + '" title="References">' + ICON_REFERENCES + '</button>' +
+          '<button class="icon-btn icon-only" data-role="references" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '" title="References">' + ICON_REFERENCES + '</button>' +
           '<button class="icon-btn icon-only" data-role="open-in-files" data-path="' + escapeHtml(r.path) + '" data-name="' + escapeHtml(r.name) + '" title="Open in Workspace">' + ICON_WORKSPACE + '</button>' +
           '<div class="row-menu">' +
             '<button type="button" class="menu-toggle" data-role="row-menu-toggle" aria-label="More actions">⋯</button>' +
@@ -2204,7 +2297,7 @@
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="references"]'), function(btn){
       btn.addEventListener("click", function(){
         closeAllRowMenus();
-        openReferencesModal(btn.getAttribute("data-path"));
+        openReferencesPanel(btn.getAttribute("data-path"), btn.getAttribute("data-name"));
       });
     });
     Array.prototype.forEach.call(body.querySelectorAll('[data-role="open-in-files"]'), function(btn){
@@ -2390,6 +2483,8 @@
   try { mainSidebarCollapsed = localStorage.getItem("mainSidebarCollapsed") === "1"; } catch(e){ mainSidebarCollapsed = false; }
   function applyMainSidebarCollapsed(){
     document.body.classList.toggle("sidebar-collapsed", mainSidebarCollapsed);
+    var topbarToggle = document.getElementById("filesSidebarToggleBtn");
+    if (topbarToggle) topbarToggle.title = mainSidebarCollapsed ? "Show sidebar (Ctrl+B)" : "Hide sidebar (Ctrl+B)";
   }
   function setMainSidebarCollapsed(v){
     mainSidebarCollapsed = v;
@@ -2399,6 +2494,9 @@
   applyMainSidebarCollapsed();
   document.getElementById("mainSidebarCollapseBtn").addEventListener("click", function(){ setMainSidebarCollapsed(true); });
   document.getElementById("mainSidebarExpandBtn").addEventListener("click", function(){ setMainSidebarCollapsed(false); });
+  document.getElementById("filesSidebarToggleBtn").addEventListener("click", function(){
+    setMainSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+  });
 
   function switchMainView(view){
     Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
@@ -2411,6 +2509,7 @@
     if (searchPanelEl) searchPanelEl.hidden = view !== "search";
     settingsPanel.hidden = view !== "settings";
     document.getElementById("mainEl").classList.toggle("files-full", view === "files");
+    document.body.classList.toggle("files-view-active", view === "files");
     if (view === "ideas" && !ideasLoaded) loadIdeas();
     if (view === "files") {
       renderFilesProjectPicker();
@@ -2579,17 +2678,68 @@
     });
   });
 
-  // ---- References modal ----
+  // ---- References drawer ----
 
-  var referencesOverlay = document.getElementById("referencesOverlay");
   var referencesBody = document.getElementById("referencesBody");
   var referencesSummary = document.getElementById("referencesSummary");
   var referencesErr = document.getElementById("referencesErr");
   var referencesCount = document.getElementById("referencesCount");
   var referencesProjectName = document.getElementById("referencesProjectName");
   var referencesSearch = document.getElementById("referencesSearch");
+  var referencesSort = document.getElementById("referencesSort");
+  var referencesFilterBar = document.getElementById("referencesFilterBar");
+  var referencesActivePills = document.getElementById("referencesActivePills");
   var referencesPath = null;
   var allReferences = [];
+  var hasSlrData = false;
+  var refActiveFilters = {};
+  var refFulltextOnly = false;
+  var refOpenPopoverKey = null;
+
+  var REF_FILTER_DIMENSIONS = [
+    { key: "read_status", label: "Read status", field: "read_status" },
+    { key: "article_type", label: "Type", field: "article_type" },
+    { key: "journal_name", label: "Journal", field: "journal_name" }
+  ];
+  var STAGE_LABELS = {
+    identified: "Identified",
+    title_abstract: "Title/Abstract",
+    eligible: "Eligibility",
+    included: "Included",
+    excluded_title_abstract: "Excluded",
+    excluded_eligibility: "Excluded"
+  };
+  var STAGE_RANK = ["identified", "title_abstract", "eligible", "included", "excluded_title_abstract", "excluded_eligibility"];
+
+  // ---- per-project drawer open/closed persistence ----
+  var REFERENCES_DRAWER_OPEN_KEY = "arti-references-drawer-open";
+  function loadReferencesDrawerOpenMap(){
+    try { return JSON.parse(localStorage.getItem(REFERENCES_DRAWER_OPEN_KEY)) || {}; } catch (e){ return {}; }
+  }
+  function saveReferencesDrawerOpenForProject(projectPath, open){
+    try {
+      var map = loadReferencesDrawerOpenMap();
+      map[projectPath] = open;
+      localStorage.setItem(REFERENCES_DRAWER_OPEN_KEY, JSON.stringify(map));
+    } catch (e){}
+  }
+  function isReferencesDrawerOpenForProject(projectPath){
+    if (!projectPath) return false;
+    var map = loadReferencesDrawerOpenMap();
+    return map.hasOwnProperty(projectPath) ? map[projectPath] : false;
+  }
+  function setReferencesDrawerVisible(open){
+    document.getElementById("referencesDrawer").hidden = !open;
+    document.getElementById("chatResizerReferences").hidden = !open;
+  }
+  // Applies the remembered open/closed state for a project switched to in
+  // the Files workspace via any path other than the References button itself
+  // (that button always forces the drawer open -- see openReferencesPanel).
+  function applyReferencesDrawerStateForProject(projectPath){
+    var open = isReferencesDrawerOpenForProject(projectPath);
+    setReferencesDrawerVisible(open);
+    if (open) prepareReferencesForProject(projectPath);
+  }
 
   function buildJournalBadgeHtml(result){
     if (!result){
@@ -2645,26 +2795,46 @@
     });
   }
 
+  function stageBadgeClass(stage){
+    if (stage === "included") return "avail-stage-included";
+    if (stage && stage.indexOf("excluded_") === 0) return "avail-stage-excluded";
+    return "avail-stage-progress";
+  }
+
+  function buildPrismaBadge(r){
+    if (!r.screening_stage) return "";
+    var cls = stageBadgeClass(r.screening_stage);
+    var label = STAGE_LABELS[r.screening_stage] || r.screening_stage;
+    if (cls === "avail-stage-excluded"){
+      return '<button type="button" class="avail-badge ' + cls + '" data-expand="exclusion">' + escapeHtml(label) + '</button>';
+    }
+    return '<span class="avail-badge ' + cls + '">' + escapeHtml(label) + '</span>';
+  }
+
   function renderReferenceCards(rows){
     if (!rows.length){
-      referencesBody.innerHTML = '<div class="empty">' + (allReferences.length ? "No references match your search." : "No references yet.") + '</div>';
+      referencesBody.innerHTML = '<div class="empty">' + (allReferences.length ? "No references match your filters." : "No references yet.") + '</div>';
       return;
     }
     referencesBody.innerHTML = rows.map(function(r){
       var doiRow = r.doi
-        ? '<span class="doi-row">DOI: <a href="https://dx.doi.org/' + encodeURIComponent(r.doi) + '" target="_blank" rel="noopener">' + escapeHtml(r.doi) + '</a>' +
-          '<button class="copy-doi-btn" data-doi="' + escapeHtml(r.doi) + '">Copy</button></span>'
-        : '<span class="doi-row">DOI: —</span>';
+        ? '<span class="doi-row"><a href="https://dx.doi.org/' + encodeURIComponent(r.doi) + '" target="_blank" rel="noopener">' + escapeHtml(r.doi) + '</a>' +
+          '<button class="copy-doi-btn" data-doi="' + escapeHtml(r.doi) + '" title="Copy DOI">' + ICON_COPY + '</button></span>'
+        : '';
 
       var badges = buildJournalBadge(r);
       badges += '<span class="avail-badge avail-citation">Citation</span>';
       if (r.abstract) badges += '<button type="button" class="avail-badge avail-abstract" data-expand="abstract">Abstract</button>';
       if (r.local_file) badges += '<span class="avail-badge avail-fulltext"' + (r.local_file ? ' title="' + escapeHtml(r.local_file) + '"' : '') + '>Fulltext</span>';
       if (r.summary) badges += '<button type="button" class="avail-badge avail-summary" data-expand="summary">Summary</button>';
+      badges += buildPrismaBadge(r);
 
       var expands = "";
       if (r.abstract) expands += '<div class="ref-expand ref-expand-abstract" hidden><strong>Abstract</strong><p>' + escapeHtml(r.abstract) + '</p></div>';
       if (r.summary) expands += '<div class="ref-expand ref-expand-summary" hidden><strong>Summary</strong><p>' + escapeHtml(r.summary) + '</p></div>';
+      if (r.screening_stage && r.screening_stage.indexOf("excluded_") === 0 && r.exclusion_reason){
+        expands += '<div class="ref-expand ref-expand-exclusion" hidden><strong>Exclusion reason</strong><p>' + escapeHtml(r.exclusion_reason) + '</p></div>';
+      }
 
       return '<div class="ref-card">' +
         '<div class="ref-title">' + escapeHtml(r.citation) + '</div>' +
@@ -2679,26 +2849,211 @@
     fetchJournalBadges(rows);
   }
 
-  function applyReferencesFilter(){
-    var q = referencesSearch.value.trim().toLowerCase();
-    if (!q){
-      renderReferenceCards(allReferences);
-      return;
-    }
-    var filtered = allReferences.filter(function(r){
-      return [r.citation, r.key, r.doi, r.used_in, r.abstract, r.summary].some(function(v){
-        return v && String(v).toLowerCase().indexOf(q) !== -1;
+  // ---- search + filter chips + sort ----
+
+  function computeReferenceFilterOptions(rows){
+    var opts = { read_status: [], article_type: [], journal_name: [], screening_stage: [] };
+    var seen = { read_status: {}, article_type: {}, journal_name: {}, screening_stage: {} };
+    rows.forEach(function(r){
+      Object.keys(opts).forEach(function(field){
+        var v = r[field];
+        if (v && !seen[field][v]){ seen[field][v] = true; opts[field].push(v); }
       });
     });
-    renderReferenceCards(filtered);
+    Object.keys(opts).forEach(function(field){ opts[field].sort(); });
+    return opts;
   }
-  referencesSearch.addEventListener("input", applyReferencesFilter);
+
+  function stageFilterLabel(value){
+    if (value === "__included__") return "Included only";
+    if (value === "__excluded_any__") return "Excluded";
+    return STAGE_LABELS[value] || value;
+  }
+
+  function sortReferenceRows(rows, sortKey){
+    var sorted = rows.slice();
+    function cmpStr(a, b){ return String(a || "").localeCompare(String(b || "")); }
+    if (sortKey === "journal"){
+      sorted.sort(function(a, b){ return cmpStr(a.journal_name, b.journal_name) || cmpStr(a.key, b.key); });
+    } else if (sortKey === "read_status"){
+      sorted.sort(function(a, b){ return cmpStr(a.read_status, b.read_status) || cmpStr(a.key, b.key); });
+    } else if (sortKey === "updated"){
+      sorted.sort(function(a, b){ return cmpStr(b.updated_at, a.updated_at); });
+    } else if (sortKey === "prisma"){
+      sorted.sort(function(a, b){
+        var ra = STAGE_RANK.indexOf(a.screening_stage); if (ra === -1) ra = STAGE_RANK.length;
+        var rb = STAGE_RANK.indexOf(b.screening_stage); if (rb === -1) rb = STAGE_RANK.length;
+        return ra - rb || cmpStr(a.key, b.key);
+      });
+    } else {
+      sorted.sort(function(a, b){ return cmpStr(a.key, b.key); });
+    }
+    return sorted;
+  }
+
+  function renderSortOptions(){
+    var prev = referencesSort.value;
+    var options = [
+      { value: "key", label: "Key (author-year)" },
+      { value: "journal", label: "Journal" },
+      { value: "read_status", label: "Read status" },
+      { value: "updated", label: "Recently updated" }
+    ];
+    if (hasSlrData) options.push({ value: "prisma", label: "PRISMA stage" });
+    referencesSort.innerHTML = options.map(function(o){
+      return '<option value="' + o.value + '">' + o.label + '</option>';
+    }).join("");
+    referencesSort.value = options.some(function(o){ return o.value === prev; }) ? prev : "key";
+  }
+  referencesSort.addEventListener("change", applyReferencesFilters);
+
+  function closeRefPopovers(){
+    Array.prototype.forEach.call(document.querySelectorAll(".ref-filter-popover"), function(p){ p.remove(); });
+    refOpenPopoverKey = null;
+  }
+
+  function openRefFilterPopover(chip, key){
+    var opts = computeReferenceFilterOptions(allReferences);
+    var current = refActiveFilters[key];
+    var buttons = [{ value: "", label: "All" }];
+    if (key === "screening_stage"){
+      buttons.push({ value: "__included__", label: "Included only" });
+      buttons.push({ value: "__excluded_any__", label: "Excluded (with reasons)" });
+      buttons.push({ divider: true });
+      opts.screening_stage.forEach(function(v){ buttons.push({ value: v, label: STAGE_LABELS[v] || v }); });
+    } else {
+      var dim = REF_FILTER_DIMENSIONS.filter(function(d){ return d.key === key; })[0];
+      opts[dim.field].forEach(function(v){ buttons.push({ value: v, label: v }); });
+    }
+    function renderButtons(filterText){
+      var ft = (filterText || "").toLowerCase();
+      return buttons.filter(function(b){
+        return b.divider || !ft || b.label.toLowerCase().indexOf(ft) !== -1 || b.value === "";
+      }).map(function(b){
+        if (b.divider) return '<div class="ref-filter-popover-divider"></div>';
+        var cls = (current || "") === b.value ? "selected" : "";
+        return '<button type="button" class="' + cls + '" data-value="' + escapeHtml(b.value) + '">' + escapeHtml(b.label) + '</button>';
+      }).join("");
+    }
+    var pop = document.createElement("div");
+    pop.className = "ref-filter-popover";
+    // Journal names can be numerous, so that chip's popover gets a free-text
+    // refine box above the option list rather than a plain scroll.
+    var refineHtml = key === "journal_name"
+      ? '<input type="text" class="search-input ref-filter-popover-refine" placeholder="Refine…" />'
+      : "";
+    pop.innerHTML = refineHtml + '<div class="ref-filter-popover-list">' + renderButtons("") + '</div>';
+    var listEl = pop.querySelector(".ref-filter-popover-list");
+    var refineInput = pop.querySelector(".ref-filter-popover-refine");
+    if (refineInput){
+      refineInput.addEventListener("click", function(e){ e.stopPropagation(); });
+      refineInput.addEventListener("input", function(){ listEl.innerHTML = renderButtons(refineInput.value); });
+    }
+    pop.addEventListener("click", function(e){
+      var btn = e.target.closest("button[data-value]");
+      if (!btn) return;
+      var value = btn.getAttribute("data-value");
+      if (value) refActiveFilters[key] = value; else delete refActiveFilters[key];
+      closeRefPopovers();
+      renderFilterBar();
+      applyReferencesFilters();
+    });
+    chip.appendChild(pop);
+    if (refineInput) refineInput.focus();
+    refOpenPopoverKey = key;
+  }
+
+  document.addEventListener("click", function(e){
+    if (refOpenPopoverKey && !e.target.closest(".ref-filter-chip")) closeRefPopovers();
+  });
+
+  function renderFilterBar(){
+    var opts = computeReferenceFilterOptions(allReferences);
+    var html = "";
+    REF_FILTER_DIMENSIONS.forEach(function(dim){
+      if (!opts[dim.field].length) return;
+      var active = refActiveFilters[dim.key];
+      html += '<button type="button" class="ref-filter-chip' + (active ? ' active' : '') + '" data-chip="' + dim.key + '">' +
+        escapeHtml(active ? (dim.label + ": " + active) : (dim.label + " ▾")) + '</button>';
+    });
+    html += '<button type="button" class="ref-filter-chip' + (refFulltextOnly ? ' active' : '') + '" data-chip="fulltext">Fulltext only</button>';
+    if (hasSlrData){
+      var stageActive = refActiveFilters.screening_stage;
+      html += '<button type="button" class="ref-filter-chip' + (stageActive ? ' active' : '') + '" data-chip="screening_stage">' +
+        escapeHtml((stageActive ? stageFilterLabel(stageActive) : "Stage") + " ▾") + '</button>';
+    }
+    referencesFilterBar.innerHTML = html;
+  }
+
+  referencesFilterBar.addEventListener("click", function(e){
+    var chip = e.target.closest(".ref-filter-chip");
+    if (!chip) return;
+    var key = chip.getAttribute("data-chip");
+    if (key === "fulltext"){
+      refFulltextOnly = !refFulltextOnly;
+      renderFilterBar();
+      applyReferencesFilters();
+      return;
+    }
+    var reopen = refOpenPopoverKey !== key;
+    closeRefPopovers();
+    if (reopen) openRefFilterPopover(chip, key);
+  });
+
+  referencesActivePills.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    var key = btn.getAttribute("data-remove");
+    if (key === "fulltext") refFulltextOnly = false; else delete refActiveFilters[key];
+    renderFilterBar();
+    applyReferencesFilters();
+  });
+
+  function renderActivePills(){
+    var pills = [];
+    REF_FILTER_DIMENSIONS.forEach(function(dim){
+      if (refActiveFilters[dim.key]) pills.push({ key: dim.key, text: dim.label + ": " + refActiveFilters[dim.key] });
+    });
+    if (refActiveFilters.screening_stage) pills.push({ key: "screening_stage", text: "Stage: " + stageFilterLabel(refActiveFilters.screening_stage) });
+    if (refFulltextOnly) pills.push({ key: "fulltext", text: "Fulltext only" });
+    referencesActivePills.innerHTML = pills.map(function(p){
+      return '<span class="ref-active-pill">' + escapeHtml(p.text) + ' <button type="button" data-remove="' + p.key + '">&times;</button></span>';
+    }).join("");
+  }
+
+  function applyReferencesFilters(){
+    var q = referencesSearch.value.trim().toLowerCase();
+    var rows = allReferences.filter(function(r){
+      if (q && ![r.citation, r.key, r.doi, r.used_in, r.abstract, r.summary].some(function(v){
+        return v && String(v).toLowerCase().indexOf(q) !== -1;
+      })) return false;
+      if (refFulltextOnly && !r.local_file) return false;
+      for (var i = 0; i < REF_FILTER_DIMENSIONS.length; i++){
+        var dim = REF_FILTER_DIMENSIONS[i];
+        var active = refActiveFilters[dim.key];
+        if (active && r[dim.field] !== active) return false;
+      }
+      var stageFilter = refActiveFilters.screening_stage;
+      if (stageFilter === "__included__" && r.screening_stage !== "included") return false;
+      if (stageFilter === "__excluded_any__" && (!r.screening_stage || r.screening_stage.indexOf("excluded_") !== 0)) return false;
+      if (stageFilter && stageFilter !== "__included__" && stageFilter !== "__excluded_any__" && r.screening_stage !== stageFilter) return false;
+      return true;
+    });
+    rows = sortReferenceRows(rows, referencesSort.value);
+    renderActivePills();
+    renderReferenceCards(rows);
+  }
+  referencesSearch.addEventListener("input", applyReferencesFilters);
 
   function loadReferences(){
     return api("/references/list?path=" + encodeURIComponent(referencesPath)).then(function(data){
       allReferences = data.rows || [];
       referencesCount.textContent = allReferences.length;
-      applyReferencesFilter();
+      hasSlrData = allReferences.some(function(r){ return !!r.screening_stage; });
+      document.getElementById("referencesDrawer").classList.toggle("has-slr", hasSlrData);
+      renderSortOptions();
+      renderFilterBar();
+      applyReferencesFilters();
     });
   }
 
@@ -2707,10 +3062,14 @@
     if (copyBtn){
       var doi = copyBtn.getAttribute("data-doi");
       navigator.clipboard.writeText(doi).then(function(){
-        var prev = copyBtn.textContent;
-        copyBtn.textContent = "Copied";
+        copyBtn.innerHTML = ICON_CHECK;
         copyBtn.classList.add("copied");
-        setTimeout(function(){ copyBtn.textContent = prev; copyBtn.classList.remove("copied"); }, 1200);
+        copyBtn.title = "Copied";
+        setTimeout(function(){
+          copyBtn.innerHTML = ICON_COPY;
+          copyBtn.classList.remove("copied");
+          copyBtn.title = "Copy DOI";
+        }, 1200);
       });
       return;
     }
@@ -2726,24 +3085,50 @@
     }
   });
 
-  function openReferencesModal(path){
+  // ---- open/close/navigate ----
+
+  function prepareReferencesForProject(path){
     referencesPath = path;
+    refActiveFilters = {};
+    refFulltextOnly = false;
+    closeRefPopovers();
     referencesErr.hidden = true;
     referencesSummary.textContent = "";
     referencesSearch.value = "";
     referencesCount.textContent = "0";
     var proj = allProjects.filter(function(p){ return p.path === path; })[0];
-    referencesProjectName.textContent = proj ? ("· " + proj.name) : "";
+    referencesProjectName.textContent = proj ? proj.name : "";
     referencesProjectName.title = proj ? proj.name : "";
     referencesBody.innerHTML = '<div class="empty loading">Loading…</div>';
-    openModal(referencesOverlay);
-    loadReferences().catch(function(err){
+    return loadReferences().catch(function(err){
       referencesErr.textContent = err.message;
       referencesErr.hidden = false;
     });
   }
-  document.getElementById("closeReferencesModal").addEventListener("click", function(){ closeModal(referencesOverlay); });
-  referencesOverlay.addEventListener("click", function(e){ if (e.target === referencesOverlay) closeModal(referencesOverlay); });
+
+  // Single reachability path for both entry points (per-project-row button
+  // and the Files workspace toolbar button/Ctrl+Shift+F): navigate to the
+  // Files workspace for the project, then force the drawer open there.
+  function openReferencesPanel(path, name){
+    return openProjectInFiles(path, name).then(function(){
+      setReferencesDrawerVisible(true);
+      saveReferencesDrawerOpenForProject(path, true);
+      return prepareReferencesForProject(path);
+    });
+  }
+
+  function toggleReferencesDrawer(){
+    if (!filesCurrentProjectPath) return;
+    var willOpen = document.getElementById("referencesDrawer").hidden;
+    setReferencesDrawerVisible(willOpen);
+    saveReferencesDrawerOpenForProject(filesCurrentProjectPath, willOpen);
+    if (willOpen) prepareReferencesForProject(filesCurrentProjectPath);
+  }
+
+  document.getElementById("closeReferencesDrawerBtn").addEventListener("click", function(){
+    setReferencesDrawerVisible(false);
+    if (filesCurrentProjectPath) saveReferencesDrawerOpenForProject(filesCurrentProjectPath, false);
+  });
 
   document.getElementById("addReferencesBtn").addEventListener("click", function(){
     var btn = this;
@@ -2988,6 +3373,7 @@
     renderFilesProjectPicker();
     updateFilesResponsiveState();
     applyFineAiCollapsedForProject(projectPath);
+    applyReferencesDrawerStateForProject(projectPath);
     return loaded;
   }
 
@@ -4453,8 +4839,7 @@
   });
 
   document.getElementById("chatReferencesBtn").addEventListener("click", function(){
-    if (!filesCurrentProjectPath) return;
-    openReferencesModal(filesCurrentProjectPath);
+    toggleReferencesDrawer();
   });
 
   document.getElementById("chatFilesMoreToggle").addEventListener("click", function(e){
