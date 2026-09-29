@@ -16,6 +16,10 @@
     --red:#dc2626; --red-soft:#fdecec;
     --green:#15803d; --green-soft:#e8f7ee;
     --shadow: 0 1px 2px rgba(16,24,40,0.05);
+    --radius: 0;
+    --space-1: 2px; --space-2: 4px; --space-3: 8px; --space-4: 12px; --space-5: 16px;
+    --topbar-h: 38px; --topbar-h-narrow: 26px;
+    --control-pad-y: 4px; --control-pad-x: 8px;
     color-scheme: light;
     /* Fallback for a previewed source file's own embedded <style> block
        referencing --font-sans (e.g. arti-lms content) -- an unresolved
@@ -41,29 +45,29 @@
   body.sidebar-collapsed .sidebar{ width:0; border-right-color:transparent; }
   .sidebar-inner{
     width:232px; min-height:100vh; display:flex; flex-direction:column;
-    padding:28px 18px 18px; box-sizing:border-box;
+    padding:var(--space-5) var(--space-4) var(--space-4); box-sizing:border-box;
   }
   .sidebar-toggle-btn{
     width:28px; height:28px; flex:none; display:flex; align-items:center; justify-content:center;
-    border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
     cursor:pointer;
   }
   .sidebar-toggle-btn:hover{ background:var(--surface-2); color:var(--text); }
   #mainSidebarExpandBtn{
     position:fixed; top:0; left:0; z-index:50; display:none;
-    width:26px; height:26px; border-radius:0;
+    width:26px; height:26px; border-radius:var(--radius);
   }
   body.sidebar-collapsed #mainSidebarExpandBtn{ display:flex; }
   /* Files view has its own sidebar toggle in the topbar strip
-     (#filesSidebarToggleBtn) -- hide the sidebar's own header button and
-     the floating collapsed-state button while that view is active, so
-     there is only ever one sidebar control on screen. */
-  body.files-view-active #mainSidebarCollapseBtn,
+     (#filesSidebarToggleBtn) -- hide the floating collapsed-state button
+     while that view is active, so there is only ever one sidebar control
+     on screen. The sidebar's own header hamburger was removed; Ctrl+B and
+     filesSidebarToggleBtn are the only ways to collapse/expand now. */
   body.files-view-active #mainSidebarExpandBtn{ display:none !important; }
   .brand{ display:flex; flex-direction:row; align-items:center; gap:10px; margin-bottom:26px; }
   .brand h1{ flex:1; min-width:0; }
   .brand .mark{
-    display:inline-block; width:34px; height:34px; border-radius:8px;
+    display:inline-block; width:34px; height:34px; border-radius:var(--radius);
     background:var(--surface-2); flex:none;
   }
   h1{
@@ -76,7 +80,7 @@
   .nav-item{
     display:flex; align-items:center; gap:9px; width:100%; text-align:left;
     font-family:"Inter",system-ui,sans-serif; font-size:14px; font-weight:500;
-    padding:9px 12px; border-radius:8px; border:1px solid transparent; background:none;
+    padding:var(--space-3) var(--space-4); border-radius:var(--radius); border:1px solid transparent; background:none;
     color:var(--text-muted); cursor:pointer;
     transition:background-color .1s ease, color .1s ease;
   }
@@ -91,7 +95,7 @@
 
   .cat-badge{
     display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
-    padding:4px 12px; border-radius:20px; white-space:nowrap;
+    padding:4px 12px; border-radius:var(--radius); white-space:nowrap;
   }
   .cat-badge.cat-paper{ color:var(--accent); background:var(--accent-soft); }
   .cat-badge.cat-project{ color:var(--slate); background:var(--slate-soft); }
@@ -99,29 +103,28 @@
 
   .tags-line{ font-size:13px; color:var(--text-muted); margin-top:3px; }
 
-  .filter-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .search-input{
     font-family:inherit; font-size:14px; padding:9px 14px; border:1px solid var(--border);
-    border-radius:8px; background:var(--surface); color:var(--text); min-width:200px;
+    border-radius:var(--radius); background:var(--surface); color:var(--text); min-width:200px;
   }
   .search-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .chip-row{ display:flex; gap:8px; flex-wrap:wrap; }
   .chip{
     font-family:"Inter",system-ui,sans-serif; font-size:13px; font-weight:500; padding:6px 14px;
-    border-radius:20px; border:1px solid var(--border); background:var(--surface);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface);
     color:var(--text-muted); cursor:pointer; white-space:nowrap;
   }
   .chip:hover{ border-color:var(--accent); color:var(--accent); }
   .chip.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
   .sort-select{
     font-family:"Inter",system-ui,sans-serif; font-size:13px; padding:9px 12px; border:1px solid var(--border);
-    border-radius:8px; background:var(--surface); color:var(--text);
+    border-radius:var(--radius); background:var(--surface); color:var(--text);
   }
 
   .launcher{ display:flex; gap:14px; margin-bottom:26px; flex-wrap:wrap; }
   .launch-btn{
     flex:1; min-width:240px; background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; box-shadow:var(--shadow);
+    border-radius:var(--radius); box-shadow:var(--shadow);
     padding:20px; text-align:left; cursor:pointer; font-family:inherit; color:var(--text);
     transition:border-color .12s ease, box-shadow .12s ease, transform .06s ease;
   }
@@ -136,30 +139,21 @@
   .col{ display:flex; flex-direction:column; gap:20px; }
 
   .panel{
-    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
     box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
-  }
-  .panel-head{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:16px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap;
-  }
-  .panel-title{
-    font-family:"Inter",system-ui,sans-serif; font-size:16px; font-weight:600;
-    color:var(--text);
-    display:flex; align-items:center; gap:9px;
   }
   .count-badge{
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--accent);
-    background:var(--accent-soft); padding:2px 9px; border-radius:20px;
+    background:var(--accent-soft); padding:2px 9px; border-radius:var(--radius);
   }
 
   table{ width:100%; border-collapse:collapse; font-size:14px; }
   th{
     text-align:left; font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600;
     color:var(--text-muted);
-    padding:8px 20px; border-bottom:1px solid var(--border);
+    padding:var(--space-2) var(--space-5); border-bottom:1px solid var(--border);
   }
-  td{ padding:8px 20px; border-top:1px solid var(--border); vertical-align:top; }
+  td{ padding:var(--space-2) var(--space-5); border-top:1px solid var(--border); vertical-align:top; }
   .substage{ font-size:12.5px; color:var(--text-muted); margin-top:3px; }
   .proj-path{
     font-size:12px; color:var(--text-muted); margin-top:2px; font-family:"SFMono-Regular",Consolas,monospace;
@@ -173,7 +167,7 @@
   .row-actions{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .icon-btn{
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:500; padding:6px 12px;
-    border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface);
     color:var(--text-muted); text-decoration:none; cursor:pointer; white-space:nowrap;
     transition:background-color .1s ease, border-color .1s ease, color .1s ease, transform .06s ease;
   }
@@ -195,7 +189,7 @@
     background:var(--surface); border-color:var(--border); color:var(--text-muted);
   }
   .icon-btn.icon-only:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
-  .icon-btn.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .icon-btn.active, .icon-btn.popover-open{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
   .icon-btn.icon-only svg{ width:16px; height:16px; }
   .icon-btn:disabled{ opacity:.4; cursor:not-allowed; pointer-events:none; }
   .empty{ padding:36px 20px; text-align:center; color:var(--text-muted); font-size:14px; }
@@ -203,7 +197,7 @@
   @keyframes pulse{ 0%,100%{ opacity:0.45; } 50%{ opacity:1; } }
   .tag-pill{
     display:inline-block; max-width:100%; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600;
-    padding:3px 10px; border-radius:20px; white-space:normal; overflow-wrap:break-word; color:var(--slate); background:var(--slate-soft);
+    padding:3px 10px; border-radius:var(--radius); white-space:normal; overflow-wrap:break-word; color:var(--slate); background:var(--slate-soft);
     margin:2px 4px 2px 0; box-sizing:border-box;
   }
   #ideasTable{ table-layout:fixed; }
@@ -223,7 +217,7 @@
   #ideasTable td:nth-child(5){ white-space:nowrap; }
   .convert-idea-btn{
     margin-top:5px; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
-    padding:3px 9px; border-radius:6px; border:1px solid var(--accent); background:var(--surface);
+    padding:3px 9px; border-radius:var(--radius); border:1px solid var(--accent); background:var(--surface);
     color:var(--accent); cursor:pointer; white-space:nowrap;
     transition:background-color .1s ease, color .1s ease;
   }
@@ -235,7 +229,7 @@
 
   .ref-list{ display:flex; flex-direction:column; gap:10px; }
   .ref-card{
-    border:1px solid var(--border); border-radius:10px; padding:14px 16px;
+    border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
     display:flex; flex-direction:column; gap:8px; background:var(--surface);
   }
   .ref-title{ font-weight:700; font-size:14.5px; line-height:1.4; }
@@ -246,7 +240,7 @@
   .doi-row a:hover{ text-decoration:underline; }
   .copy-doi-btn{
     display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; padding:0;
-    border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface);
     color:var(--text-muted); cursor:pointer; flex:none;
   }
   .copy-doi-btn svg{ width:13px; height:13px; }
@@ -257,7 +251,7 @@
   .sjm-badge{
     display:inline-flex; align-items:center; gap:5px; font-size:12px; line-height:1.4;
     font-weight:600; font-family:"Inter",system-ui,sans-serif; padding:2px 8px;
-    border-radius:999px; white-space:nowrap; background:#eee; color:#333;
+    border-radius:var(--radius); white-space:nowrap; background:#eee; color:#333;
     text-decoration:none; cursor:pointer; border:none;
   }
   .sjm-badge:hover, .sjm-badge:visited, .sjm-badge:active{ color:inherit; text-decoration:none; }
@@ -274,7 +268,7 @@
   }
   .avail-badge{
     display:inline-block; font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:600;
-    padding:2px 10px; border-radius:20px; white-space:nowrap; border:none; margin:0;
+    padding:2px 10px; border-radius:var(--radius); white-space:nowrap; border:none; margin:0;
   }
   .avail-badge.avail-citation{ color:var(--slate); background:var(--slate-soft); cursor:default; }
   .avail-badge.avail-fulltext{ color:var(--accent); background:var(--accent-soft); cursor:default; }
@@ -285,15 +279,15 @@
   .avail-badge.avail-abstract.expanded, .avail-badge.avail-summary.expanded{ color:var(--green); background:var(--green-soft); }
 
   .ref-expand{
-    font-size:13px; color:var(--text); background:var(--surface-2); border-radius:8px;
+    font-size:13px; color:var(--text); background:var(--surface-2); border-radius:var(--radius);
     padding:10px 12px;
   }
   .ref-expand strong{ display:block; font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.02em; }
   .ref-expand p{ margin:0; line-height:1.5; white-space:pre-wrap; }
-  .stale-badge{ display:inline-block; margin-top:3px; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:600; background:var(--amber-soft); color:var(--amber); }
+  .stale-badge{ display:inline-block; margin-top:3px; padding:1px 6px; border-radius:var(--radius); font-size:11px; font-weight:600; background:var(--amber-soft); color:var(--amber); }
   .lifecycle-tag{
     display:inline-block; font-size:11px; font-weight:600; color:var(--text-muted);
-    background:var(--surface-2); padding:2px 8px; border-radius:20px; margin-left:8px;
+    background:var(--surface-2); padding:2px 8px; border-radius:var(--radius); margin-left:8px;
   }
   .archived-toggle{
     display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted);
@@ -303,13 +297,13 @@
   .row-menu[hidden]{ display:none; }
   .menu-toggle{
     font-family:"Inter",system-ui,sans-serif; font-size:15px; font-weight:700; line-height:1;
-    padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface);
+    padding:6px 10px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface);
     color:var(--text-muted); cursor:pointer;
   }
   .menu-toggle:hover{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
   .menu-dropdown{
     position:absolute; top:calc(100% + 4px); right:0; min-width:150px; background:var(--surface);
-    border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 20px rgba(16,24,40,0.16);
+    border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 6px 20px rgba(16,24,40,0.16);
     z-index:5; display:flex; flex-direction:column; overflow:hidden;
   }
   .menu-dropdown[hidden]{ display:none; }
@@ -326,8 +320,8 @@
 
   .btn{
     font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600;
-    background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px;
-    padding:10px 16px; cursor:pointer; transition:border-color .1s ease, opacity .1s ease, transform .06s ease;
+    background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:var(--radius);
+    padding:var(--control-pad-y) var(--space-4); cursor:pointer; transition:border-color .1s ease, opacity .1s ease, transform .06s ease;
   }
   .btn:hover{ border-color:var(--accent); }
   .btn:active{ transform:translateY(1px); }
@@ -347,7 +341,7 @@
   .modal-overlay[hidden]{ display:none; }
   .modal-overlay.open{ opacity:1; }
   .modal{
-    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
     box-shadow:0 12px 32px rgba(16,24,40,0.16); width:100%; max-width:460px; overflow:hidden;
     transform:scale(0.96); transition:transform .14s ease;
     max-height:90vh; display:flex; flex-direction:column;
@@ -365,15 +359,11 @@
     margin:0; font-size:16px; font-family:"Inter",system-ui,sans-serif; font-weight:600;
     display:flex; align-items:center; gap:9px; min-width:0;
   }
-  .ref-project-name{
-    font-size:12.5px; font-weight:500; color:var(--text-muted);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
   .modal-close{ background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; }
   .modal-close:hover{ color:var(--text); }
   .modal-body{ padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
   .modal-body input, .modal-body select{
-    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);
     background:var(--surface); color:var(--text); font-family:inherit; font-size:14px;
   }
   .path-row{ display:flex; gap:8px; }
@@ -382,7 +372,7 @@
   .toggle-row{ display:flex; gap:8px; }
   .toggle-row button{
     flex:1; font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:600; padding:9px 12px;
-    border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
     cursor:pointer;
   }
   .toggle-row button.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -392,7 +382,7 @@
   /* ---- Files panel ---- */
   #filesPanel{ height:calc(100vh - 64px); flex-direction:row; position:relative; }
   main.files-full #filesPanel{
-    height:100vh; border:none; border-radius:0; box-shadow:none; background:transparent;
+    height:100vh; border:none; border-radius:var(--radius); box-shadow:none; background:transparent;
   }
   /* files-main = everything right of the file-list resizer but left of the
      Fine AI column: a topbar (Workspace toggle [narrow-only] + project
@@ -401,20 +391,41 @@
   /* Flush, square-cornered segmented strip -- sidebar toggle, project
      picker, file-list toggle, Fine AI toggle, Note toggle all sit in one
      continuous row with shared borders and no rounding, in every layout
-     state (full width, collapsed sidebar, narrow). The old floating
-     #mainSidebarExpandBtn / sidebar-header #mainSidebarCollapseBtn are
-     hidden while Files view is active -- see body.files-view-active below
-     -- so filesSidebarToggleBtn is the sole sidebar control here. */
-  .files-topbar{
-    flex:none; display:flex; align-items:stretch; gap:0;
+     state (full width, collapsed sidebar, narrow). The floating
+     #mainSidebarExpandBtn is hidden while Files view is active -- see
+     body.files-view-active below -- so filesSidebarToggleBtn is the sole
+     sidebar control here. */
+  .panel-topbar, .files-topbar{
+    flex:none; display:flex; align-items:stretch; gap:0; min-height:var(--topbar-h);
     border-bottom:1px solid var(--border); background:var(--surface);
   }
-  .files-topbar .files-picker-btn{ border-radius:0; height:38px; }
-  .files-topbar .icon-btn.icon-only{
-    width:38px; height:38px; border-radius:0; flex:none;
+  .panel-topbar .files-picker-btn, .files-topbar .files-picker-btn{ border-radius:var(--radius); height:var(--topbar-h); }
+  .panel-topbar .icon-btn.icon-only, .files-topbar .icon-btn.icon-only{
+    width:var(--topbar-h); height:var(--topbar-h); border-radius:var(--radius); flex:none;
   }
-  .files-topbar .icon-btn.icon-only svg{ width:16px; height:16px; }
-  .files-topbar .fine-ai-icon-accent{ color:var(--accent); }
+  .panel-topbar .icon-btn.icon-only svg, .files-topbar .icon-btn.icon-only svg{ width:16px; height:16px; }
+  .panel-topbar .fine-ai-icon-accent, .files-topbar .fine-ai-icon-accent{ color:var(--accent); }
+  #sideNoteToggleBtn{ background:var(--note-bg); border-color:var(--note-border); color:var(--note-text); }
+  #sideNoteToggleBtn:hover{ background:var(--note-bg-2); border-color:var(--note-border); color:var(--note-text); }
+  /* Generalized flush topbar, used by Projects/Ideas/Search/Settings in
+     addition to Workspace's own .files-topbar -- see plan Phase 2/3. */
+  .panel-topbar-title{
+    display:flex; align-items:center; gap:6px; flex:none; white-space:nowrap;
+    padding:0 var(--space-4); font-size:14px; font-weight:600; color:var(--text);
+    border-right:1px solid var(--border);
+  }
+  .panel-topbar .btn{
+    flex:none; border-radius:var(--radius); border-top:none; border-bottom:none;
+    border-left:none; border-right:1px solid var(--border);
+    height:var(--topbar-h); padding:0 var(--space-4); display:flex; align-items:center;
+  }
+  .panel-topbar .search-input{
+    flex:1; min-width:80px; height:var(--topbar-h); border:none; border-radius:var(--radius);
+    background:transparent; padding:0 var(--space-4);
+  }
+  .panel-topbar .search-input:focus-visible{ outline:none; box-shadow:inset 0 -2px 0 0 var(--accent); }
+  .panel-topbar-divider{ width:1px; align-self:stretch; background:var(--border); flex:none; }
+  .panel-topbar-popover-wrap{ position:relative; flex:none; }
   #filesMenuToggleBtn.menu-open-icon{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
   .files-content-row{ flex:1; display:flex; min-height:0; position:relative; }
   .files-narrow #chatProjectFiles, .files-narrow #chatResizerFiles{ display:none; }
@@ -451,7 +462,7 @@
   .files-project-picker-wrap{ position:relative; flex:1; min-width:0; max-width:320px; }
   .files-picker-btn{
     width:100%; display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border);
-    border-radius:8px; background:var(--surface); color:var(--text); font-family:inherit; font-size:13px;
+    border-radius:var(--radius); background:var(--surface); color:var(--text); font-family:inherit; font-size:13px;
     cursor:pointer; text-align:left;
   }
   .files-picker-btn:hover{ border-color:var(--accent); }
@@ -462,7 +473,7 @@
   .files-picker-btn.open .files-picker-chevron{ transform:rotate(180deg); }
   .files-picker-dropdown{
     position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:480px; z-index:20;
-    background:var(--surface); border:1px solid rgba(16,24,40,0.14); border-radius:10px;
+    background:var(--surface); border:1px solid rgba(16,24,40,0.14); border-radius:var(--radius);
     box-shadow:0 12px 28px rgba(16,24,40,0.22); padding:8px; display:flex; flex-direction:column; gap:6px;
     max-height:320px; overflow:hidden;
   }
@@ -473,7 +484,7 @@
     border-top:1px solid var(--border); padding-top:4px; margin-top:2px;
   }
   .files-picker-option{
-    padding:6px 9px; border-radius:6px; cursor:pointer; flex:none; min-width:0;
+    padding:6px 9px; border-radius:var(--radius); cursor:pointer; flex:none; min-width:0;
   }
   .files-picker-option-name{
     font-size:13px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -493,24 +504,22 @@
 
   /* ---- Search panel ---- */
   #searchPanel{ height:calc(100vh - 64px); }
-  #searchPanel .panel-head{ align-items:flex-start; }
-  .search-header-top{ display:flex; align-items:flex-start; gap:16px; flex:1 1 100%; flex-wrap:wrap; }
-  .search-header-top > .panel-title{ flex:none; padding-top:6px; }
-  .search-header-fields{ flex:1; min-width:280px; display:flex; flex-direction:column; gap:8px; }
-  .search-field-scope{ min-width:0; max-width:320px; }
-  .search-controls-row, .search-refine-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .search-field{ min-width:0; }
-  .search-field-query{ flex:1 1 240px; }
-  .search-query-input{ width:100%; }
-  .search-field-mode{ flex:none; }
-  .search-field-include, .search-field-exclude{ flex:1 1 220px; }
+  /* Topbar: project-picker, query input, AND/OR toggle stay inline (always
+     relevant); Include/Exclude collapse into the "Refine" popover below. */
+  #searchTopbar .files-project-picker-wrap{ flex:0 0 200px; max-width:220px; }
+  #searchTopbar .search-query-input{ flex:1 1 auto; min-width:0; }
+  #searchTopbar .and-or-toggle{ flex:none; padding:0 var(--space-4); }
+  /* Refine button sits at the far right of the topbar; anchor the dropdown to
+     its right edge instead of its left so the popover doesn't overflow the
+     viewport (the shared .files-picker-dropdown default is left:0). */
+  #searchRefineDropdown{ left:auto; right:0; }
+  .search-refine-popover{ display:flex; flex-direction:column; gap:8px; width:280px; }
+  .search-field-include, .search-field-exclude{ flex:none; }
   .search-refine-input{ width:100%; font-size:13px; padding:7px 12px; }
   #searchExcludeInput:not(:placeholder-shown){ border-color:var(--amber); }
   #searchIncludeInput:not(:placeholder-shown){ border-color:var(--accent); }
   @media (max-width: 640px){
-    .search-field-scope{ max-width:none; }
-    .search-field-query, .search-field-mode,
-    .search-field-include, .search-field-exclude{ flex-basis:100%; }
+    #searchTopbar .files-project-picker-wrap{ max-width:none; }
   }
 
   /* Compact AND/OR pill switch (replaces the old two-button toggle) --
@@ -526,19 +535,19 @@
   .and-or-toggle[aria-checked="false"] .and-or-toggle-and{ color:var(--accent); }
   .and-or-toggle[aria-checked="true"] .and-or-toggle-or{ color:var(--amber); }
   .and-or-toggle-track{
-    position:relative; width:34px; height:18px; border-radius:20px; background:var(--accent);
+    position:relative; width:34px; height:18px; border-radius:var(--radius); background:var(--accent);
     transition:background .15s ease; flex:none;
   }
   .and-or-toggle[aria-checked="true"] .and-or-toggle-track{ background:var(--amber); }
   .and-or-toggle-knob{
-    position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
+    position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:var(--radius);
     background:#fff; box-shadow:0 1px 2px rgba(16,24,40,0.35); transition:left .15s ease;
   }
   .and-or-toggle[aria-checked="true"] .and-or-toggle-knob{ left:18px; }
-  .and-or-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+  .and-or-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--radius); }
   .search-tabs{
-    display:flex; gap:2px; margin:14px -20px -16px; padding:0 12px; border-top:1px solid var(--border);
-    flex-basis:100%; overflow-x:auto;
+    display:flex; gap:2px; margin:0; padding:0 var(--space-4); border-bottom:1px solid var(--border);
+    flex:none; overflow-x:auto;
   }
   .search-tab{
     font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:500; padding:10px 8px;
@@ -554,13 +563,13 @@
     padding:32px 12px; text-align:center; color:var(--text-muted); font-size:13.5px;
   }
   .search-truncated-note{
-    font-size:12.5px; color:var(--amber); background:var(--amber-soft); border-radius:8px;
+    font-size:12.5px; color:var(--amber); background:var(--amber-soft); border-radius:var(--radius);
     padding:8px 12px; margin-bottom:10px;
   }
   .search-results-list{ display:flex; flex-direction:column; gap:8px; }
   .search-results-list[hidden]{ display:none; }
   .search-result-file, .search-result-snippet, .search-result-abstract{
-    border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px;
     background:var(--surface); transition:border-color .1s ease, background .1s ease;
   }
   .search-result-file, .search-result-snippet{ cursor:pointer; }
@@ -582,7 +591,7 @@
   }
   .search-result-abstract-status{
     font-family:"Inter",system-ui,sans-serif; font-size:11px; font-weight:600; color:var(--accent);
-    background:var(--accent-soft); padding:2px 8px; border-radius:20px; text-transform:capitalize;
+    background:var(--accent-soft); padding:2px 8px; border-radius:var(--radius); text-transform:capitalize;
   }
   .search-result-abstract-meta{ font-size:12px; color:var(--text-muted); margin-bottom:6px; }
   .search-result-abstract .search-result-snippet-text{ font-family:inherit; }
@@ -599,6 +608,20 @@
   .files-preview-panel.editing .files-preview-content{
     box-shadow:0 0 0 2px var(--accent) inset;
   }
+  /* Multi-pane preview: #filesPreviewPanes holds N uniform panes plus one
+     .chat-resizer between each non-rightmost pane and its neighbor. Every
+     pane defaults to flex:1 (.files-preview-panel above); only the rightmost
+     pane keeps that -- every other pane gets .files-preview-panel-fixed, a
+     fixed, resizable width (like the other .chat-resizer targets) frozen at
+     whatever width it had when it stopped being rightmost, so dragging its
+     resizer actually changes something -- see initChatResizer()'s
+     width-based model. No cap on pane count; once they exceed the available
+     width the row scrolls horizontally instead of squeezing any pane below
+     a usable minimum. */
+  .files-preview-panes{ flex:1; display:flex; min-width:280px; min-height:0; overflow-x:auto; }
+  .files-preview-panel.files-preview-panel-fixed{
+    flex:none; width:480px; min-width:320px; max-width:820px;
+  }
   .fine-ai-section{
     flex:none; display:flex; flex-direction:column; min-height:0; background:var(--surface);
     width:640px; min-width:380px; max-width:960px;
@@ -611,7 +634,7 @@
   .references-drawer[hidden]{ display:none; }
   .references-drawer-head{
     flex:none; padding:12px 14px; border-bottom:1px solid var(--border);
-    display:flex; flex-direction:column; gap:4px;
+    display:flex; flex-direction:column; gap:10px;
   }
   .references-drawer-title-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .references-drawer-title-row h2{ font-size:15px; margin:0; display:flex; align-items:center; gap:6px; }
@@ -622,19 +645,19 @@
   .references-filter-bar{ display:flex; flex-wrap:wrap; gap:6px; position:relative; }
   .ref-filter-chip{
     position:relative; font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600; padding:4px 10px;
-    border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
     cursor:pointer; display:inline-flex; align-items:center; gap:4px;
   }
   .ref-filter-chip:hover{ border-color:var(--accent); color:var(--accent); }
   .ref-filter-chip.active{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
   .ref-filter-popover{
     position:absolute; top:100%; margin-top:4px; z-index:10; min-width:180px;
-    border:1px solid var(--border); border-radius:8px; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);
     box-shadow:0 4px 16px rgba(0,0,0,.16); padding:6px; display:flex; flex-direction:column; gap:2px;
     max-height:260px; overflow-y:auto;
   }
   .ref-filter-popover button{
-    text-align:left; padding:6px 8px; border-radius:6px; border:none; background:transparent;
+    text-align:left; padding:6px 8px; border-radius:var(--radius); border:none; background:transparent;
     font-size:12.5px; color:var(--text); cursor:pointer; font-family:inherit;
   }
   .ref-filter-popover button:hover{ background:var(--surface-2); }
@@ -646,13 +669,15 @@
   .references-active-pills:empty{ display:none; }
   .ref-active-pill{
     display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
-    padding:2px 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent);
+    padding:2px 8px; border-radius:var(--radius); background:var(--accent-soft); color:var(--accent);
   }
   .ref-active-pill button{
     border:none; background:transparent; color:inherit; cursor:pointer; padding:0; line-height:1; font-size:13px;
   }
+  .references-search-row{ display:flex; align-items:center; gap:6px; }
+  .references-search-row .search-input{ flex:1; min-width:0; }
   .references-sort-select{
-    padding:6px 8px; font-size:12.5px; border-radius:6px; border:1px solid var(--border);
+    flex:none; padding:6px 8px; font-size:12.5px; border-radius:var(--radius); border:1px solid var(--border);
     background:var(--surface); color:var(--text);
   }
   .avail-badge.avail-stage-included{ color:var(--green); background:var(--green-soft); cursor:default; }
@@ -661,7 +686,7 @@
     color:var(--red); background:var(--red-soft); cursor:pointer; font-family:inherit; border:none;
   }
   .avail-badge.avail-stage-excluded.expanded{ box-shadow:0 0 0 1px currentColor; }
-  .ref-expand-exclusion{ background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:12.5px; }
+  .ref-expand-exclusion{ background:var(--surface-2); border-radius:var(--radius); padding:8px 10px; font-size:12.5px; }
   .fine-ai-section.fine-ai-collapsed{ display:none; }
   #filesPanel.fine-ai-collapsed #chatResizerFineAi{ display:none; }
   /* "Enable Fine AI" Settings toggle -- fully hides the Fine AI column (and
@@ -692,7 +717,7 @@
   .sessions-open-btn{
     display:none; position:absolute; top:10px; left:10px; z-index:5;
     align-items:center; justify-content:center; width:28px; height:28px; padding:0;
-    border-radius:6px; border:1px solid var(--border); cursor:pointer;
+    border-radius:var(--radius); border:1px solid var(--border); cursor:pointer;
     background:var(--surface); color:var(--text-muted);
   }
   .sessions-open-btn:hover{ color:var(--accent); background:var(--accent-soft); border-color:var(--accent); }
@@ -729,7 +754,7 @@
   .chat-folder-group{ margin-bottom:12px; }
   .chat-folder-label{
     display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.03em; color:var(--text-muted); padding:8px 4px 8px 6px; border-radius:7px;
+    letter-spacing:0.03em; color:var(--text-muted); padding:8px 4px 8px 6px; border-radius:var(--radius);
     cursor:pointer; user-select:none; background:var(--surface-2); transition:filter .1s ease;
     margin-bottom:6px;
   }
@@ -739,15 +764,15 @@
     transition:transform .12s ease; color:var(--text-muted);
   }
   .chat-folder-group.collapsed .chat-folder-chevron{ transform:rotate(-90deg); }
-  .chat-folder-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .chat-folder-dot{ width:8px; height:8px; border-radius:var(--radius); flex:none; }
   .chat-folder-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .chat-folder-count{
     font-size:10.5px; font-weight:600; color:var(--text-muted); background:var(--surface-2);
-    border-radius:999px; padding:1px 7px; flex:none;
+    border-radius:var(--radius); padding:1px 7px; flex:none;
   }
   .chat-folder-add-btn{
     width:22px; height:22px; flex:none; display:flex; align-items:center; justify-content:center;
-    border-radius:5px; border:none; background:transparent; color:var(--text-muted); cursor:pointer;
+    border-radius:var(--radius); border:none; background:transparent; color:var(--text-muted); cursor:pointer;
     transition:background .1s ease, color .1s ease;
   }
   .chat-folder-add-btn:hover{ background:var(--accent-soft); color:var(--accent); }
@@ -755,7 +780,7 @@
   .chat-folder-items{ padding-left:2px; display:flex; flex-direction:column; gap:4px; }
   .chat-folder-group.collapsed .chat-folder-items{ display:none; }
   .chat-session-item{
-    display:flex; flex-direction:column; gap:2px; padding:9px 10px; border-radius:8px; cursor:pointer;
+    display:flex; flex-direction:column; gap:2px; padding:9px 10px; border-radius:var(--radius); cursor:pointer;
     font-size:13.5px; color:var(--text); border-left:2px solid transparent;
   }
   .chat-session-item:hover{ background:var(--surface-2); }
@@ -772,17 +797,17 @@
     padding:12px 14px; border-bottom:1px solid var(--border);
     display:flex; flex-direction:column; gap:8px;
   }
-  .chat-project-files-label-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .chat-project-files-label-row{ display:flex; align-items:center; gap:6px; }
   .chat-project-files-label{
     font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-muted);
     display:flex; align-items:center; gap:6px; flex:1 1 auto; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .chat-project-files-label-row .files-head-actions{
-    display:flex; align-items:center; gap:2px; flex:none; margin-left:auto;
+  .chat-project-files-head .files-head-actions{
+    display:flex; align-items:center; gap:2px; flex-wrap:wrap;
   }
-  .chat-project-files-label-row .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
-  .chat-project-files-label-row .icon-btn.icon-only svg{ width:15px; height:15px; }
+  .chat-project-files-head .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
+  .chat-project-files-head .icon-btn.icon-only svg{ width:15px; height:15px; }
   .files-action-group{ display:flex; align-items:center; gap:2px; }
   .files-action-divider{ width:1px; height:16px; background:var(--border); margin:0 5px; flex:none; }
   .chat-project-files-search-row{ display:flex; align-items:center; gap:6px; }
@@ -796,7 +821,7 @@
   .chat-file-list{ overflow-y:auto; overflow-x:hidden; padding:6px; flex:1; min-height:0; }
   .chat-file-item{
     display:flex; align-items:center; gap:6px;
-    padding:7px 8px; border-radius:6px; font-size:12.5px;
+    padding:7px 8px; border-radius:var(--radius); font-size:12.5px;
     width:100%;
   }
   .chat-file-item:hover{ background:var(--surface-2); }
@@ -813,15 +838,15 @@
   .chat-file-name.no-preview:hover{ color:var(--text); }
   .chat-file-rename-input{
     flex:1; min-width:0; font-family:"SFMono-Regular",Consolas,monospace; font-size:12px;
-    padding:2px 6px; border:1px solid var(--border); border-radius:5px;
+    padding:2px 6px; border:1px solid var(--border); border-radius:var(--radius);
     background:var(--surface); color:var(--text);
   }
   .chat-file-rename-input.error{ border-color:#d9534f; }
   .chat-file-type-icon{ flex:none; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
   .tree-inline-create-icon svg{ width:15px; height:15px; display:block; }
-  .tree-inline-create-row{ background:var(--surface-2); border-radius:6px; }
+  .tree-inline-create-row{ background:var(--surface-2); border-radius:var(--radius); }
   .tree-inline-create-input{
-    padding:4px 8px; border-radius:6px; font-size:12.5px;
+    padding:4px 8px; border-radius:var(--radius); font-size:12.5px;
     transition:border-color .12s ease, box-shadow .12s ease;
   }
   .tree-inline-create-input:focus{
@@ -844,7 +869,7 @@
   .tree-folder-group{ margin-bottom:0; }
   .tree-folder-label{
     text-transform:none; font-weight:600; font-size:12.5px; letter-spacing:normal;
-    padding:6px 8px; background:transparent; margin-bottom:2px; border-radius:6px;
+    padding:6px 8px; background:transparent; margin-bottom:2px; border-radius:var(--radius);
   }
   .tree-folder-label:hover{ background:var(--surface-2); filter:none; }
   .tree-folder-label .row-menu{ flex:none; margin-left:auto; }
@@ -863,7 +888,7 @@
   .chat-bulk-job-log{
     font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; line-height:1.6;
     max-height:340px; overflow-y:auto; white-space:pre-wrap; word-break:break-word;
-    background:var(--surface-2); border-radius:6px; padding:10px 12px;
+    background:var(--surface-2); border-radius:var(--radius); padding:10px 12px;
   }
   .chat-bulk-job-log .log-error{ color:#dc2626; }
   .chat-bulk-job-head-actions{ display:flex; align-items:center; gap:2px; }
@@ -871,14 +896,14 @@
   .chat-bulk-job-pill{
     position:fixed; right:22px; bottom:22px; z-index:50;
     display:flex; align-items:center; gap:8px;
-    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
     padding:9px 16px; box-shadow:0 6px 20px rgba(16,24,40,0.18);
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--text); cursor:pointer;
   }
   .chat-bulk-job-pill:hover{ border-color:var(--accent); }
   .chat-bulk-job-pill[hidden]{ display:none; }
   .chat-bulk-job-pill-spinner{
-    width:12px; height:12px; border-radius:50%; flex:none;
+    width:12px; height:12px; border-radius:var(--radius); flex:none;
     border:2px solid var(--accent-soft); border-top-color:var(--accent);
     animation:chat-bulk-job-spin .7s linear infinite;
   }
@@ -901,7 +926,7 @@
     width:280px; height:220px; min-width:200px; min-height:140px;
     max-width:80vw; max-height:80vh;
     display:flex; flex-direction:column;
-    background:var(--note-bg); border:1px solid var(--note-border); border-radius:0;
+    background:var(--note-bg); border:1px solid var(--note-border); border-radius:var(--radius);
     box-shadow:0 6px 20px rgba(16,24,40,0.18);
     resize:both; overflow:hidden;
   }
@@ -918,7 +943,7 @@
   }
   .side-note-head-actions{ display:flex; align-items:center; gap:2px; flex:none; }
   .side-note-head-actions .icon-btn.icon-only{
-    width:20px; height:20px; border:none; background:transparent; border-radius:0;
+    width:20px; height:20px; border:none; background:transparent; border-radius:var(--radius);
     font-size:15px; line-height:1; color:var(--note-text);
   }
   .side-note-head-actions .icon-btn.icon-only:hover{ background:rgba(0,0,0,0.08); color:var(--note-text); }
@@ -931,15 +956,15 @@
   .side-note-save-copy-bar[hidden]{ display:none; }
   .side-note-save-copy-bar input{
     flex:1; min-width:0; font-size:11.5px; padding:3px 6px; height:22px;
-    border:1px solid var(--note-border); border-radius:0;
+    border:1px solid var(--note-border); border-radius:var(--radius);
     background:var(--note-bg); color:var(--note-text);
   }
   .side-note-save-copy-bar .btn{
-    border-radius:0; font-size:11.5px; font-weight:500; padding:3px 8px; height:22px;
+    border-radius:var(--radius); font-size:11.5px; font-weight:500; padding:3px 8px; height:22px;
     background:var(--note-bg); border-color:var(--note-border); color:var(--note-text);
   }
   .side-note-save-copy-bar .icon-btn.icon-only{
-    width:22px; height:22px; border:none; background:transparent; border-radius:0; font-size:14px;
+    width:22px; height:22px; border:none; background:transparent; border-radius:var(--radius); font-size:14px;
     color:var(--note-text);
   }
   .side-note-save-copy-bar .icon-btn.icon-only:hover{ background:rgba(0,0,0,0.08); color:var(--note-text); }
@@ -956,7 +981,7 @@
   .side-note-pill{
     position:fixed; right:22px; bottom:22px; z-index:60;
     display:flex; align-items:center; gap:8px;
-    background:var(--note-bg); border:1px solid var(--note-border); border-radius:0;
+    background:var(--note-bg); border:1px solid var(--note-border); border-radius:var(--radius);
     padding:9px 16px; box-shadow:0 6px 20px rgba(16,24,40,0.18);
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; color:var(--note-text); cursor:pointer;
   }
@@ -976,7 +1001,7 @@
   }
   .preview-filename-input{
     width:100%; font-size:14px; font-family:"SFMono-Regular",Consolas,monospace; font-weight:500;
-    padding:6px 9px; border:1px solid var(--border); border-radius:6px;
+    padding:6px 9px; border:1px solid var(--border); border-radius:var(--radius);
     background:var(--surface); color:var(--text);
   }
   .preview-filename-input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
@@ -995,7 +1020,7 @@
   #chatPreviewBody.markdown-body pre .code-copy-btn{
     position:absolute; top:6px; right:6px; opacity:0; transition:opacity .12s ease;
     padding:3px 9px; font-size:11.5px; line-height:1.5; border:1px solid var(--border);
-    border-radius:6px; background:var(--surface); color:var(--text-muted, var(--text));
+    border-radius:var(--radius); background:var(--surface); color:var(--text-muted, var(--text));
     cursor:pointer;
   }
   #chatPreviewBody.markdown-body pre:hover .code-copy-btn{ opacity:1; }
@@ -1013,23 +1038,23 @@
   .image-viewer-container.zoomed{ cursor:grab; }
   .image-viewer-container.dragging{ cursor:grabbing; }
   .image-viewer-container img{
-    max-width:100%; max-height:100%; object-fit:contain; border-radius:6px;
+    max-width:100%; max-height:100%; object-fit:contain; border-radius:var(--radius);
     user-select:none; -webkit-user-drag:none;
   }
   .pdf-preview-body{ position:relative; height:100%; }
   .preview-zoom-toolbar{
     position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:2;
     display:flex; align-items:center; gap:12px;
-    background:var(--surface); border:1px solid var(--border); border-radius:999px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
     padding:6px 14px; box-shadow:0 2px 10px rgba(0,0,0,0.2);
   }
   .preview-zoom-controls{ display:flex; align-items:center; gap:6px; }
   .preview-zoom-controls .btn{
-    width:26px; height:26px; padding:0; border-radius:50%;
+    width:26px; height:26px; padding:0; border-radius:var(--radius);
     display:inline-flex; align-items:center; justify-content:center; line-height:1;
   }
   .preview-zoom-toolbar .preview-zoom-label{ font-size:12px; color:var(--text-muted); min-width:38px; text-align:center; }
-  .preview-zoom-toolbar .btn.text{ width:auto; border-radius:999px; padding:0 10px; }
+  .preview-zoom-toolbar .btn.text{ width:auto; border-radius:var(--radius); padding:0 10px; }
   .pdf-page-indicator{
     font-size:12px; color:var(--text-muted); border-left:1px solid var(--border); padding-left:12px;
     white-space:nowrap;
@@ -1050,11 +1075,11 @@
   .modal-actions .chat-msg-edit-hint{ font-size:12px; }
   .chat-preview-external-change{
     display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600;
-    color:var(--amber); background:var(--amber-soft); padding:4px 6px 4px 10px; border-radius:7px;
+    color:var(--amber); background:var(--amber-soft); padding:4px 6px 4px 10px; border-radius:var(--radius);
   }
   .chat-preview-external-change button{
     font-family:"Inter",system-ui,sans-serif; font-size:11.5px; font-weight:700; padding:3px 9px;
-    border-radius:6px; border:1px solid var(--amber); background:var(--surface); color:var(--amber);
+    border-radius:var(--radius); border:1px solid var(--amber); background:var(--surface); color:var(--amber);
     cursor:pointer;
   }
 
@@ -1065,11 +1090,11 @@
   .chat-preview-search-bar[hidden]{ display:none; }
   .chat-preview-search-bar input{
     flex:1; min-width:0; font-family:inherit; font-size:13px; padding:6px 10px;
-    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);
+    border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);
   }
   .chat-preview-search-count{ font-size:12px; color:var(--text-muted); white-space:nowrap; flex:none; }
   .chat-preview-search-bar .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
-  mark.search-hit{ background:var(--amber-soft); color:inherit; border-radius:2px; }
+  mark.search-hit{ background:var(--amber-soft); color:inherit; border-radius:var(--radius); }
   mark.search-hit.active{ background:var(--amber); color:#fff; }
 
   .chat-thread{ flex:1; min-width:340px; display:flex; flex-direction:column; min-height:0; background:var(--surface); }
@@ -1091,7 +1116,7 @@
   .chat-context-actions .icon-btn.icon-only svg{ width:14px; height:14px; }
   .token-pill{
     font-family:"Inter",system-ui,sans-serif; font-size:12px; font-weight:600; color:var(--slate);
-    background:var(--slate-soft); padding:3px 10px; border-radius:20px; white-space:nowrap;
+    background:var(--slate-soft); padding:3px 10px; border-radius:var(--radius); white-space:nowrap;
   }
   .token-pill.files-pill{
     border:1px solid transparent; cursor:pointer; color:var(--accent); background:var(--accent-soft);
@@ -1125,7 +1150,7 @@
   .chat-msg.role-user{ align-self:flex-end; align-items:flex-end; }
   .chat-msg.role-assistant{ align-self:flex-start; align-items:flex-start; }
   .chat-msg-bubble{
-    border-radius:12px; padding:10px 13px; font-size:14px; line-height:1.55; white-space:normal;
+    border-radius:var(--radius); padding:10px 13px; font-size:14px; line-height:1.55; white-space:normal;
     word-break:break-word; cursor:default; min-width:0; max-width:100%; box-sizing:border-box;
   }
   .chat-msg.role-user .chat-msg-bubble{ background:var(--accent); color:#fff; }
@@ -1135,13 +1160,13 @@
   .chat-msg-bubble.markdown-body > *:first-child{ margin-top:0; }
   .chat-msg-bubble.markdown-body > *:last-child{ margin-bottom:0; }
   .chat-msg-bubble pre{
-    background:rgba(0,0,0,0.06); border-radius:8px; padding:10px; overflow-x:auto; position:relative;
+    background:rgba(0,0,0,0.06); border-radius:var(--radius); padding:10px; overflow-x:auto; position:relative;
     font-size:12.5px; font-family:"SFMono-Regular",Consolas,monospace; margin:6px 0;
   }
   .chat-msg.role-user .chat-msg-bubble pre{ background:rgba(255,255,255,0.16); }
   .chat-msg-bubble code{ font-family:"SFMono-Regular",Consolas,monospace; font-size:0.92em; }
   .chat-msg-bubble .code-copy-btn{
-    position:absolute; top:6px; right:6px; font-size:11px; padding:2px 7px; border-radius:5px;
+    position:absolute; top:6px; right:6px; font-size:11px; padding:2px 7px; border-radius:var(--radius);
     border:1px solid rgba(0,0,0,0.15); background:var(--surface); color:var(--text-muted); cursor:pointer;
   }
   /* markdown-body bakes in dark-on-light colors for links/blockquotes/tables/hr;
@@ -1175,7 +1200,7 @@
   .chat-msg-edit-hint{ margin-right:auto; }
   .chat-msg-edit-actions button{
     font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600; padding:5px 12px;
-    border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+    border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text);
     cursor:pointer;
   }
   .chat-msg-edit-actions button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -1184,7 +1209,7 @@
 
   .chat-msg-meta{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-muted); }
   .chat-msg-meta button{
-    font-family:inherit; font-size:11px; padding:1px 7px; border-radius:10px; border:1px solid var(--border);
+    font-family:inherit; font-size:11px; padding:1px 7px; border-radius:var(--radius); border:1px solid var(--border);
     background:var(--surface); color:var(--text-muted); cursor:pointer;
   }
   .chat-msg-meta button:hover{ border-color:var(--accent); color:var(--accent); }
@@ -1192,7 +1217,7 @@
   .chat-compose{ border-top:1px solid var(--border); padding:12px 18px; display:flex; flex-direction:column; gap:8px; }
   .chat-compose-row{
     display:flex; gap:8px; align-items:flex-end;
-    border:1.5px solid var(--border); border-radius:16px; background:var(--surface);
+    border:1.5px solid var(--border); border-radius:var(--radius); background:var(--surface);
     padding:6px 6px 6px 16px; transition:border-color .15s ease, box-shadow .15s ease;
   }
   .chat-compose-row:focus-within{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
@@ -1202,7 +1227,7 @@
     overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none;
   }
   .chat-compose textarea::-webkit-scrollbar{ display:none; }
-  .chat-compose-row .btn.primary{ flex:none; align-self:flex-end; margin-bottom:3px; border-radius:12px; }
+  .chat-compose-row .btn.primary{ flex:none; align-self:flex-end; margin-bottom:3px; border-radius:var(--radius); }
   .chat-compose-tools{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   .compose-dropdown{
     left:0; right:auto; top:auto; bottom:calc(100% + 4px); min-width:160px; max-width:260px;
@@ -1224,14 +1249,14 @@
   .model-row .m-url{ font-size:12px; color:var(--text-muted); flex:1; min-width:120px; }
   .model-add-row{ display:flex; gap:8px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--border); }
   .model-add-row input{
-    font-family:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:7px;
+    font-family:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius);
   }
   .model-add-row input.m-in-name{ width:170px; }
   .model-add-row input.m-in-url{ width:200px; }
   .model-add-row input.m-in-key{ flex:1; min-width:160px; }
   #pdfSummaryPrompt{
     width:100%; min-height:100px; font-family:inherit; font-size:13.5px; padding:10px 12px;
-    border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); resize:vertical;
+    border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); resize:vertical;
   }
   .settings-panel-body{ padding:20px; display:flex; flex-direction:column; gap:24px; max-width:760px; }
 
@@ -1243,7 +1268,7 @@
   .mm-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:10px; }
   #bulkJsonText, #exportJsonText, #contextInspectText{
     width:100%; min-height:320px; font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px;
-    padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); color:var(--text);
+    padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-2); color:var(--text);
   }
   #contextInspectOverlay .modal-body{ flex:1; min-height:0; }
   #contextInspectHint, #contextInspectOverlay .export-format-tabs{ flex:none; }
@@ -1257,20 +1282,20 @@
   .mm-table td.mm-drag{ width:20px; cursor:grab; color:var(--text-muted); user-select:none; }
   .mm-table tr.mm-dragging{ opacity:.4; }
   .mm-table tr.mm-drop-target{ box-shadow:inset 0 2px 0 var(--accent); }
-  .mm-ctx-toggle{ padding:3px 9px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); cursor:pointer; }
+  .mm-ctx-toggle{ padding:3px 9px; font-size:12px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-muted); cursor:pointer; }
   .mm-ctx-toggle.on{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
   #contextInspectManageErr{ margin-top:6px; }
   #addFileUploadPane.af-drop-active, #chatProjectFiles.af-drop-active{
-    box-shadow:inset 0 0 0 2px var(--accent); background:var(--accent-soft); border-radius:8px;
+    box-shadow:inset 0 0 0 2px var(--accent); background:var(--accent-soft); border-radius:var(--radius);
   }
   .add-file-staged-list{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; }
   .add-file-staged-list .staged-row{
     display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border);
-    border-radius:8px; background:var(--surface-2); font-size:12.5px;
+    border-radius:var(--radius); background:var(--surface-2); font-size:12.5px;
   }
   .add-file-staged-list .staged-row.error{ border-color:#d9534f; color:#d9534f; }
   .add-file-staged-list .staged-thumb{
-    width:28px; height:28px; border-radius:6px; object-fit:cover; flex:none; background:var(--surface);
+    width:28px; height:28px; border-radius:var(--radius); object-fit:cover; flex:none; background:var(--surface);
   }
   .add-file-staged-list .staged-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .add-file-staged-list .staged-size{ color:var(--text-muted); flex:none; }
@@ -1293,7 +1318,6 @@
         <circle cx="103" cy="34" r="16" fill="var(--accent)" />
       </svg>
       <h1>ARTi</h1>
-      <button type="button" class="sidebar-toggle-btn" id="mainSidebarCollapseBtn" title="Hide sidebar (Ctrl+B)">&#9776;</button>
     </div>
     <nav class="side-nav">
       <button type="button" class="nav-item active" data-view="projects" title="Projects (Ctrl+1)">Projects</button>
@@ -1312,17 +1336,29 @@
 <main id="mainEl">
   <div class="col">
     <div class="panel" id="projectsPanel">
-      <div class="panel-head">
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <div class="panel-title">Projects <span class="count-badge" id="projectsCount">0</span></div>
-          <button class="btn primary" id="openNewProject" title="New project (Ctrl+Shift+N)">New</button>
-          <button class="btn outline-primary" id="openExistingFolder" title="Convert From Folder (Ctrl+Shift+F)">Convert From Folder</button>
-        </div>
-        <div class="filter-row">
-          <input class="search-input" id="projectSearch" placeholder="Search name or path…" title="Search (Ctrl+P)" />
-          <div class="chip-row" id="categoryChips"></div>
-          <label class="archived-toggle"><input type="checkbox" id="showArchivedToggle" /> Show archived</label>
-        </div>
+      <div class="panel-topbar" id="projectsTopbar">
+        <div class="panel-topbar-title">Projects <span class="count-badge" id="projectsCount">0</span></div>
+        <button class="btn primary" id="openNewProject" title="New project (Ctrl+Shift+N)">New</button>
+        <button class="btn outline-primary" id="openExistingFolder" title="Convert From Folder (Ctrl+Shift+F)">Convert From Folder</button>
+        <span class="panel-topbar-divider"></span>
+        <input class="search-input" id="projectSearch" placeholder="Search name or path…" title="Search (Ctrl+P)" />
+        <span class="panel-topbar-popover-wrap">
+          <button type="button" class="icon-btn icon-only" id="projectsFilterBtn" title="Filter by category">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M4 5h16l-6.5 7.5V18l-3 1.5v-7z" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <div class="files-picker-dropdown" id="projectsFilterDropdown" hidden>
+            <div class="chip-row" id="categoryChips"></div>
+          </div>
+        </span>
+        <button type="button" class="icon-btn icon-only" id="showArchivedToggleBtn" title="Show archived projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M3 7l1-3h16l1 3" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z" stroke-linejoin="round"/>
+            <path d="M9.5 12h5" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
       <div class="proj-list">
         <table id="projectsTable">
@@ -1335,11 +1371,9 @@
     </div>
 
     <div class="panel" id="ideasPanel" hidden>
-      <div class="panel-head">
-        <div class="panel-title">Ideas <span class="count-badge" id="ideasCount">0</span></div>
-        <div class="filter-row">
-          <input class="search-input" id="ideaSearch" placeholder="Search label, idea text, or tag…" title="Search (Ctrl+P)" />
-        </div>
+      <div class="panel-topbar" id="ideasTopbar">
+        <div class="panel-topbar-title">Ideas <span class="count-badge" id="ideasCount">0</span></div>
+        <input class="search-input" id="ideaSearch" placeholder="Search label, idea text, or tag…" title="Search (Ctrl+P)" />
       </div>
       <div class="proj-list">
         <table id="ideasTable">
@@ -1386,10 +1420,8 @@
         </button>
         <button type="button" id="sideNoteToggleBtn" class="icon-btn icon-only" title="Toggle side note (Ctrl+Alt+N)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <rect x="5" y="3" width="14" height="18" rx="1.5"/>
-            <path d="M8 8h8" stroke-linecap="round"/>
-            <path d="M8 12h8" stroke-linecap="round"/>
-            <path d="M8 16h5" stroke-linecap="round"/>
+            <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H15l4 4v12.5A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5z" stroke-linejoin="round"/>
+            <path d="M15 3v3.5A1.5 1.5 0 0 0 16.5 8H19" stroke-linejoin="round"/>
           </svg>
         </button>
       </div>
@@ -1398,53 +1430,54 @@
       <div class="chat-project-files-head">
         <div class="chat-project-files-label-row">
           <div class="chat-project-files-label">Project files <span class="count-badge" id="chatProjectFilesCount">0</span></div>
-          <div class="files-head-actions">
-            <span class="files-action-group">
-              <button type="button" class="icon-btn icon-only" id="chatNewFileBtn" title="New file (Ctrl+Shift+N)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke-linejoin="round"/>
-                  <path d="M13 3v5h5" stroke-linejoin="round"/>
-                  <path d="M12 12v5M9.5 14.5h5" stroke-linecap="round"/>
-                </svg>
-              </button>
-              <button type="button" class="icon-btn icon-only" id="chatAddFileBtn" title="Upload file (Ctrl+Shift+U)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
-                </svg>
-              </button>
-              <button type="button" class="icon-btn icon-only" id="chatRefreshFilesBtn" title="Refresh file list (Ctrl+Shift+R)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path d="M20 11a8 8 0 0 0-14.9-3.5M4 13a8 8 0 0 0 14.9 3.5" stroke-linecap="round"/>
-                  <path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </span>
-            <span class="files-action-divider"></span>
-            <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="Toggle references (Ctrl+Shift+F)">
+          <button type="button" class="icon-btn icon-only" id="chatProjectFilesCloseBtn" title="Close project files (Ctrl+P)">&times;</button>
+        </div>
+        <div class="files-head-actions">
+          <span class="files-action-group">
+            <button type="button" class="icon-btn icon-only" id="chatNewFileBtn" title="New file (Ctrl+Shift+N)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/>
+                <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke-linejoin="round"/>
+                <path d="M13 3v5h5" stroke-linejoin="round"/>
+                <path d="M12 12v5M9.5 14.5h5" stroke-linecap="round"/>
               </svg>
             </button>
-            <button type="button" class="icon-btn icon-only" id="chatOpenVscodeBtn" title="Open in VS Code (Ctrl+Shift+V)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
+            <button type="button" class="icon-btn icon-only" id="chatAddFileBtn" title="Upload file (Ctrl+Shift+U)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
               </svg>
             </button>
-            <button type="button" class="icon-btn icon-only" id="chatOpenProjectFolderBtn" title="Open in file explorer (Ctrl+Shift+O)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="#FFA000" d="M2 6a2 2 0 0 1 2-2h4.17a2 2 0 0 1 1.41.59L11 6h9a2 2 0 0 1 2 2v1H2z"/>
-                <path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
+            <button type="button" class="icon-btn icon-only" id="chatRefreshFilesBtn" title="Refresh file list (Ctrl+Shift+R)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M20 11a8 8 0 0 0-14.9-3.5M4 13a8 8 0 0 0 14.9 3.5" stroke-linecap="round"/>
+                <path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
-            <span class="row-menu">
-              <button type="button" class="menu-toggle" id="chatFilesMoreToggle" title="More actions (Ctrl+Shift+M)" aria-label="More actions">&#8942;</button>
-              <div class="menu-dropdown" id="chatFilesMoreDropdown" hidden>
-                <button type="button" id="chatAddClaudeMdBtn">Add CLAUDE.md</button>
-                <button type="button" id="chatScaffoldPaperBtn">Scaffold Paper Project</button>
-                <button type="button" id="chatScaffoldGeneralBtn">Scaffold General Project</button>
-              </div>
-            </span>
-          </div>
+          </span>
+          <span class="files-action-divider"></span>
+          <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="Toggle references (Ctrl+Shift+F)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn icon-only" id="chatOpenVscodeBtn" title="Open in VS Code (Ctrl+Shift+V)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn icon-only" id="chatOpenProjectFolderBtn" title="Open in file explorer (Ctrl+Shift+O)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#FFA000" d="M2 6a2 2 0 0 1 2-2h4.17a2 2 0 0 1 1.41.59L11 6h9a2 2 0 0 1 2 2v1H2z"/>
+              <path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
+            </svg>
+          </button>
+          <span class="row-menu">
+            <button type="button" class="menu-toggle" id="chatFilesMoreToggle" title="More actions (Ctrl+Shift+M)" aria-label="More actions">&#8942;</button>
+            <div class="menu-dropdown" id="chatFilesMoreDropdown" hidden>
+              <button type="button" id="chatAddClaudeMdBtn">Add CLAUDE.md</button>
+              <button type="button" id="chatScaffoldPaperBtn">Scaffold Paper Project</button>
+              <button type="button" id="chatScaffoldGeneralBtn">Scaffold General Project</button>
+            </div>
+          </span>
         </div>
         <div class="chat-project-files-search-row">
           <input class="search-input" id="chatFileSearch" placeholder="Search files…" />
@@ -1491,13 +1524,14 @@
           <h2>References <span class="count-badge" id="referencesCount">0</span></h2>
           <button class="icon-btn icon-only" id="closeReferencesDrawerBtn" type="button" title="Close references">&times;</button>
         </div>
-        <div class="ref-project-name" id="referencesProjectName"></div>
+        <div class="references-search-row">
+          <select class="references-sort-select" id="referencesSort"></select>
+          <input class="search-input" id="referencesSearch" placeholder="Search references…" />
+        </div>
+        <div class="references-filter-bar" id="referencesFilterBar"></div>
       </div>
       <div class="references-drawer-body">
-        <input class="search-input" id="referencesSearch" placeholder="Search references…" />
-        <div class="references-filter-bar" id="referencesFilterBar"></div>
         <div class="references-active-pills" id="referencesActivePills"></div>
-        <select class="references-sort-select" id="referencesSort"></select>
         <div class="hint" id="referencesSummary"></div>
         <div class="err" id="referencesErr" hidden></div>
         <div class="ref-list" id="referencesBody"></div>
@@ -1508,6 +1542,7 @@
     </div>
     <div class="chat-resizer" id="chatResizerReferences" data-target="referencesDrawer" title="Drag to resize" hidden></div>
 
+    <div class="files-preview-panes" id="filesPreviewPanes">
     <div class="files-preview-panel" id="filesPreviewPanel">
       <div class="files-preview-empty" id="filesPreviewEmpty">No file selected.</div>
       <div class="files-preview-content" id="filesPreviewContent" hidden>
@@ -1538,6 +1573,7 @@
           <button class="btn" id="chatPreviewEditBtn" type="button" title="Edit (Ctrl+E)">Edit</button>
         </div>
       </div>
+    </div>
     </div>
       </div>
     </div>
@@ -1631,64 +1667,61 @@
   </div>
 
   <div class="panel" id="searchPanel" hidden>
-    <div class="panel-head">
-    <div class="search-header-top">
-      <div class="panel-title">Search</div>
-      <div class="search-header-fields">
-      <div class="search-field search-field-scope">
-        <div class="files-project-picker-wrap" id="searchProjectPickerWrap">
-          <button type="button" class="files-picker-btn" id="searchProjectPickerBtn">
-            <span id="searchProjectPickerLabel">All projects</span>
-            <svg class="files-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <div class="files-picker-dropdown" id="searchProjectPickerDropdown" hidden>
-            <input type="text" class="search-input" id="searchProjectPickerSearch" placeholder="Search projects…" autocomplete="off" />
-            <div class="files-picker-options" id="searchProjectPickerOptions"></div>
+    <div class="panel-topbar" id="searchTopbar">
+      <div class="panel-topbar-title">Search</div>
+      <div class="files-project-picker-wrap" id="searchProjectPickerWrap">
+        <button type="button" class="files-picker-btn" id="searchProjectPickerBtn">
+          <span id="searchProjectPickerLabel">All projects</span>
+          <svg class="files-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="files-picker-dropdown" id="searchProjectPickerDropdown" hidden>
+          <input type="text" class="search-input" id="searchProjectPickerSearch" placeholder="Search projects…" autocomplete="off" />
+          <div class="files-picker-options" id="searchProjectPickerOptions"></div>
+        </div>
+      </div>
+      <input type="text" class="search-input search-query-input" id="searchQueryInput"
+        placeholder="Separate multiple terms with commas" autocomplete="off" />
+      <button type="button" class="and-or-toggle" id="searchModeToggle" role="switch" aria-checked="false" aria-label="Match mode: AND / OR">
+        <span class="and-or-toggle-label and-or-toggle-and">AND</span>
+        <span class="and-or-toggle-track"><span class="and-or-toggle-knob"></span></span>
+        <span class="and-or-toggle-label and-or-toggle-or">OR</span>
+      </button>
+      <span class="panel-topbar-popover-wrap">
+        <button type="button" class="icon-btn icon-only" id="searchRefineBtn" title="Refine: include/exclude terms">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 5h16l-6.5 7.5V18l-3 1.5v-7z" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="files-picker-dropdown" id="searchRefineDropdown" hidden>
+          <div class="search-refine-popover">
+            <div class="search-field search-field-include">
+              <input type="text" class="search-input search-refine-input" id="searchIncludeInput"
+                placeholder="Include: filename or content also has…" autocomplete="off" />
+            </div>
+            <div class="search-field search-field-exclude">
+              <input type="text" class="search-input search-refine-input" id="searchExcludeInput"
+                placeholder="Exclude: filename or content has…" autocomplete="off" />
+            </div>
           </div>
         </div>
-      </div>
-      <div class="search-controls-row">
-        <div class="search-field search-field-query">
-          <input type="text" class="search-input search-query-input" id="searchQueryInput"
-            placeholder="Separate multiple terms with commas" autocomplete="off" />
-        </div>
-        <div class="search-field search-field-mode">
-          <button type="button" class="and-or-toggle" id="searchModeToggle" role="switch" aria-checked="false" aria-label="Match mode: AND / OR">
-            <span class="and-or-toggle-label and-or-toggle-and">AND</span>
-            <span class="and-or-toggle-track"><span class="and-or-toggle-knob"></span></span>
-            <span class="and-or-toggle-label and-or-toggle-or">OR</span>
-          </button>
-        </div>
-      </div>
-      <div class="search-refine-row">
-        <div class="search-field search-field-include">
-          <input type="text" class="search-input search-refine-input" id="searchIncludeInput"
-            placeholder="Include: filename or content also has…" autocomplete="off" />
-        </div>
-        <div class="search-field search-field-exclude">
-          <input type="text" class="search-input search-refine-input" id="searchExcludeInput"
-            placeholder="Exclude: filename or content has…" autocomplete="off" />
-        </div>
-      </div>
-      </div>
+      </span>
     </div>
-      <div class="search-tabs">
-        <button type="button" class="search-tab active" id="searchTabFiles" data-tab="files">
-          Files <span class="count-badge" id="searchFilesCount">0</span>
-        </button>
-        <button type="button" class="search-tab" id="searchTabMarkdown" data-tab="markdown">
-          Markdown <span class="count-badge" id="searchMarkdownCount">0</span>
-        </button>
-        <button type="button" class="search-tab" id="searchTabRisBib" data-tab="risbib">
-          Ris &amp; Bib <span class="count-badge" id="searchRisBibCount">0</span>
-        </button>
-        <button type="button" class="search-tab" id="searchTabOthers" data-tab="other">
-          Others <span class="count-badge" id="searchOthersCount">0</span>
-        </button>
-        <button type="button" class="search-tab" id="searchTabAbstracts" data-tab="abstracts" title="Select a single project to search its literature library">
-          Abstracts <span class="count-badge" id="searchAbstractsCount">0</span>
-        </button>
-      </div>
+    <div class="search-tabs">
+      <button type="button" class="search-tab active" id="searchTabFiles" data-tab="files">
+        Files <span class="count-badge" id="searchFilesCount">0</span>
+      </button>
+      <button type="button" class="search-tab" id="searchTabMarkdown" data-tab="markdown">
+        Markdown <span class="count-badge" id="searchMarkdownCount">0</span>
+      </button>
+      <button type="button" class="search-tab" id="searchTabRisBib" data-tab="risbib">
+        Ris &amp; Bib <span class="count-badge" id="searchRisBibCount">0</span>
+      </button>
+      <button type="button" class="search-tab" id="searchTabOthers" data-tab="other">
+        Others <span class="count-badge" id="searchOthersCount">0</span>
+      </button>
+      <button type="button" class="search-tab" id="searchTabAbstracts" data-tab="abstracts" title="Select a single project to search its literature library">
+        Abstracts <span class="count-badge" id="searchAbstractsCount">0</span>
+      </button>
     </div>
     <div class="search-panel-body">
       <div class="search-loading" id="searchLoadingIndicator" hidden>Searching…</div>
@@ -1701,8 +1734,8 @@
   </div>
 
   <div class="panel" id="settingsPanel" hidden>
-    <div class="panel-head">
-      <div class="panel-title">Settings</div>
+    <div class="panel-topbar">
+      <div class="panel-topbar-title">Settings</div>
     </div>
     <div class="settings-panel-body">
       <div class="settings-section">
@@ -1852,8 +1885,8 @@
     </div>
     <div class="modal-body">
       <div class="hint">Writes a synthetic user question + assistant answer directly into context, without calling the model.</div>
-      <textarea id="qaQuestion" placeholder="Question (user)" style="min-height:70px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
-      <textarea id="qaAnswer" placeholder="Answer (assistant)" style="min-height:110px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <textarea id="qaQuestion" placeholder="Question (user)" style="min-height:70px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);"></textarea>
+      <textarea id="qaAnswer" placeholder="Answer (assistant)" style="min-height:110px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);"></textarea>
       <div class="err" id="qaErr" hidden></div>
     </div>
     <div class="modal-actions">
@@ -1984,7 +2017,7 @@
     <div class="modal-body">
       <div id="templatesList"></div>
       <input id="newTemplateName" placeholder="Template name" />
-      <textarea id="newTemplateContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <textarea id="newTemplateContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);"></textarea>
       <div class="err" id="templatesErr" hidden></div>
     </div>
     <div class="modal-actions">
@@ -2003,7 +2036,7 @@
       <div id="skillsList"></div>
       <input id="newSkillName" placeholder="Skill name" />
       <input id="newSkillDescription" placeholder="Description (optional)" />
-      <textarea id="newSkillContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <textarea id="newSkillContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);"></textarea>
       <div class="err" id="skillsErr" hidden></div>
     </div>
     <div class="modal-actions">
@@ -2021,7 +2054,7 @@
     <div class="modal-body">
       <div id="systemRolesList"></div>
       <input id="newRoleName" placeholder="Role name" />
-      <textarea id="newRoleContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+      <textarea id="newRoleContent" placeholder="Content" style="min-height:80px; width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius);"></textarea>
       <label style="font-size:13px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="newRoleDefault" /> Set as default</label>
       <div class="err" id="systemRolesErr" hidden></div>
     </div>
@@ -2120,7 +2153,7 @@
     var toast = document.createElement("div");
     toast.textContent = message;
     toast.style.cssText = "background:" + (isError ? "#dc2626" : "#1a1d23") + ";color:#fff;" +
-      "padding:8px 14px;border-radius:6px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.25);" +
+      "padding:8px 14px;border-radius:var(--radius);font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.25);" +
       "opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease;max-width:320px;";
     container.appendChild(toast);
     requestAnimationFrame(function(){
@@ -2218,6 +2251,8 @@
         renderProjects();
       });
     });
+    var filterBtn = document.getElementById("projectsFilterBtn");
+    if (filterBtn) filterBtn.classList.toggle("filter-active", activeCategory !== "All");
   }
 
   function filteredSortedProjects(){
@@ -2379,14 +2414,46 @@
     if (!e.target.closest || !e.target.closest(".row-menu")) closeAllRowMenus();
   });
 
+  // ---- Generic popover shell for topbar filter/refine icon buttons ----
+  // (reuses the .files-picker-dropdown shell for a simple show/hide box,
+  // no options list navigation like the project pickers have)
+  var openSimplePopovers = [];
+  function bindSimplePopover(btnId, ddId){
+    var btn = document.getElementById(btnId);
+    var dd = document.getElementById(ddId);
+    if (!btn || !dd) return;
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var willOpen = dd.hidden;
+      closeSimplePopovers();
+      if (willOpen){
+        dd.hidden = false;
+        btn.classList.add("popover-open");
+        openSimplePopovers.push({ btn: btn, dd: dd });
+      }
+    });
+  }
+  function closeSimplePopovers(){
+    openSimplePopovers.forEach(function(p){ p.dd.hidden = true; p.btn.classList.remove("popover-open"); });
+    openSimplePopovers = [];
+  }
+  document.addEventListener("click", function(e){
+    if (!e.target.closest || !e.target.closest(".files-picker-dropdown")) closeSimplePopovers();
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") closeSimplePopovers();
+  });
+
   document.getElementById("projectSearch").addEventListener("input", function(e){
     searchQuery = e.target.value;
     renderProjects();
   });
-  document.getElementById("showArchivedToggle").addEventListener("change", function(e){
-    showArchived = e.target.checked;
+  document.getElementById("showArchivedToggleBtn").addEventListener("click", function(e){
+    showArchived = !showArchived;
+    e.currentTarget.classList.toggle("active", showArchived);
     renderProjects();
   });
+  bindSimplePopover("projectsFilterBtn", "projectsFilterDropdown");
 
   // ---- Sidebar nav / Ideas view ----
 
@@ -2492,7 +2559,6 @@
     applyMainSidebarCollapsed();
   }
   applyMainSidebarCollapsed();
-  document.getElementById("mainSidebarCollapseBtn").addEventListener("click", function(){ setMainSidebarCollapsed(true); });
   document.getElementById("mainSidebarExpandBtn").addEventListener("click", function(){ setMainSidebarCollapsed(false); });
   document.getElementById("filesSidebarToggleBtn").addEventListener("click", function(){
     setMainSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed"));
@@ -2684,7 +2750,6 @@
   var referencesSummary = document.getElementById("referencesSummary");
   var referencesErr = document.getElementById("referencesErr");
   var referencesCount = document.getElementById("referencesCount");
-  var referencesProjectName = document.getElementById("referencesProjectName");
   var referencesSearch = document.getElementById("referencesSearch");
   var referencesSort = document.getElementById("referencesSort");
   var referencesFilterBar = document.getElementById("referencesFilterBar");
@@ -3096,9 +3161,6 @@
     referencesSummary.textContent = "";
     referencesSearch.value = "";
     referencesCount.textContent = "0";
-    var proj = allProjects.filter(function(p){ return p.path === path; })[0];
-    referencesProjectName.textContent = proj ? proj.name : "";
-    referencesProjectName.title = proj ? proj.name : "";
     referencesBody.innerHTML = '<div class="empty loading">Loading…</div>';
     return loadReferences().catch(function(err){
       referencesErr.textContent = err.message;
@@ -3622,7 +3684,7 @@
   // the "Files" tab's own state, driven by the project picker (or by
   // openProjectInFiles), not by currentSession().
   function renderFilesPanel(projectPath){
-    closePreviewInline();
+    resetAllPreviewPanes();
     filesCurrentProjectPath = projectPath;
     chatFileSearchQuery = "";
     chatFileListActiveIndex = -1;
@@ -4245,12 +4307,20 @@
   // of the main query; only takes effect once a main search is running.
   var searchIncludeInputEl = document.getElementById("searchIncludeInput");
   var searchExcludeInputEl = document.getElementById("searchExcludeInput");
+  var searchRefineBtnEl = document.getElementById("searchRefineBtn");
+  function updateSearchRefineActiveState(){
+    if (!searchRefineBtnEl) return;
+    var active = (searchIncludeInputEl && searchIncludeInputEl.value.trim()) ||
+      (searchExcludeInputEl && searchExcludeInputEl.value.trim());
+    searchRefineBtnEl.classList.toggle("filter-active", !!active);
+  }
   if (searchIncludeInputEl){
-    searchIncludeInputEl.addEventListener("input", function(){ runSearchDebounced(300); });
+    searchIncludeInputEl.addEventListener("input", function(){ updateSearchRefineActiveState(); runSearchDebounced(300); });
   }
   if (searchExcludeInputEl){
-    searchExcludeInputEl.addEventListener("input", function(){ runSearchDebounced(300); });
+    searchExcludeInputEl.addEventListener("input", function(){ updateSearchRefineActiveState(); runSearchDebounced(300); });
   }
+  bindSimplePopover("searchRefineBtn", "searchRefineDropdown");
 
   function _parseSearchTermsClient(q){
     return (q || "").split(",").map(function(t){ return t.trim(); }).filter(function(t){ return t; });
@@ -4649,6 +4719,7 @@
   }
 
   document.getElementById("filesMenuToggleBtn").addEventListener("click", toggleFilesMenu);
+  document.getElementById("chatProjectFilesCloseBtn").addEventListener("click", toggleFilesMenu);
 
   document.addEventListener("keydown", function(e){
     var noMods = !e.altKey && !e.shiftKey;
@@ -5140,6 +5211,7 @@
         '<button type="button" class="menu-toggle" data-role="file-menu-toggle" aria-label="File actions">&#8942;</button>' +
         '<div class="menu-dropdown" hidden>' +
           '<button type="button" data-role="open-file">Open</button>' +
+          '<button type="button" data-role="compare-file">Open in new pane</button>' +
           '<button type="button" data-role="open-file-with">Open with&hellip;</button>' +
           '<button type="button" data-role="reveal-file">Open file location</button>' +
           '<button type="button" data-role="copy-file">Copy</button>' +
@@ -5250,8 +5322,17 @@
       });
     });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="preview-file"]'), function(el){
-      el.addEventListener("click", function(){
+      el.addEventListener("click", function(e){
         var item = el.closest("[data-abs]");
+        // Shift+click always opens a genuinely new pane, same as "Open in
+        // new pane" in the row's context menu, instead of replacing
+        // whichever pane is currently focused.
+        if (e.shiftKey){
+          var pane = createPreviewPane();
+          previewProjectFile(filesCurrentProjectPath, item.getAttribute("data-abs"), item.getAttribute("data-rel"), null, pane);
+          lastFocusedPane = pane;
+          return;
+        }
         previewProjectFile(filesCurrentProjectPath, item.getAttribute("data-abs"), item.getAttribute("data-rel"));
       });
     });
@@ -5358,6 +5439,15 @@
         startInlineFileRename(btn.closest(".chat-file-item"));
       });
     });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="compare-file"]'), function(btn){
+      btn.addEventListener("click", function(){
+        closeAllRowMenus();
+        var item = btn.closest("[data-abs]");
+        var pane = createPreviewPane();
+        previewProjectFile(filesCurrentProjectPath, item.getAttribute("data-abs"), item.getAttribute("data-rel"), null, pane);
+        lastFocusedPane = pane;
+      });
+    });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="move-file"]'), function(btn){
       btn.addEventListener("click", function(){
         closeAllRowMenus();
@@ -5422,7 +5512,7 @@
           body: JSON.stringify({ path: filesCurrentProjectPath, file: entry.absPath })
         }).then(function(){
           delete chatFileSelection[entry.relPath];
-          if (chatPreviewAbsPath === entry.absPath) closePreviewInline();
+          panes.slice().forEach(function(p){ if (p.absPath === entry.absPath) closePreviewPane(p); });
         }).catch(function(e){
           errors.push(entry.relPath + ": " + (e && e.message ? e.message : "delete failed"));
         });
@@ -5448,7 +5538,7 @@
     var currentName = slashIdx === -1 ? relPath : relPath.slice(slashIdx + 1);
     var input = document.createElement("input");
     input.type = "text";
-    input.className = "chat-file-rename-input";
+    input.className = "chat-file-rename-input tree-inline-create-input";
     input.value = currentName;
     nameEl.replaceWith(input);
     input.focus();
@@ -5464,9 +5554,9 @@
         method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ path: filesCurrentProjectPath, file: absPath, new_file: folder + newName })
       }).then(function(result){
-        if (chatPreviewAbsPath === absPath){
-          previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path);
-        }
+        panes.forEach(function(p){
+          if (p.absPath === absPath) previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path, null, p);
+        });
         return refreshProjectFiles(filesCurrentProjectPath);
       }).catch(function(err){
         input.disabled = false;
@@ -5981,6 +6071,91 @@
   var chatPreviewPollTimer = null;
   var chatPreviewExternalChangePending = false;
 
+  // ---- multi-pane preview ----
+  // Every pane -- including whichever one happens to be showing when the
+  // Files view first loads -- is created, closed, resized, edited, and
+  // searched through the exact same code path (createPreviewPane() /
+  // closePreviewPane() / getActivePane()). The only asymmetry that survives
+  // is invisible: the very first pane's DOM node is the one already baked
+  // into the page's static HTML (#filesPreviewPanel, with its original
+  // unsuffixed ids like #chatPreviewBody), reused rather than cloned, and it
+  // stays backed by the legacy chatPreview* globals above (not a new,
+  // separate source of truth) so the handful of tree-driven call sites that
+  // still read/write those globals directly keep working unchanged. Every
+  // pane opened after that is a clone with a fresh numeric id suffix and
+  // owns real, independent state in a plain object.
+  function buildPaneEls(suffix){
+    var ids = {
+      panel: "filesPreviewPanel", empty: "filesPreviewEmpty", content: "filesPreviewContent",
+      fileName: "chatPreviewFileName", renameBtn: "chatPreviewRenameBtn",
+      searchToggleBtn: "chatPreviewSearchToggleBtn", closeBtn: "chatPreviewCloseBtn",
+      searchBar: "chatPreviewSearchBar", searchInput: "chatPreviewSearchInput",
+      searchCount: "chatPreviewSearchCount", searchPrevBtn: "chatPreviewSearchPrevBtn",
+      searchNextBtn: "chatPreviewSearchNextBtn", searchCloseBtn: "chatPreviewSearchCloseBtn",
+      bodyWrap: "chatPreviewBodyWrap", body: "chatPreviewBody",
+      actions: "chatPreviewActions", editBtn: "chatPreviewEditBtn"
+    };
+    var els = {};
+    Object.keys(ids).forEach(function(key){
+      var id = ids[key] + suffix;
+      // Looked up live (not cached) -- several of these ids (chatPreviewBody
+      // above all) get their element replaced wholesale via innerHTML on
+      // every render, so a cached reference would go stale immediately.
+      Object.defineProperty(els, key, { enumerable: true, get: function(){ return document.getElementById(id); } });
+    });
+    return els;
+  }
+
+  var panes = [];
+  var originalPane = { suffix: "", els: buildPaneEls("") };
+  Object.defineProperties(originalPane, {
+    rawText: { get: function(){ return chatPreviewRawText; }, set: function(v){ chatPreviewRawText = v; } },
+    relPath: { get: function(){ return chatPreviewRelPath; }, set: function(v){ chatPreviewRelPath = v; } },
+    rawUrl: { get: function(){ return chatPreviewRawUrl; }, set: function(v){ chatPreviewRawUrl = v; } },
+    projectPath: { get: function(){ return chatPreviewProjectPath; }, set: function(v){ chatPreviewProjectPath = v; } },
+    absPath: { get: function(){ return chatPreviewAbsPath; }, set: function(v){ chatPreviewAbsPath = v; } },
+    matches: { get: function(){ return chatPreviewMatches; }, set: function(v){ chatPreviewMatches = v; } },
+    matchIndex: { get: function(){ return chatPreviewMatchIndex; }, set: function(v){ chatPreviewMatchIndex = v; } },
+    editorView: { get: function(){ return chatPreviewEditorView; }, set: function(v){ chatPreviewEditorView = v; } },
+    mtime: { get: function(){ return chatPreviewMtime; }, set: function(v){ chatPreviewMtime = v; } },
+    pollTimer: { get: function(){ return chatPreviewPollTimer; }, set: function(v){ chatPreviewPollTimer = v; } },
+    externalChangePending: { get: function(){ return chatPreviewExternalChangePending; }, set: function(v){ chatPreviewExternalChangePending = v; } }
+  });
+  // Per-pane PDF.js viewer state (pdfEventBus/pdfLinkService/pdfFindController/
+  // pdfViewer/pdfLastQuery) -- plain mutable fields, not proxied to a shared
+  // global, since nothing outside renderPdfPreview() and its helpers reads them.
+  originalPane.pdfEventBus = null;
+  originalPane.pdfLinkService = null;
+  originalPane.pdfFindController = null;
+  originalPane.pdfViewer = null;
+  originalPane.pdfLastQuery = "";
+  panes.push(originalPane);
+
+  // Monotonic counter for fresh panes' id suffix ("-" + paneIdSeq++) --
+  // starts at 2 since the original pane's ids stay unsuffixed, matching
+  // today's ids.
+  var paneIdSeq = 2;
+
+  // The single idle pane object left over after closing the last pane down
+  // to zero (see closePreviewPane()) -- its DOM node is still in the
+  // document, already reset to the empty state, waiting for the next
+  // createPreviewPane() call to reclaim it instead of cloning a new one.
+  var idlePane = null;
+
+  // The pane object that last had a mousedown/focus inside it, so
+  // document-level keyboard shortcuts (Ctrl+F/Ctrl+E/Esc) and any call site
+  // that wants "whichever pane the user is using" route correctly. Cleared
+  // by closePreviewPane() if it was the pane that got closed.
+  var lastFocusedPane = null;
+
+  // Returns the pane new preview activity should target: whichever pane was
+  // last focused (if it's still open), else the first open pane, else null
+  // if no pane is currently open at all.
+  function getActivePane(){
+    if (lastFocusedPane && panes.indexOf(lastFocusedPane) !== -1) return lastFocusedPane;
+    return panes.length ? panes[0] : null;
+  }
+
   // Runs `cb` once CodeMirror is loaded (see the module <script> that sets
   // window.__CM, near the /lib/*.min.js tags). In practice this resolves
   // immediately -- that script sits near the top of the page and evaluates
@@ -6072,47 +6247,67 @@
     return !!m && MARKDOWN_PREVIEW_EXTENSIONS.indexOf(m[0].toLowerCase()) !== -1;
   }
 
-  function closePreviewInline(){
-    var empty = document.getElementById("filesPreviewEmpty");
-    var content = document.getElementById("filesPreviewContent");
-    if (empty) empty.hidden = false;
+  // Resets a single pane back to its blank "No file selected" state in
+  // place, without touching the pane array or the layout -- used wherever a
+  // pane's own content goes away (create-mode cancel, project switch) but
+  // the pane itself should stay put. closePreviewPane() below layers
+  // pane-array/layout bookkeeping on top of this for the "actually close a
+  // pane" case.
+  function resetPaneToEmpty(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var empty = pane.els.empty;
+    var content = pane.els.content;
+    if (empty){ empty.hidden = false; empty.textContent = "No file selected."; }
     if (content) content.hidden = true;
-    var panel = document.getElementById("filesPreviewPanel");
+    var panel = pane.els.panel;
     if (panel) panel.classList.remove("editing");
     // The close ("x") button can fire mid-edit without going through
     // enterPreviewEditMode/enterPreviewCreateMode's own cancel() -- always
     // destroy a live CodeMirror view here too, or it leaks.
-    if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
-    stopPreviewFilePolling();
-    chatPreviewRawText = "";
-    chatPreviewRelPath = "";
-    chatPreviewRawUrl = "";
-    chatPreviewMtime = null;
-    closePreviewSearchBar();
+    if (pane.editorView){ pane.editorView.destroy(); pane.editorView = null; }
+    stopPreviewFilePolling(pane);
+    pane.rawText = "";
+    pane.relPath = "";
+    pane.rawUrl = "";
+    pane.mtime = null;
+    closePreviewSearchBar(pane);
+  }
+
+  // Resets every open pane back to a single, empty pane -- used when the
+  // Files view switches to a different project, since panes showing files
+  // from the old project no longer make sense.
+  function resetAllPreviewPanes(){
+    while (panes.length > 1) closePreviewPane(panes[panes.length - 1]);
+    if (panes.length) resetPaneToEmpty(panes[0]);
   }
 
   // ---- external-change detection: poll the open file's mtime so edits made
   // outside the dashboard (e.g. Claude Code editing the same file) show up
   // without the user having to manually re-open it. ----
 
-  function stopPreviewFilePolling(){
-    if (chatPreviewPollTimer){ clearInterval(chatPreviewPollTimer); chatPreviewPollTimer = null; }
-    chatPreviewExternalChangePending = false;
-    hideExternalChangeNotice();
+  function stopPreviewFilePolling(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (pane.pollTimer){ clearInterval(pane.pollTimer); pane.pollTimer = null; }
+    pane.externalChangePending = false;
+    hideExternalChangeNotice(pane);
   }
 
-  function startPreviewFilePolling(projectPath, absPath){
-    stopPreviewFilePolling();
-    chatPreviewPollTimer = setInterval(function(){
+  function startPreviewFilePolling(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    stopPreviewFilePolling(pane);
+    pane.pollTimer = setInterval(function(){
       if (document.hidden) return;
-      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      // Scoped by prefix (not a suffixed getElementById) since this button is
+      // created dynamically per-pane by enterPreviewEditMode(), suffixed the
+      // same way -- see that function's editContainerId/saveBtn comment.
+      var saveBtn = pane.els.actions && pane.els.actions.querySelector('[id^="chatPreviewSaveBtn"]');
       if (saveBtn && saveBtn.disabled) return; // a save is in flight
-      if (chatPreviewExternalChangePending) return; // already surfaced; wait for the user
+      if (pane.externalChangePending) return; // already surfaced; wait for the user
       var url = "/chat/project-files/stat?path=" + encodeURIComponent(projectPath) +
         "&file=" + encodeURIComponent(absPath);
       apiRaw(url).then(function(d){
-        if (chatPreviewMtime != null && d.mtime === chatPreviewMtime) return;
-        handleExternalFileChange(projectPath, absPath);
+        if (pane.mtime != null && d.mtime === pane.mtime) return;
+        handleExternalFileChange(projectPath, absPath, pane);
       }).catch(function(){
         // File may have been deleted/renamed mid-poll -- ignore; the next
         // successful load (or the user closing the panel) resets state.
@@ -6120,121 +6315,318 @@
     }, 3000);
   }
 
-  function handleExternalFileChange(projectPath, absPath){
-    var panel = document.getElementById("filesPreviewPanel");
+  function handleExternalFileChange(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var panel = pane.els.panel;
     var editing = panel && panel.classList.contains("editing");
     if (!editing){
       // Nothing unsaved to lose -- just reload the read-only preview.
-      previewProjectFile(projectPath, absPath, chatPreviewRelPath);
+      previewProjectFile(projectPath, absPath, pane.relPath, null, pane);
       return;
     }
-    if (!chatPreviewEditorView) return;
-    var currentDoc = chatPreviewEditorView.state.doc.toString();
-    if (currentDoc === chatPreviewRawText){
+    if (!pane.editorView) return;
+    var currentDoc = pane.editorView.state.doc.toString();
+    if (currentDoc === pane.rawText){
       // No local edits since this was loaded/last saved -- safe to reload.
-      reloadEditorContentFromDisk(projectPath, absPath);
+      reloadEditorContentFromDisk(projectPath, absPath, pane);
     } else {
       // Don't clobber an in-progress edit; let the user choose.
-      chatPreviewExternalChangePending = true;
-      showExternalChangeNotice(projectPath, absPath);
+      pane.externalChangePending = true;
+      showExternalChangeNotice(projectPath, absPath, pane);
     }
   }
 
-  function reloadEditorContentFromDisk(projectPath, absPath){
+  function reloadEditorContentFromDisk(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
       "&file=" + encodeURIComponent(absPath);
     apiRaw(url).then(function(d){
-      if (!chatPreviewEditorView) return; // edit ended while this was in flight
-      chatPreviewEditorView.dispatch({
-        changes: { from: 0, to: chatPreviewEditorView.state.doc.length, insert: d.content }
+      if (!pane.editorView) return; // edit ended while this was in flight
+      pane.editorView.dispatch({
+        changes: { from: 0, to: pane.editorView.state.doc.length, insert: d.content }
       });
-      chatPreviewRawText = d.content;
-      chatPreviewMtime = d.mtime;
-      chatPreviewExternalChangePending = false;
-      hideExternalChangeNotice();
+      pane.rawText = d.content;
+      pane.mtime = d.mtime;
+      pane.externalChangePending = false;
+      hideExternalChangeNotice(pane);
     }).catch(function(){
       // Transient read error -- leave the notice/pending state as-is, the
       // next poll tick (or the user's own Reload click) will retry.
     });
   }
 
-  function showExternalChangeNotice(projectPath, absPath){
-    if (document.getElementById("chatPreviewExternalChangeNotice")) return;
-    var actions = document.getElementById("chatPreviewActions");
+  function showExternalChangeNotice(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var noticeId = "chatPreviewExternalChangeNotice" + pane.suffix;
+    if (document.getElementById(noticeId)) return;
+    var actions = pane.els.actions;
     if (!actions) return;
+    var reloadBtnId = "chatPreviewReloadBtn" + pane.suffix;
     actions.insertAdjacentHTML("beforeend",
-      '<span class="chat-preview-external-change" id="chatPreviewExternalChangeNotice">' +
+      '<span class="chat-preview-external-change" id="' + noticeId + '">' +
         'File changed on disk' +
-        '<button type="button" class="btn" id="chatPreviewReloadBtn">Reload</button>' +
+        '<button type="button" class="btn" id="' + reloadBtnId + '">Reload</button>' +
       '</span>');
-    document.getElementById("chatPreviewReloadBtn").addEventListener("click", function(){
-      reloadEditorContentFromDisk(projectPath, absPath);
+    document.getElementById(reloadBtnId).addEventListener("click", function(){
+      reloadEditorContentFromDisk(projectPath, absPath, pane);
     });
   }
 
-  function hideExternalChangeNotice(){
-    var el = document.getElementById("chatPreviewExternalChangeNotice");
+  function hideExternalChangeNotice(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var el = document.getElementById("chatPreviewExternalChangeNotice" + pane.suffix);
     if (el) el.remove();
   }
 
-  function _applyPreviewSearchTerm(searchTerm){
+  function _applyPreviewSearchTerm(searchTerm, pane){
+    pane = pane || getActivePane() || createPreviewPane();
     if (!searchTerm) return;
-    var input = document.getElementById("chatPreviewSearchInput");
+    var input = pane.els.searchInput;
     if (!input) return;
     input.value = searchTerm;
-    openPreviewSearchBar();
+    openPreviewSearchBar(pane);
   }
 
-  function previewProjectFile(projectPath, absPath, relPath, searchTerm){
-    // Guards the same way closePreviewInline() does: this can be called to
+  function previewProjectFile(projectPath, absPath, relPath, searchTerm, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    // Guards the same way resetPaneToEmpty() does: this can be called to
     // switch the preview to a different file while the current one is still
     // mid-edit (e.g. clicking another file in the list instead of Cancel).
-    if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
-    stopPreviewFilePolling();
-    chatPreviewProjectPath = projectPath;
-    chatPreviewAbsPath = absPath;
+    if (pane.editorView){ pane.editorView.destroy(); pane.editorView = null; }
+    stopPreviewFilePolling(pane);
+    pane.projectPath = projectPath;
+    pane.absPath = absPath;
     if (_isImagePreviewableFile(relPath) || _isPdfPreviewableFile(relPath)){
-      chatPreviewRawText = "";
-      chatPreviewRelPath = relPath;
-      chatPreviewRawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
+      pane.rawText = "";
+      pane.relPath = relPath;
+      pane.rawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
         "&file=" + encodeURIComponent(absPath);
-      chatPreviewMtime = null; // no live-refresh polling for image/PDF previews yet
-      document.getElementById("chatPreviewFileName").textContent = relPath;
-      document.getElementById("filesPreviewPanel").classList.remove("editing");
-      closePreviewSearchBar();
-      renderPreviewView();
-      restorePreviewViewActions(projectPath, absPath);
-      document.getElementById("filesPreviewEmpty").hidden = true;
-      document.getElementById("filesPreviewContent").hidden = false;
-      _applyPreviewSearchTerm(searchTerm);
+      pane.mtime = null; // no live-refresh polling for image/PDF previews yet
+      pane.els.fileName.textContent = relPath;
+      pane.els.panel.classList.remove("editing");
+      closePreviewSearchBar(pane);
+      renderPreviewView(pane);
+      restorePreviewViewActions(projectPath, absPath, pane);
+      pane.els.empty.hidden = true;
+      pane.els.content.hidden = false;
+      _applyPreviewSearchTerm(searchTerm, pane);
       return;
     }
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
       "&file=" + encodeURIComponent(absPath);
     apiRaw(url).then(function(d){
-      chatPreviewRawText = d.content;
-      chatPreviewRelPath = relPath;
-      chatPreviewRawUrl = "";
-      chatPreviewMtime = d.mtime;
-      document.getElementById("chatPreviewFileName").textContent = relPath;
-      document.getElementById("filesPreviewPanel").classList.remove("editing");
-      closePreviewSearchBar();
-      renderPreviewView();
-      restorePreviewViewActions(projectPath, absPath);
-      document.getElementById("filesPreviewEmpty").textContent = "No file selected.";
-      document.getElementById("filesPreviewEmpty").hidden = true;
-      document.getElementById("filesPreviewContent").hidden = false;
-      _applyPreviewSearchTerm(searchTerm);
-      startPreviewFilePolling(projectPath, absPath);
+      pane.rawText = d.content;
+      pane.relPath = relPath;
+      pane.rawUrl = "";
+      pane.mtime = d.mtime;
+      pane.els.fileName.textContent = relPath;
+      pane.els.panel.classList.remove("editing");
+      closePreviewSearchBar(pane);
+      renderPreviewView(pane);
+      restorePreviewViewActions(projectPath, absPath, pane);
+      pane.els.empty.textContent = "No file selected.";
+      pane.els.empty.hidden = true;
+      pane.els.content.hidden = false;
+      _applyPreviewSearchTerm(searchTerm, pane);
+      startPreviewFilePolling(projectPath, absPath, pane);
     }).catch(function(err){
-      chatPreviewRawText = "";
-      chatPreviewRelPath = "";
-      chatPreviewRawUrl = "";
-      chatPreviewMtime = null;
-      var empty = document.getElementById("filesPreviewEmpty");
+      pane.rawText = "";
+      pane.relPath = "";
+      pane.rawUrl = "";
+      pane.mtime = null;
+      var empty = pane.els.empty;
       empty.textContent = (err && err.message) || "This file can't be previewed. Use Open or Open with… instead.";
       empty.hidden = false;
-      document.getElementById("filesPreviewContent").hidden = true;
+      pane.els.content.hidden = true;
+    });
+  }
+
+  // Recomputes every non-rightmost pane's fixed width as an equal share of
+  // the row's actual visible width (the rightmost pane always just takes
+  // whatever's left, via flex:1) -- called whenever a pane is opened so a
+  // newly added pane is never left invisible off the edge of an
+  // already-full row. Overrides any width a pane was previously dragged to;
+  // clamped to the same 320-820px range .files-preview-panel-fixed's own
+  // CSS min/max-width allow, so at some pane count the row legitimately
+  // overflows and falls back to horizontal scrolling instead of squeezing
+  // panes below a usable width.
+  function redistributePaneWidths(){
+    var fixedCount = panes.length - 1;
+    if (fixedCount < 1) return; // 0 or 1 panes -- nothing fixed-width to distribute
+    var panesContainer = document.getElementById("filesPreviewPanes");
+    var containerWidth = panesContainer.clientWidth;
+    var resizerTotalWidth = fixedCount * 6; // .chat-resizer's own fixed width
+    var rightmostMinWidth = 280; // .files-preview-panel's own min-width
+    var available = containerWidth - resizerTotalWidth - rightmostMinWidth;
+    var share = Math.max(320, Math.min(820, Math.floor(available / fixedCount)));
+    for (var i = 0; i < fixedCount; i++){
+      panes[i].els.panel.style.width = share + "px";
+    }
+  }
+
+  // Creates a brand-new preview pane, always -- never reuses an existing
+  // one. If the pane array is currently empty and an idle DOM node is
+  // sitting around from a previous close-down-to-zero, that node is
+  // reclaimed (see closePreviewPane()); otherwise a fresh clone of the
+  // original template is appended as the new rightmost pane, and whatever
+  // used to be rightmost becomes a fixed, resizable column with its own
+  // trailing resizer -- every fixed pane's width is then redistributed so
+  // the new pane is always visible without manually scrolling.
+  function createPreviewPane(){
+    if (!panes.length && idlePane){
+      var reclaimed = idlePane;
+      idlePane = null;
+      panes.push(reclaimed);
+      return reclaimed;
+    }
+
+    var panesContainer = document.getElementById("filesPreviewPanes");
+
+    if (panes.length){
+      // The current rightmost pane stops auto-filling and becomes a fixed,
+      // resizable column with its own trailing resizer -- its actual width
+      // is set below by redistributePaneWidths() once the new pane exists.
+      var rightmost = panes[panes.length - 1];
+      var rightmostPanel = rightmost.els.panel;
+      rightmostPanel.classList.add("files-preview-panel-fixed");
+      var rightmostResizer = document.createElement("div");
+      rightmostResizer.className = "chat-resizer";
+      rightmostResizer.id = "chatResizerFilesPreview" + rightmost.suffix;
+      rightmostResizer.setAttribute("data-target", rightmostPanel.id);
+      rightmostResizer.title = "Drag to resize";
+      panesContainer.insertBefore(rightmostResizer, rightmostPanel.nextSibling);
+      initChatResizer(rightmostResizer);
+    }
+
+    var suffix = "-" + (paneIdSeq++);
+    var clone = document.getElementById("filesPreviewPanel").cloneNode(true);
+    clone.id = "filesPreviewPanel" + suffix;
+    // The template node's current class/width may belong to whatever pane
+    // it happens to represent right now (possibly mid-edit, or a fixed,
+    // non-rightmost pane) -- strip all of that back to the blank shape a
+    // brand-new pane starts from.
+    clone.className = "files-preview-panel";
+    clone.style.width = "";
+    // Suffix every inner id so the new pane never collides with any other
+    // pane's ids (this covers the *static* markup only -- functions that
+    // inject fresh HTML at runtime, e.g. enterPreviewEditMode(), suffix
+    // their own dynamically-created ids using pane.suffix the same way).
+    Array.prototype.forEach.call(clone.querySelectorAll("[id]"), function(el){
+      el.id = el.id + suffix;
+    });
+    var emptyEl = clone.querySelector("#filesPreviewEmpty" + suffix);
+    if (emptyEl){ emptyEl.hidden = false; emptyEl.textContent = "No file selected."; }
+    var contentEl = clone.querySelector("#filesPreviewContent" + suffix);
+    if (contentEl) contentEl.hidden = true;
+    var bodyWrap = clone.querySelector("#chatPreviewBodyWrap" + suffix);
+    if (bodyWrap){
+      bodyWrap.classList.remove("flush");
+      bodyWrap.innerHTML = '<div class="markdown-body" id="chatPreviewBody' + suffix + '"></div>';
+    }
+    var actions = clone.querySelector("#chatPreviewActions" + suffix);
+    if (actions){
+      actions.style.display = "";
+      actions.innerHTML = '<button class="btn" id="chatPreviewEditBtn' + suffix + '" type="button" title="Edit (Ctrl+E)">Edit</button>';
+    }
+    var searchBar = clone.querySelector("#chatPreviewSearchBar" + suffix);
+    if (searchBar) searchBar.hidden = true;
+    var searchInput = clone.querySelector("#chatPreviewSearchInput" + suffix);
+    if (searchInput) searchInput.value = "";
+    var fileNameEl = clone.querySelector("#chatPreviewFileName" + suffix);
+    if (fileNameEl) fileNameEl.textContent = "";
+
+    panesContainer.appendChild(clone);
+
+    var pane = {
+      suffix: suffix, els: buildPaneEls(suffix),
+      rawText: "", relPath: "", rawUrl: "", projectPath: "", absPath: "",
+      matches: [], matchIndex: -1, editorView: null, mtime: null,
+      pollTimer: null, externalChangePending: false,
+      pdfEventBus: null, pdfLinkService: null, pdfFindController: null,
+      pdfViewer: null, pdfLastQuery: ""
+    };
+    panes.push(pane);
+    wireupPreviewPaneButtons(pane);
+    redistributePaneWidths();
+    return pane;
+  }
+
+  // Closes a pane: if it's the only pane left, resets it in place to the
+  // empty state instead of removing it (so there's always at least one
+  // visible slot, and the next createPreviewPane() call reclaims this same
+  // idle node). Otherwise removes it from the layout entirely -- if it was
+  // the rightmost pane, its former left neighbor drops its fixed width and
+  // trailing resizer and becomes the new flex:1 rightmost; if it wasn't,
+  // its own trailing resizer goes with it and neighbors are unaffected.
+  function closePreviewPane(pane){
+    if (!pane) return;
+    var idx = panes.indexOf(pane);
+    if (idx === -1) return;
+
+    if (panes.length === 1){
+      resetPaneToEmpty(pane);
+      panes.splice(idx, 1);
+      idlePane = pane;
+    } else {
+      stopPreviewFilePolling(pane);
+      if (pane.editorView){ pane.editorView.destroy(); pane.editorView = null; }
+      var panel = pane.els.panel;
+      var wasRightmost = (idx === panes.length - 1);
+      var ownResizer = document.getElementById("chatResizerFilesPreview" + pane.suffix);
+      if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      if (ownResizer && ownResizer.parentNode) ownResizer.parentNode.removeChild(ownResizer);
+      panes.splice(idx, 1);
+      if (wasRightmost && panes.length){
+        var newRightmost = panes[panes.length - 1];
+        var newRightmostPanel = newRightmost.els.panel;
+        var newRightmostResizer = document.getElementById("chatResizerFilesPreview" + newRightmost.suffix);
+        if (newRightmostResizer && newRightmostResizer.parentNode) newRightmostResizer.parentNode.removeChild(newRightmostResizer);
+        newRightmostPanel.classList.remove("files-preview-panel-fixed");
+        newRightmostPanel.style.width = "";
+      }
+    }
+    if (lastFocusedPane === pane) lastFocusedPane = null;
+  }
+
+  // Wires the rename/search/close/edit-toggle buttons shared by every
+  // preview pane. Called once for the original pane at load, and again for
+  // every pane createPreviewPane() creates afterward.
+  function wireupPreviewPaneButtons(pane){
+    pane.els.panel.addEventListener("mousedown", function(){ lastFocusedPane = pane; });
+    pane.els.panel.addEventListener("focusin", function(){ lastFocusedPane = pane; });
+
+    pane.els.searchToggleBtn.addEventListener("click", function(){
+      if (pane.els.searchBar.hidden) openPreviewSearchBar(pane);
+      else closePreviewSearchBar(pane);
+    });
+    pane.els.searchCloseBtn.addEventListener("click", function(){ closePreviewSearchBar(pane); });
+    pane.els.searchPrevBtn.addEventListener("click", function(){
+      if (_isPdfPreviewableFile(pane.relPath)) pdfFindAgain(true, pane);
+      else gotoPreviewMatch(pane.matchIndex - 1, pane);
+    });
+    pane.els.searchNextBtn.addEventListener("click", function(){
+      if (_isPdfPreviewableFile(pane.relPath)) pdfFindAgain(false, pane);
+      else gotoPreviewMatch(pane.matchIndex + 1, pane);
+    });
+    pane.els.searchInput.addEventListener("input", function(e){
+      runPreviewSearch(e.target.value, pane);
+    });
+    pane.els.searchInput.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){
+        e.preventDefault();
+        if (_isPdfPreviewableFile(pane.relPath)) pdfFindAgain(e.shiftKey, pane);
+        else if (e.shiftKey) gotoPreviewMatch(pane.matchIndex - 1, pane);
+        else gotoPreviewMatch(pane.matchIndex + 1, pane);
+      } else if (e.key === "Escape"){
+        e.preventDefault();
+        e.stopPropagation();
+        closePreviewSearchBar(pane);
+      }
+    });
+    pane.els.closeBtn.addEventListener("click", function(){ closePreviewPane(pane); });
+    pane.els.renameBtn.addEventListener("click", function(){
+      if (!pane.projectPath || !pane.absPath || !pane.relPath) return;
+      enterPreviewRenameMode(pane.projectPath, pane.absPath, pane);
     });
   }
 
@@ -6268,13 +6660,14 @@
   // project-files raw-file endpoint, resolved against chatPreviewAbsPath's
   // directory, so local images actually load (remote http(s)/data URLs are
   // left untouched).
-  function resolveMarkdownPreviewImages(body){
-    if (!chatPreviewProjectPath || !chatPreviewAbsPath) return;
+  function resolveMarkdownPreviewImages(body, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (!pane.projectPath || !pane.absPath) return;
     Array.prototype.forEach.call(body.querySelectorAll("img[src]"), function(img){
       var src = img.getAttribute("src");
       if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.indexOf("//") === 0) return;
-      var resolvedAbsPath = resolveRelativeProjectPath(chatPreviewAbsPath, src);
-      img.setAttribute("src", API + "/chat/project-files/raw?path=" + encodeURIComponent(chatPreviewProjectPath) +
+      var resolvedAbsPath = resolveRelativeProjectPath(pane.absPath, src);
+      img.setAttribute("src", API + "/chat/project-files/raw?path=" + encodeURIComponent(pane.projectPath) +
         "&file=" + encodeURIComponent(resolvedAbsPath));
     });
   }
@@ -6331,13 +6724,14 @@
     }
     if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return; // mailto:, etc. -- leave to the OS/browser default
     if (href.charAt(0) === "#") return; // in-page anchor
-    if (markdownHost.id === "chatPreviewBody" && chatPreviewProjectPath && chatPreviewAbsPath){
+    var linkPane = panes.filter(function(p){ return p.els.body === markdownHost; })[0] || null;
+    if (linkPane && linkPane.projectPath && linkPane.absPath){
       e.preventDefault();
       var hrefPath = href.split("#")[0].split("?")[0];
       if (!hrefPath) return;
-      var resolvedAbsPath = resolveRelativeProjectPath(chatPreviewAbsPath, hrefPath);
-      var relPath = projectRelPathFromAbs(chatPreviewProjectPath, resolvedAbsPath);
-      previewProjectFile(chatPreviewProjectPath, resolvedAbsPath, relPath);
+      var resolvedAbsPath = resolveRelativeProjectPath(linkPane.absPath, hrefPath);
+      var relPath = projectRelPathFromAbs(linkPane.projectPath, resolvedAbsPath);
+      previewProjectFile(linkPane.projectPath, resolvedAbsPath, relPath, null, linkPane);
       return;
     }
     // No file-preview context to resolve a relative link against (e.g. a
@@ -6528,8 +6922,9 @@
   }
 
   function exportProjectFileToPdfByPath(projectPath, absPath, relPath, triggerBtn){
-    if (absPath === chatPreviewAbsPath && chatPreviewRawText){
-      return exportProjectFileToPdf(projectPath, absPath, relPath, chatPreviewRawText, triggerBtn);
+    var loadedPane = panes.filter(function(p){ return p.absPath === absPath && p.rawText; })[0];
+    if (loadedPane){
+      return exportProjectFileToPdf(projectPath, absPath, relPath, loadedPane.rawText, triggerBtn);
     }
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
       "&file=" + encodeURIComponent(absPath);
@@ -6540,37 +6935,47 @@
     });
   }
 
-  function renderPreviewView(){
-    var wrap = document.getElementById("chatPreviewBodyWrap");
-    wrap.classList.toggle("flush", _isPdfPreviewableFile(chatPreviewRelPath) || _isImagePreviewableFile(chatPreviewRelPath));
-    if (_isPdfPreviewableFile(chatPreviewRelPath)){
-      wrap.innerHTML = '<div class="pdf-preview-body" id="chatPreviewBody"></div>';
-      renderPdfPreview(chatPreviewRawUrl);
-    } else if (_isImagePreviewableFile(chatPreviewRelPath)){
-      wrap.innerHTML = '<div class="image-preview-body" id="chatPreviewBody"></div>';
-      renderImagePreview(chatPreviewRawUrl, chatPreviewRelPath);
-    } else if (isMarkdownPreview(chatPreviewRelPath)){
+  function renderPreviewView(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var wrap = pane.els.bodyWrap;
+    var bodyId = "chatPreviewBody" + pane.suffix;
+    wrap.classList.toggle("flush", _isPdfPreviewableFile(pane.relPath) || _isImagePreviewableFile(pane.relPath));
+    if (_isPdfPreviewableFile(pane.relPath)){
+      wrap.innerHTML = '<div class="pdf-preview-body" id="' + bodyId + '"></div>';
+      renderPdfPreview(pane.rawUrl, pane);
+    } else if (_isImagePreviewableFile(pane.relPath)){
+      wrap.innerHTML = '<div class="image-preview-body" id="' + bodyId + '"></div>';
+      renderImagePreview(pane.rawUrl, pane.relPath, pane);
+    } else if (isMarkdownPreview(pane.relPath)){
       // "content" alongside "markdown-body" so a source file's own embedded
       // <style> block (e.g. arti-lms content, scoped to `.content`) actually
       // has something to match -- innerHTML-inserted <style> tags are live
       // and apply normally, same as the PDF export now does.
-      wrap.innerHTML = '<div class="markdown-body content" id="chatPreviewBody"></div>';
-      var body = document.getElementById("chatPreviewBody");
-      body.innerHTML = parseMarkdownWithMath(chatPreviewRawText);
-      resolveMarkdownPreviewImages(body);
+      wrap.innerHTML = '<div class="markdown-body content" id="' + bodyId + '"></div>';
+      var body = document.getElementById(bodyId);
+      body.innerHTML = parseMarkdownWithMath(pane.rawText);
+      resolveMarkdownPreviewImages(body, pane);
       renderMathIn(body);
       addCodeCopyButtons(body);
     } else {
-      wrap.innerHTML = '<pre class="plain-text-body" id="chatPreviewBody"></pre>';
-      document.getElementById("chatPreviewBody").textContent = chatPreviewRawText;
+      wrap.innerHTML = '<pre class="plain-text-body" id="' + bodyId + '"></pre>';
+      document.getElementById(bodyId).textContent = pane.rawText;
     }
   }
 
   // ---- image preview: CSS-transform zoom/pan, driven by buttons, ctrl+wheel
   // (trackpad pinch), touch pinch, drag-to-pan, and double-click to toggle ----
-
-  function renderImagePreview(url, relPath){
-    var body = document.getElementById("chatPreviewBody");
+  //
+  // NOTE: this viewer's inner controls (imageViewerContainer, chatPreviewImage,
+  // imgZoom*Btn) remain process-wide singletons, not suffixed per pane --
+  // comparing two images side by side isn't reliable (last-rendered one wins
+  // the shared zoom controls). The PDF viewer below IS fully per-pane (each
+  // pane gets its own PDFViewer/EventBus/FindController stored on `pane`,
+  // and its DOM ids are suffixed with pane.suffix), so two PDFs can be
+  // compared side by side independently.
+  function renderImagePreview(url, relPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var body = pane.els.body;
     if (!body) return;
     body.innerHTML =
       '<div class="image-viewer-container" id="imageViewerContainer">' +
@@ -6664,57 +7069,58 @@
   // PDFFindController) instead of a hand-rolled renderer -- gets correct
   // per-page layout, lazy rendering, and find/highlight/prev/next for free ----
 
-  var chatPdfEventBus = null;
-  var chatPdfLinkService = null;
-  var chatPdfFindController = null;
-  var chatPdfViewer = null;
-  var chatPdfLastQuery = "";
-
-  function renderPdfPreview(url){
-    var body = document.getElementById("chatPreviewBody");
+  // Each pane owns its own PDFViewer/EventBus/LinkService/FindController
+  // (stored directly on the pane object, e.g. pane.pdfViewer) and its own
+  // suffixed DOM ids (pdfViewerContainer2, pdfZoomOutBtn2, ...), scoped via
+  // pane.els.panel.querySelector -- so two PDFs open side by side (one per
+  // pane) never collide on id lookups or share zoom/find state.
+  function renderPdfPreview(url, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var body = pane.els.body;
     if (!body || !url) return;
-    chatPdfViewer = null;
-    chatPdfLastQuery = "";
+    var sfx = pane.suffix;
+    pane.pdfViewer = null;
+    pane.pdfLastQuery = "";
     body.innerHTML =
-      '<div class="pdf-viewer-container" id="pdfViewerContainer"><div class="pdfViewer" id="pdfViewerInner"></div></div>' +
+      '<div class="pdf-viewer-container" id="pdfViewerContainer' + sfx + '"><div class="pdfViewer" id="pdfViewerInner' + sfx + '"></div></div>' +
       '<div class="preview-zoom-toolbar">' +
         '<div class="preview-zoom-controls">' +
-          '<button type="button" class="btn" id="pdfZoomOutBtn" title="Zoom out">&minus;</button>' +
-          '<span class="preview-zoom-label" id="pdfZoomLabel">100%</span>' +
-          '<button type="button" class="btn" id="pdfZoomInBtn" title="Zoom in">+</button>' +
+          '<button type="button" class="btn" id="pdfZoomOutBtn' + sfx + '" title="Zoom out">&minus;</button>' +
+          '<span class="preview-zoom-label" id="pdfZoomLabel' + sfx + '">100%</span>' +
+          '<button type="button" class="btn" id="pdfZoomInBtn' + sfx + '" title="Zoom in">+</button>' +
         '</div>' +
-        '<span class="pdf-page-indicator" id="pdfPageIndicator"></span>' +
+        '<span class="pdf-page-indicator" id="pdfPageIndicator' + sfx + '"></span>' +
       '</div>';
 
-    var container = document.getElementById("pdfViewerContainer");
-    var viewerEl = document.getElementById("pdfViewerInner");
+    var container = body.querySelector("#pdfViewerContainer" + sfx);
+    var viewerEl = body.querySelector("#pdfViewerInner" + sfx);
 
-    chatPdfEventBus = new pdfjsViewer.EventBus();
-    chatPdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus: chatPdfEventBus });
-    chatPdfFindController = new pdfjsViewer.PDFFindController({
-      eventBus: chatPdfEventBus, linkService: chatPdfLinkService
+    pane.pdfEventBus = new pdfjsViewer.EventBus();
+    pane.pdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus: pane.pdfEventBus });
+    pane.pdfFindController = new pdfjsViewer.PDFFindController({
+      eventBus: pane.pdfEventBus, linkService: pane.pdfLinkService
     });
-    chatPdfViewer = new pdfjsViewer.PDFViewer({
-      container: container, viewer: viewerEl, eventBus: chatPdfEventBus,
-      linkService: chatPdfLinkService, findController: chatPdfFindController
+    pane.pdfViewer = new pdfjsViewer.PDFViewer({
+      container: container, viewer: viewerEl, eventBus: pane.pdfEventBus,
+      linkService: pane.pdfLinkService, findController: pane.pdfFindController
     });
-    chatPdfLinkService.setViewer(chatPdfViewer);
+    pane.pdfLinkService.setViewer(pane.pdfViewer);
 
-    chatPdfEventBus.on("pagesinit", function(){
-      chatPdfViewer.currentScaleValue = 1;
-      updatePdfZoomLabel();
-      updatePdfPageIndicator();
+    pane.pdfEventBus.on("pagesinit", function(){
+      pane.pdfViewer.currentScaleValue = 1;
+      updatePdfZoomLabel(pane);
+      updatePdfPageIndicator(pane);
     });
-    chatPdfEventBus.on("pagechanging", function(){ updatePdfPageIndicator(); });
-    chatPdfEventBus.on("scalechanging", function(e){ updatePdfZoomLabel(e.scale); });
-    chatPdfEventBus.on("updatefindmatchescount", function(e){ updatePdfMatchesCount(e.matchesCount); });
-    chatPdfEventBus.on("updatefindcontrolstate", function(e){ updatePdfMatchesCount(e.matchesCount); });
+    pane.pdfEventBus.on("pagechanging", function(){ updatePdfPageIndicator(pane); });
+    pane.pdfEventBus.on("scalechanging", function(e){ updatePdfZoomLabel(pane, e.scale); });
+    pane.pdfEventBus.on("updatefindmatchescount", function(e){ updatePdfMatchesCount(pane, e.matchesCount); });
+    pane.pdfEventBus.on("updatefindcontrolstate", function(e){ updatePdfMatchesCount(pane, e.matchesCount); });
 
-    document.getElementById("pdfZoomOutBtn").addEventListener("click", function(){
-      setPdfZoomScale(chatPdfViewer.currentScale - 0.2);
+    body.querySelector("#pdfZoomOutBtn" + sfx).addEventListener("click", function(){
+      setPdfZoomScale(pane, pane.pdfViewer.currentScale - 0.2);
     });
-    document.getElementById("pdfZoomInBtn").addEventListener("click", function(){
-      setPdfZoomScale(chatPdfViewer.currentScale + 0.2);
+    body.querySelector("#pdfZoomInBtn" + sfx).addEventListener("click", function(){
+      setPdfZoomScale(pane, pane.pdfViewer.currentScale + 0.2);
     });
 
     // Trackpad pinch is reported by the browser as a wheel event with ctrlKey
@@ -6724,7 +7130,7 @@
     container.addEventListener("wheel", function(e){
       if (!e.ctrlKey) return;
       e.preventDefault();
-      setPdfZoomScale(chatPdfViewer.currentScale * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+      setPdfZoomScale(pane, pane.pdfViewer.currentScale * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
     }, { passive: false });
 
     // Real two-finger touch pinch (touchscreens), tracked by the distance
@@ -6739,13 +7145,13 @@
     container.addEventListener("touchstart", function(e){
       if (e.touches.length === 2){
         pinchStartDist = pdfTouchDist(e.touches);
-        pinchStartScale = chatPdfViewer.currentScale;
+        pinchStartScale = pane.pdfViewer.currentScale;
       }
     }, { passive: true });
     container.addEventListener("touchmove", function(e){
       if (e.touches.length === 2 && pinchStartDist){
         e.preventDefault();
-        setPdfZoomScale(pinchStartScale * (pdfTouchDist(e.touches) / pinchStartDist));
+        setPdfZoomScale(pane, pinchStartScale * (pdfTouchDist(e.touches) / pinchStartDist));
       }
     }, { passive: false });
     container.addEventListener("touchend", function(e){
@@ -6753,67 +7159,67 @@
     });
 
     pdfjsLib.getDocument(url).promise.then(function(doc){
-      if (!chatPdfViewer) return; // preview closed/switched before the doc loaded
-      chatPdfViewer.setDocument(doc);
-      chatPdfLinkService.setDocument(doc, null);
-      chatPdfFindController.setDocument(doc);
+      if (!pane.pdfViewer) return; // preview closed/switched before the doc loaded
+      pane.pdfViewer.setDocument(doc);
+      pane.pdfLinkService.setDocument(doc, null);
+      pane.pdfFindController.setDocument(doc);
     }).catch(function(err){
       container.innerHTML = '<div class="hint">Failed to load PDF: ' +
         escapeHtml(err && err.message ? err.message : "unknown error") + '</div>';
     });
   }
 
-  function setPdfZoomScale(scale){
-    if (!chatPdfViewer) return;
-    chatPdfViewer.currentScaleValue = Math.max(0.4, Math.min(3, scale));
+  function setPdfZoomScale(pane, scale){
+    if (!pane.pdfViewer) return;
+    pane.pdfViewer.currentScaleValue = Math.max(0.4, Math.min(3, scale));
   }
 
-  function updatePdfZoomLabel(scale){
-    var label = document.getElementById("pdfZoomLabel");
+  function updatePdfZoomLabel(pane, scale){
+    var label = pane.els.panel.querySelector("#pdfZoomLabel" + pane.suffix);
     if (!label) return;
-    var s = typeof scale === "number" ? scale : (chatPdfViewer ? chatPdfViewer.currentScale : 1);
+    var s = typeof scale === "number" ? scale : (pane.pdfViewer ? pane.pdfViewer.currentScale : 1);
     label.textContent = Math.round(s * 100) + "%";
   }
 
-  function updatePdfPageIndicator(){
-    var indicator = document.getElementById("pdfPageIndicator");
-    if (!indicator || !chatPdfViewer) return;
-    var total = chatPdfViewer.pagesCount || 0;
-    var current = chatPdfViewer.currentPageNumber || (total ? 1 : 0);
+  function updatePdfPageIndicator(pane){
+    var indicator = pane.els.panel.querySelector("#pdfPageIndicator" + pane.suffix);
+    if (!indicator || !pane.pdfViewer) return;
+    var total = pane.pdfViewer.pagesCount || 0;
+    var current = pane.pdfViewer.currentPageNumber || (total ? 1 : 0);
     indicator.textContent = total ? current + " of " + total + (total === 1 ? " page" : " pages") : "";
   }
 
-  function updatePdfMatchesCount(matchesCount){
-    var el = document.getElementById("chatPreviewSearchCount");
+  function updatePdfMatchesCount(pane, matchesCount){
+    var el = pane.els.searchCount;
     if (!el) return;
     el.textContent = matchesCount && matchesCount.total
       ? matchesCount.current + " / " + matchesCount.total
       : "0 / 0";
   }
 
-  function runPdfPreviewSearch(query){
-    chatPdfLastQuery = query || "";
-    if (!chatPdfEventBus) return;
-    if (!chatPdfLastQuery.trim()){ updatePdfMatchesCount(null); }
-    chatPdfEventBus.dispatch("find", {
-      source: window, type: "", query: chatPdfLastQuery,
+  function runPdfPreviewSearch(query, pane){
+    pane.pdfLastQuery = query || "";
+    if (!pane.pdfEventBus) return;
+    if (!pane.pdfLastQuery.trim()){ updatePdfMatchesCount(pane, null); }
+    pane.pdfEventBus.dispatch("find", {
+      source: window, type: "", query: pane.pdfLastQuery,
       caseSensitive: false, entireWord: false, highlightAll: true,
       matchDiacritics: false, findPrevious: false
     });
   }
 
-  function pdfFindAgain(findPrevious){
-    if (!chatPdfEventBus || !chatPdfLastQuery.trim()) return;
-    chatPdfEventBus.dispatch("find", {
-      source: window, type: "again", query: chatPdfLastQuery,
+  function pdfFindAgain(findPrevious, pane){
+    if (!pane.pdfEventBus || !pane.pdfLastQuery.trim()) return;
+    pane.pdfEventBus.dispatch("find", {
+      source: window, type: "again", query: pane.pdfLastQuery,
       caseSensitive: false, entireWord: false, highlightAll: true,
       matchDiacritics: false, findPrevious: !!findPrevious
     });
   }
 
-  function pdfFindBarClose(){
-    if (!chatPdfEventBus) return;
-    chatPdfEventBus.dispatch("findbarclose", { source: window });
+  function pdfFindBarClose(pane){
+    if (!pane.pdfEventBus) return;
+    pane.pdfEventBus.dispatch("findbarclose", { source: window });
   }
 
   function renderMathIn(el){
@@ -6831,37 +7237,40 @@
 
   // ---- in-file search (highlight + prev/next), scoped to the preview drawer ----
 
-  function openPreviewSearchBar(){
-    var bar = document.getElementById("chatPreviewSearchBar");
+  function openPreviewSearchBar(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var bar = pane.els.searchBar;
     bar.hidden = false;
-    var input = document.getElementById("chatPreviewSearchInput");
+    var input = pane.els.searchInput;
     input.focus();
     input.select();
-    runPreviewSearch(input.value);
+    runPreviewSearch(input.value, pane);
   }
 
-  function closePreviewSearchBar(){
-    var bar = document.getElementById("chatPreviewSearchBar");
+  function closePreviewSearchBar(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var bar = pane.els.searchBar;
     bar.hidden = true;
-    document.getElementById("chatPreviewSearchInput").value = "";
-    if (_isPdfPreviewableFile(chatPreviewRelPath)){
-      pdfFindBarClose();
-    } else if (document.getElementById("filesPreviewPanel").classList.contains("editing")){
-      if (chatPreviewEditorView){
-        chatPreviewEditorView.dispatch({
+    pane.els.searchInput.value = "";
+    if (_isPdfPreviewableFile(pane.relPath)){
+      pdfFindBarClose(pane);
+    } else if (pane.els.panel.classList.contains("editing")){
+      if (pane.editorView){
+        pane.editorView.dispatch({
           effects: window.__CM.setSearchQuery.of(new window.__CM.SearchQuery({ search: "" }))
         });
       }
     } else {
-      clearPreviewSearchHighlights();
+      clearPreviewSearchHighlights(pane);
     }
-    chatPreviewMatches = [];
-    chatPreviewMatchIndex = -1;
-    updatePreviewSearchCount();
+    pane.matches = [];
+    pane.matchIndex = -1;
+    updatePreviewSearchCount(pane);
   }
 
-  function clearPreviewSearchHighlights(){
-    var body = document.getElementById("chatPreviewBody");
+  function clearPreviewSearchHighlights(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var body = pane.els.body;
     if (body){
       Array.prototype.forEach.call(body.querySelectorAll("mark.search-hit"), function(mark){
         var parent = mark.parentNode;
@@ -6872,16 +7281,18 @@
     }
   }
 
-  function runPreviewSearch(query){
-    if (_isPdfPreviewableFile(chatPreviewRelPath)) return runPdfPreviewSearch(query);
-    var panel = document.getElementById("filesPreviewPanel");
-    if (panel && panel.classList.contains("editing")) return runPreviewSearchInEditor(query);
-    clearPreviewSearchHighlights();
-    chatPreviewMatches = [];
-    chatPreviewMatchIndex = -1;
-    var body = document.getElementById("chatPreviewBody");
+  function runPreviewSearch(query, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (_isPdfPreviewableFile(pane.relPath)) return runPdfPreviewSearch(query, pane);
+    var panel = pane.els.panel;
+    if (panel && panel.classList.contains("editing")) return runPreviewSearchInEditor(query, pane);
+    clearPreviewSearchHighlights(pane);
+    var matches = [];
+    pane.matches = matches;
+    pane.matchIndex = -1;
+    var body = pane.els.body;
     var q = (query || "").trim();
-    if (!body || !q){ updatePreviewSearchCount(); return; }
+    if (!body || !q){ updatePreviewSearchCount(pane); return; }
     var qLower = q.toLowerCase();
     var walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
     var textNodes = [];
@@ -6902,22 +7313,23 @@
         mark.className = "search-hit";
         mark.textContent = text.slice(idx, idx + q.length);
         frag.appendChild(mark);
-        chatPreviewMatches.push(mark);
+        matches.push(mark);
         lastIndex = idx + q.length;
         idx = lower.indexOf(qLower, lastIndex);
       }
       frag.appendChild(document.createTextNode(text.slice(lastIndex)));
       textNode.parentNode.replaceChild(frag, textNode);
     });
-    updatePreviewSearchCount();
-    if (chatPreviewMatches.length) gotoPreviewMatch(0);
+    updatePreviewSearchCount(pane);
+    if (pane.matches.length) gotoPreviewMatch(0, pane);
   }
 
-  function updatePreviewSearchCount(){
-    var el = document.getElementById("chatPreviewSearchCount");
+  function updatePreviewSearchCount(pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var el = pane.els.searchCount;
     if (!el) return;
-    el.textContent = chatPreviewMatches.length
-      ? (chatPreviewMatchIndex + 1) + " / " + chatPreviewMatches.length
+    el.textContent = pane.matches.length
+      ? (pane.matchIndex + 1) + " / " + pane.matches.length
       : "0 / 0";
   }
 
@@ -6925,15 +7337,17 @@
   // document (found via @codemirror/search's SearchCursor); highlighting and
   // scrolling are CM6's own job (the search() extension + scrollIntoView),
   // not hand-rolled DOM like the old mirror-<pre> approach.
-  function runPreviewSearchInEditor(query){
-    chatPreviewMatches = [];
-    chatPreviewMatchIndex = -1;
+  function runPreviewSearchInEditor(query, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var matches = [];
+    pane.matches = matches;
+    pane.matchIndex = -1;
     var CM = window.__CM;
-    var view = chatPreviewEditorView;
+    var view = pane.editorView;
     var q = (query || "").trim();
     if (!view || !CM || !q){
       if (view && CM) view.dispatch({ effects: CM.setSearchQuery.of(new CM.SearchQuery({ search: "" })) });
-      updatePreviewSearchCount();
+      updatePreviewSearchCount(pane);
       return;
     }
     // SearchCursor's 5th arg is a normalize(string) function applied to each
@@ -6942,20 +7356,21 @@
     var cursor = new CM.SearchCursor(view.state.doc, q, 0, view.state.doc.length,
       function(s){ return s.toLowerCase(); });
     while (!cursor.next().done){
-      chatPreviewMatches.push({ from: cursor.value.from, to: cursor.value.to });
+      matches.push({ from: cursor.value.from, to: cursor.value.to });
     }
     view.dispatch({ effects: CM.setSearchQuery.of(new CM.SearchQuery({ search: q, caseSensitive: false })) });
-    updatePreviewSearchCount();
-    if (chatPreviewMatches.length) gotoPreviewMatch(0);
+    updatePreviewSearchCount(pane);
+    if (pane.matches.length) gotoPreviewMatch(0, pane);
   }
 
-  function gotoPreviewMatch(index){
-    if (!chatPreviewMatches.length) return;
-    var panel = document.getElementById("filesPreviewPanel");
+  function gotoPreviewMatch(index, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (!pane.matches.length) return;
+    var panel = pane.els.panel;
     if (panel && panel.classList.contains("editing")){
-      chatPreviewMatchIndex = ((index % chatPreviewMatches.length) + chatPreviewMatches.length) % chatPreviewMatches.length;
-      var m = chatPreviewMatches[chatPreviewMatchIndex];
-      var view = chatPreviewEditorView;
+      pane.matchIndex = ((index % pane.matches.length) + pane.matches.length) % pane.matches.length;
+      var m = pane.matches[pane.matchIndex];
+      var view = pane.editorView;
       if (view){
         // Deliberately not .focus()-ing here: this runs on every keystroke in
         // the search input (see runPreviewSearchInEditor), and stealing focus
@@ -6970,21 +7385,21 @@
           effects: window.__CM.EditorView.scrollIntoView(m.from, { y: "center" })
         });
       }
-      updatePreviewSearchCount();
+      updatePreviewSearchCount(pane);
       return;
     }
-    if (chatPreviewMatchIndex >= 0 && chatPreviewMatches[chatPreviewMatchIndex]){
-      chatPreviewMatches[chatPreviewMatchIndex].classList.remove("active");
+    if (pane.matchIndex >= 0 && pane.matches[pane.matchIndex]){
+      pane.matches[pane.matchIndex].classList.remove("active");
     }
-    chatPreviewMatchIndex = ((index % chatPreviewMatches.length) + chatPreviewMatches.length) % chatPreviewMatches.length;
-    var mark = chatPreviewMatches[chatPreviewMatchIndex];
+    pane.matchIndex = ((index % pane.matches.length) + pane.matches.length) % pane.matches.length;
+    var mark = pane.matches[pane.matchIndex];
     mark.classList.add("active");
     // A plain mark.scrollIntoView() walks every scrollable ancestor, not just
     // #chatPreviewBodyWrap -- on a long file this also nudges #filesPanel
     // (overflow:hidden, but still a valid scrollIntoView target), which has no
     // visible scrollbar, so the whole Workspace topbar silently scrolls out of
     // view above the clipped viewport. Scroll only the intended container.
-    var wrap = document.getElementById("chatPreviewBodyWrap");
+    var wrap = pane.els.bodyWrap;
     if (wrap){
       var wrapRect = wrap.getBoundingClientRect();
       var markRect = mark.getBoundingClientRect();
@@ -6993,46 +7408,26 @@
     } else {
       mark.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-    updatePreviewSearchCount();
+    updatePreviewSearchCount(pane);
   }
 
-  document.getElementById("chatPreviewSearchToggleBtn").addEventListener("click", function(){
-    var bar = document.getElementById("chatPreviewSearchBar");
-    if (bar.hidden) openPreviewSearchBar();
-    else closePreviewSearchBar();
-  });
-  document.getElementById("chatPreviewSearchCloseBtn").addEventListener("click", closePreviewSearchBar);
-  document.getElementById("chatPreviewSearchPrevBtn").addEventListener("click", function(){
-    if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(true);
-    else gotoPreviewMatch(chatPreviewMatchIndex - 1);
-  });
-  document.getElementById("chatPreviewSearchNextBtn").addEventListener("click", function(){
-    if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(false);
-    else gotoPreviewMatch(chatPreviewMatchIndex + 1);
-  });
-  document.getElementById("chatPreviewSearchInput").addEventListener("input", function(e){
-    runPreviewSearch(e.target.value);
-  });
-  document.getElementById("chatPreviewSearchInput").addEventListener("keydown", function(e){
-    if (e.key === "Enter"){
-      e.preventDefault();
-      if (_isPdfPreviewableFile(chatPreviewRelPath)) pdfFindAgain(e.shiftKey);
-      else if (e.shiftKey) gotoPreviewMatch(chatPreviewMatchIndex - 1);
-      else gotoPreviewMatch(chatPreviewMatchIndex + 1);
-    } else if (e.key === "Escape"){
-      e.preventDefault();
-      e.stopPropagation();
-      closePreviewSearchBar();
-    }
-  });
+  wireupPreviewPaneButtons(panes[0]);
+
+  // Ctrl+F / Ctrl+E / Esc route to whichever preview pane last had focus (see
+  // lastFocusedPane, set by the mousedown/focusin listeners
+  // wireupPreviewPaneButtons() attaches to each pane's root element), via
+  // getActivePane() -- falls back to the first open pane, or does nothing if
+  // none are open.
   document.addEventListener("keydown", function(e){
-    var content = document.getElementById("filesPreviewContent");
+    var pane = getActivePane();
+    if (!pane) return;
+    var content = pane.els.content;
     if (!content || content.hidden) return;
     if (e.target && e.target.closest && e.target.closest(".chat-msg-edit")) return;
     var isFind = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f";
     if (isFind){
       e.preventDefault();
-      openPreviewSearchBar();
+      openPreviewSearchBar(pane);
       return;
     }
     // Ctrl+E -- jump straight into edit mode for the previewed file (mirrors
@@ -7041,11 +7436,11 @@
     // the former; the "editing" class guards the latter here).
     var isEdit = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e";
     if (isEdit){
-      var previewPanel = document.getElementById("filesPreviewPanel");
+      var previewPanel = pane.els.panel;
       if (previewPanel && !previewPanel.classList.contains("editing") &&
-          chatPreviewProjectPath && chatPreviewAbsPath){
+          pane.projectPath && pane.absPath){
         e.preventDefault();
-        enterPreviewEditMode(chatPreviewProjectPath, chatPreviewAbsPath);
+        enterPreviewEditMode(pane.projectPath, pane.absPath, pane);
       }
       return;
     }
@@ -7054,73 +7449,77 @@
     // enterPreviewEditMode/enterPreviewCreateMode) -- it must never close the
     // whole preview panel, which is deliberately reserved for the "x" button
     // (chatPreviewCloseBtn) alone.
-    if (e.key === "Escape" && document.activeElement !== document.getElementById("chatPreviewSearchInput")){
-      var bar = document.getElementById("chatPreviewSearchBar");
-      if (!bar.hidden) closePreviewSearchBar();
+    if (e.key === "Escape" && document.activeElement !== pane.els.searchInput){
+      var bar = pane.els.searchBar;
+      if (!bar.hidden) closePreviewSearchBar(pane);
     }
   });
 
-  function restorePreviewViewActions(projectPath, absPath){
-    var actions = document.getElementById("chatPreviewActions");
-    if (_isImagePreviewableFile(chatPreviewRelPath) || _isPdfPreviewableFile(chatPreviewRelPath)){
+  function restorePreviewViewActions(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    var actions = pane.els.actions;
+    if (_isImagePreviewableFile(pane.relPath) || _isPdfPreviewableFile(pane.relPath)){
       actions.innerHTML = "";
       actions.style.display = "none";
       return;
     }
     actions.style.display = "";
-    actions.innerHTML = '<button class="btn" id="chatPreviewExportPdfBtn" type="button" title="Export PDF">Export PDF</button>' +
-      '<button class="btn" id="chatPreviewEditBtn" type="button" title="Edit (Ctrl+E)">Edit</button>';
-    document.getElementById("chatPreviewExportPdfBtn").onclick = function(e){
-      exportProjectFileToPdf(projectPath, absPath, chatPreviewRelPath, chatPreviewRawText, e.currentTarget);
+    actions.innerHTML = '<button class="btn" id="chatPreviewExportPdfBtn' + pane.suffix + '" type="button" title="Export PDF">Export PDF</button>' +
+      '<button class="btn" id="chatPreviewEditBtn' + pane.suffix + '" type="button" title="Edit (Ctrl+E)">Edit</button>';
+    actions.querySelector("#chatPreviewExportPdfBtn" + pane.suffix).onclick = function(e){
+      exportProjectFileToPdf(projectPath, absPath, pane.relPath, pane.rawText, e.currentTarget);
     };
-    document.getElementById("chatPreviewEditBtn").onclick = function(){ enterPreviewEditMode(projectPath, absPath); };
-    var wrap = document.getElementById("chatPreviewBodyWrap");
-    if (wrap) wrap.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath); };
+    actions.querySelector("#chatPreviewEditBtn" + pane.suffix).onclick = function(){ enterPreviewEditMode(projectPath, absPath, pane); };
+    var wrap = pane.els.bodyWrap;
+    if (wrap) wrap.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath, pane); };
   }
 
-  function enterPreviewEditMode(projectPath, absPath){
-    if (_isImagePreviewableFile(chatPreviewRelPath) || _isPdfPreviewableFile(chatPreviewRelPath)) return;
-    var panel = document.getElementById("filesPreviewPanel");
+  function enterPreviewEditMode(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (_isImagePreviewableFile(pane.relPath) || _isPdfPreviewableFile(pane.relPath)) return;
+    var panel = pane.els.panel;
     panel.classList.add("editing");
-    var wrapEl = document.getElementById("chatPreviewBodyWrap");
+    var wrapEl = pane.els.bodyWrap;
     wrapEl.classList.add("flush");
+    var editContainerId = "chatPreviewEditContainer" + pane.suffix;
     wrapEl.innerHTML =
-      '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
-    var actions = document.getElementById("chatPreviewActions");
+      '<div class="file-preview-edit" id="' + editContainerId + '"></div>';
+    var actions = pane.els.actions;
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">Editing</span>' +
       '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
-      '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
-      '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Save</button>';
-    var searchBar = document.getElementById("chatPreviewSearchBar");
+      '<button type="button" class="btn" id="chatPreviewCancelBtn' + pane.suffix + '">Cancel</button>' +
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '">Save</button>';
+    var cancelBtn = actions.querySelector("#chatPreviewCancelBtn" + pane.suffix);
+    var saveBtn = actions.querySelector("#chatPreviewSaveBtn" + pane.suffix);
+    var searchBar = pane.els.searchBar;
 
     function cancel(){
-      chatPreviewEditorView.destroy();
-      chatPreviewEditorView = null;
+      pane.editorView.destroy();
+      pane.editorView = null;
       panel.classList.remove("editing");
-      renderPreviewView();
-      restorePreviewViewActions(projectPath, absPath);
-      if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
+      renderPreviewView(pane);
+      restorePreviewViewActions(projectPath, absPath, pane);
+      if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
     }
     function save(){
-      var next = chatPreviewEditorView.state.doc.toString();
-      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      var next = pane.editorView.state.doc.toString();
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving…";
       apiRaw("/chat/project-files/write", {
         method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ path: projectPath, file: absPath, content: next })
       }).then(function(d){
-        chatPreviewRawText = next;
-        chatPreviewMtime = d.mtime;
-        chatPreviewExternalChangePending = false;
-        hideExternalChangeNotice();
-        chatPreviewEditorView.destroy();
-        chatPreviewEditorView = null;
+        pane.rawText = next;
+        pane.mtime = d.mtime;
+        pane.externalChangePending = false;
+        hideExternalChangeNotice(pane);
+        pane.editorView.destroy();
+        pane.editorView = null;
         panel.classList.remove("editing");
-        renderPreviewView();
-        restorePreviewViewActions(projectPath, absPath);
-        if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
+        renderPreviewView(pane);
+        restorePreviewViewActions(projectPath, absPath, pane);
+        if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
       }).catch(function(err){
         alert("Failed to save file: " + (err && err.message ? err.message : "unknown error"));
         saveBtn.disabled = false;
@@ -7129,74 +7528,75 @@
     }
 
     whenCMReady(function(){
-      var container = document.getElementById("chatPreviewEditContainer");
+      var container = document.getElementById(editContainerId);
       if (!container) return; // panel was closed/re-rendered before CM finished loading
-      chatPreviewEditorView = createFileEditor(container, {
-        content: chatPreviewRawText,
+      pane.editorView = createFileEditor(container, {
+        content: pane.rawText,
         onEscape: function(){
-          if (searchBar && !searchBar.hidden){ closePreviewSearchBar(); return; }
+          if (searchBar && !searchBar.hidden){ closePreviewSearchBar(pane); return; }
           cancel();
         },
         onSave: save,
         onDocChanged: function(){
-          if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
+          if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
         }
       });
       // If search was already open while viewing the rendered file, re-run it
       // against the editor now that #chatPreviewBody is gone from the DOM.
-      if (searchBar && !searchBar.hidden) runPreviewSearch(document.getElementById("chatPreviewSearchInput").value);
+      if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
     });
-    document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
-    document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
+    cancelBtn.addEventListener("click", cancel);
+    saveBtn.addEventListener("click", save);
   }
 
   // New-file creation reuses the same inline preview/edit panel instead of a
   // modal: an editable filename field in the header + an empty body textarea,
   // then falls through to the normal read view via previewProjectFile once
   // /chat/project-files/create succeeds.
-  function enterPreviewCreateMode(projectPath){
-    document.getElementById("filesPreviewEmpty").hidden = true;
-    document.getElementById("filesPreviewContent").hidden = false;
-    closePreviewSearchBar();
-    chatPreviewRawText = "";
-    chatPreviewRelPath = "";
-    var panel = document.getElementById("filesPreviewPanel");
+  function enterPreviewCreateMode(projectPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    pane.els.empty.hidden = true;
+    pane.els.content.hidden = false;
+    closePreviewSearchBar(pane);
+    pane.rawText = "";
+    pane.relPath = "";
+    var panel = pane.els.panel;
     panel.classList.add("editing");
-    document.getElementById("chatPreviewFileName").innerHTML =
-      '<input type="text" id="chatPreviewNewFileName" class="preview-filename-input" placeholder="filename.md" />';
-    document.getElementById("chatPreviewBodyWrap").classList.add("flush");
-    document.getElementById("chatPreviewBodyWrap").innerHTML =
-      '<div class="file-preview-edit" id="chatPreviewEditContainer"></div>';
-    var actions = document.getElementById("chatPreviewActions");
+    pane.els.fileName.innerHTML =
+      '<input type="text" id="chatPreviewNewFileName' + pane.suffix + '" class="preview-filename-input" placeholder="filename.md" />';
+    pane.els.bodyWrap.classList.add("flush");
+    pane.els.bodyWrap.innerHTML =
+      '<div class="file-preview-edit" id="chatPreviewEditContainer' + pane.suffix + '"></div>';
+    var actions = pane.els.actions;
     actions.style.display = "";
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">New file</span>' +
-      '<button type="button" class="btn" id="chatPreviewCancelBtn">Cancel</button>' +
-      '<button type="button" class="btn primary" id="chatPreviewSaveBtn">Create</button>';
-    var nameInput = document.getElementById("chatPreviewNewFileName");
+      '<button type="button" class="btn" id="chatPreviewCancelBtn' + pane.suffix + '">Cancel</button>' +
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '">Create</button>';
+    var nameInput = document.getElementById("chatPreviewNewFileName" + pane.suffix);
     nameInput.focus();
 
     function cancel(){
-      if (chatPreviewEditorView){ chatPreviewEditorView.destroy(); chatPreviewEditorView = null; }
+      if (pane.editorView){ pane.editorView.destroy(); pane.editorView = null; }
       panel.classList.remove("editing");
-      closePreviewInline();
+      resetPaneToEmpty(pane);
     }
     function save(){
       var name = nameInput.value.trim();
       if (!name){ nameInput.focus(); return; }
-      var saveBtn = document.getElementById("chatPreviewSaveBtn");
+      var saveBtn = document.getElementById("chatPreviewSaveBtn" + pane.suffix);
       saveBtn.disabled = true;
       saveBtn.textContent = "Creating…";
       apiRaw("/chat/project-files/create", {
         method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ path: projectPath, file: name, content: chatPreviewEditorView.state.doc.toString() })
+        body: JSON.stringify({ path: projectPath, file: name, content: pane.editorView.state.doc.toString() })
       }).then(function(result){
         return refreshProjectFiles(projectPath).then(function(){ return result; });
       }).then(function(result){
-        chatPreviewEditorView.destroy();
-        chatPreviewEditorView = null;
+        pane.editorView.destroy();
+        pane.editorView = null;
         panel.classList.remove("editing");
-        previewProjectFile(projectPath, result.abs_path, result.rel_path);
+        previewProjectFile(projectPath, result.abs_path, result.rel_path, null, pane);
       }).catch(function(err){
         alert("Failed to create file: " + (err && err.message ? err.message : "unknown error"));
         saveBtn.disabled = false;
@@ -7204,9 +7604,9 @@
       });
     }
     whenCMReady(function(){
-      var container = document.getElementById("chatPreviewEditContainer");
+      var container = document.getElementById("chatPreviewEditContainer" + pane.suffix);
       if (!container) return; // panel was closed/re-rendered before CM finished loading
-      chatPreviewEditorView = createFileEditor(container, {
+      pane.editorView = createFileEditor(container, {
         content: "",
         placeholder: "Start typing…",
         onEscape: cancel,
@@ -7218,10 +7618,10 @@
     });
     nameInput.addEventListener("keydown", function(e){
       if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
-      else if (e.key === "Enter"){ e.preventDefault(); if (chatPreviewEditorView) chatPreviewEditorView.focus(); }
+      else if (e.key === "Enter"){ e.preventDefault(); if (pane.editorView) pane.editorView.focus(); }
     });
-    document.getElementById("chatPreviewCancelBtn").addEventListener("click", cancel);
-    document.getElementById("chatPreviewSaveBtn").addEventListener("click", save);
+    document.getElementById("chatPreviewCancelBtn" + pane.suffix).addEventListener("click", cancel);
+    document.getElementById("chatPreviewSaveBtn" + pane.suffix).addEventListener("click", save);
   }
 
   document.getElementById("chatNewFileBtn").addEventListener("click", function(){
@@ -7229,25 +7629,27 @@
     enterPreviewCreateMode(filesCurrentProjectPath);
   });
 
-  document.getElementById("chatPreviewCloseBtn").addEventListener("click", function(){
-    closePreviewInline();
-  });
+  // Close and rename buttons for every preview pane are wired by
+  // wireupPreviewPaneButtons(), called once for the original pane above and
+  // again for every pane createPreviewPane() creates afterward.
 
-  // Renames the file currently shown in the preview panel -- swaps the header
-  // <h2> for an inline <input> the same way enterPreviewCreateMode() does for
-  // a brand-new file, but keeps the body/editor untouched. Available for every
-  // previewable file type (including images/PDFs, where #chatPreviewActions is
-  // hidden), so the rename control lives in the header itself rather than
-  // depending on that actions row.
-  function enterPreviewRenameMode(projectPath, absPath){
-    if (!chatPreviewRelPath) return;
-    var nameEl = document.getElementById("chatPreviewFileName");
-    var currentRel = chatPreviewRelPath;
+  // Renames the file currently shown in the given preview pane -- swaps the
+  // header <h2> for an inline <input> the same way enterPreviewCreateMode()
+  // does for a brand-new file, but keeps the body/editor untouched. Available
+  // for every previewable file type (including images/PDFs, where
+  // #chatPreviewActions is hidden), so the rename control lives in the header
+  // itself rather than depending on that actions row.
+  function enterPreviewRenameMode(projectPath, absPath, pane){
+    pane = pane || getActivePane() || createPreviewPane();
+    if (!pane.relPath) return;
+    var nameEl = pane.els.fileName;
+    var currentRel = pane.relPath;
     var slashIdx = currentRel.lastIndexOf("/");
     var folder = slashIdx === -1 ? "" : currentRel.slice(0, slashIdx + 1);
     var currentName = slashIdx === -1 ? currentRel : currentRel.slice(slashIdx + 1);
-    nameEl.innerHTML = '<input type="text" id="chatPreviewRenameInput" class="preview-filename-input" />';
-    var input = document.getElementById("chatPreviewRenameInput");
+    var inputId = "chatPreviewRenameInput" + pane.suffix;
+    nameEl.innerHTML = '<input type="text" id="' + inputId + '" class="preview-filename-input" />';
+    var input = document.getElementById(inputId);
     input.value = currentName;
     input.focus();
     input.select();
@@ -7265,7 +7667,7 @@
       }).then(function(result){
         return refreshProjectFiles(projectPath).then(function(){ return result; });
       }).then(function(result){
-        previewProjectFile(projectPath, result.abs_path, result.rel_path);
+        previewProjectFile(projectPath, result.abs_path, result.rel_path, null, pane);
       }).catch(function(err){
         input.disabled = false;
         input.classList.add("error");
@@ -7281,10 +7683,6 @@
       if (!input.disabled) restore();
     });
   }
-  document.getElementById("chatPreviewRenameBtn").addEventListener("click", function(){
-    if (!chatPreviewProjectPath || !chatPreviewAbsPath || !chatPreviewRelPath) return;
-    enterPreviewRenameMode(chatPreviewProjectPath, chatPreviewAbsPath);
-  });
 
   // Attaches a project file to the Fine AI session for this project, creating
   // that session (and its chat_projects folder row) lazily on first use --
@@ -8412,9 +8810,9 @@
           method: "POST", headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ path: filesCurrentProjectPath, file: entry.absPath, new_file: newRelPath })
         }).then(function(result){
-          if (chatPreviewAbsPath === entry.absPath){
-            previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path);
-          }
+          panes.forEach(function(p){
+            if (p.absPath === entry.absPath) previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path, null, p);
+          });
           delete chatFileSelection[entry.relPath];
         }).catch(function(e){
           errors.push(entry.relPath + ": " + (e && e.message ? e.message : "move failed"));

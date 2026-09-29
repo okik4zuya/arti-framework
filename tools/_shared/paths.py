@@ -17,3 +17,8 @@ def poppler_bin_dir():
 
 def tesseract_exe():
     return os.path.join(ARTI_HOME, "bin", "tesseract", "tesseract.exe")
+
+
+def ripgrep_exe():
+    exe = "rg.exe" if os.name == "nt" else "rg"
+    return os.path.join(ARTI_HOME, "bin", "ripgrep", exe)

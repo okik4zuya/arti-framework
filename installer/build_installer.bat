@@ -5,6 +5,9 @@ set "SCRIPT_DIR=%~dp0"
 REM Override by setting ARTIPDF_DIR in the environment before running this script, e.g.:
 REM   set ARTIPDF_DIR=D:\tools\artipdf && build_installer.bat
 if not defined ARTIPDF_DIR set "ARTIPDF_DIR=C:\python_tools\artipdf"
+REM Override by setting RIPGREP_DIR in the environment, e.g.:
+REM   set RIPGREP_DIR=D:\tools\ripgrep && build_installer.bat
+if not defined RIPGREP_DIR set "RIPGREP_DIR=C:\python_tools\ripgrep"
 set "PAYLOAD_BIN=%SCRIPT_DIR%payload\bin"
 
 REM makensis's OutFile ("dist\...") and File /r ("payload\bin\...", "..\tools", etc.) in
@@ -53,6 +56,23 @@ if %errorlevel% geq 8 (
     echo.
     echo ERROR: robocopy failed staging tesseract ^(exit code %errorlevel%^).
     exit /b 1
+)
+
+REM ── Stage ripgrep (rg.exe) the same way: plain local copy, no download ─────────
+REM Optional, unlike poppler/tesseract: a missing RIPGREP_DIR only means the
+REM installed app falls back to its pure-Python search path (see
+REM dashboard/server/search_ops.py) instead of failing the build.
+
+if not exist "%RIPGREP_DIR%\rg.exe" (
+    echo.
+    echo WARNING: %RIPGREP_DIR%\rg.exe not found - skipping ripgrep vendoring.
+    echo Set RIPGREP_DIR to a folder containing rg.exe to bundle it, e.g.:
+    echo     set RIPGREP_DIR=D:\tools\ripgrep ^&^& build_installer.bat
+) else (
+    echo.
+    echo Staging ripgrep into %PAYLOAD_BIN%\ripgrep ...
+    if not exist "%PAYLOAD_BIN%\ripgrep" mkdir "%PAYLOAD_BIN%\ripgrep"
+    copy /Y "%RIPGREP_DIR%\rg.exe" "%PAYLOAD_BIN%\ripgrep\rg.exe" >nul
 )
 
 REM ── Locate makensis ────────────────────────────────────────────────────────────

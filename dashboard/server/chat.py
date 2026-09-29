@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -795,27 +796,12 @@ def _search_filenames(project_path, terms_lower, combine, max_file_results, incl
     return files_out, files_truncated
 
 
-def search_project_text(project_path, terms, mode="and", max_file_results=200,
-                         max_snippets_per_file=5, max_total_snippets=500, max_files_scanned=None,
-                         include_terms=None, exclude_terms=None):
-    with arti_db._lock:
-        conn = arti_db._connect()
-        try:
-            _require_known_project_path(conn, project_path)
-        finally:
-            conn.close()
-    if not terms:
-        return {"files": [], "snippets": [], "files_truncated": False, "snippets_truncated": False}
-
-    terms_lower = [t.lower() for t in terms]
-    combine = all if mode == "and" else any
-    include_lower = [t.lower() for t in (include_terms or [])]
-    exclude_lower = [t.lower() for t in (exclude_terms or [])]
-
-    files_out, files_truncated = _search_filenames(
-        project_path, terms_lower, combine, max_file_results, include_lower, exclude_lower
-    )
-
+def _scan_snippets_python(project_path, terms_lower, combine, include_lower, exclude_lower,
+                           max_snippets_per_file, max_total_snippets, max_files_scanned):
+    """Pure-Python fallback for the snippet-scanning half of
+    search_project_text -- full-file read + lowercase + line-by-line rescan,
+    no persistent index. Used when rg isn't available (search_ops.rg_available()
+    is False) or an rg invocation fails."""
     snippets_out = []
     snippets_truncated = False
     scanned = 0
@@ -858,6 +844,47 @@ def search_project_text(project_path, terms, mode="and", max_file_results=200,
 
     if max_files_scanned is not None and scanned >= max_files_scanned:
         snippets_truncated = True
+
+    return snippets_out, snippets_truncated
+
+
+def search_project_text(project_path, terms, mode="and", max_file_results=200,
+                         max_snippets_per_file=5, max_total_snippets=500, max_files_scanned=None,
+                         include_terms=None, exclude_terms=None):
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            _require_known_project_path(conn, project_path)
+        finally:
+            conn.close()
+    if not terms:
+        return {"files": [], "snippets": [], "files_truncated": False, "snippets_truncated": False}
+
+    terms_lower = [t.lower() for t in terms]
+    combine = all if mode == "and" else any
+    include_lower = [t.lower() for t in (include_terms or [])]
+    exclude_lower = [t.lower() for t in (exclude_terms or [])]
+
+    files_out, files_truncated = _search_filenames(
+        project_path, terms_lower, combine, max_file_results, include_lower, exclude_lower
+    )
+
+    import search_ops  # lazy import, mirrors this file's db/lit import convention
+    snippets_out = snippets_truncated = None
+    if search_ops.rg_available():
+        try:
+            snippets_out, snippets_truncated = search_ops.search_snippets_rg(
+                project_path, terms_lower, mode, max_snippets_per_file, max_total_snippets,
+                include_lower, exclude_lower,
+            )
+        except search_ops.RgSearchFailed:
+            snippets_out = None  # fall through to the pure-Python scan below
+
+    if snippets_out is None:
+        snippets_out, snippets_truncated = _scan_snippets_python(
+            project_path, terms_lower, combine, include_lower, exclude_lower,
+            max_snippets_per_file, max_total_snippets, max_files_scanned,
+        )
 
     return {
         "files": files_out,
@@ -929,19 +956,12 @@ def search_all_projects_text(terms, mode="and", per_project_file_cap=50, per_pro
     db = _load_arti_db_module_for_projects()
     projects = db.list_projects()
 
-    files_out, snippets_out = [], []
-    files_truncated = snippets_truncated = False
-
-    for p in projects:
-        if len(files_out) >= global_file_cap:
-            files_truncated = True
-            break
+    def _search_one(p):
         project_path = p.get("path") or p.get("project_path")
-        project_name = p.get("name") or p.get("topic")
         if not project_path:
-            continue
+            return None
         try:
-            result = search_project_text(
+            return search_project_text(
                 project_path, terms, mode,
                 max_file_results=per_project_file_cap,
                 max_snippets_per_file=5,
@@ -951,8 +971,26 @@ def search_all_projects_text(terms, mode="and", per_project_file_cap=50, per_pro
                 exclude_terms=exclude_terms,
             )
         except ValueError:
-            continue
+            return None
 
+    # I/O-bound (subprocess/file reads) per project -- runs each registered
+    # project's search concurrently instead of one full synchronous walk per
+    # project in series. executor.map preserves projects' original order, so
+    # aggregation below and its caps behave exactly as the old serial loop did.
+    if projects:
+        with ThreadPoolExecutor(max_workers=min(8, len(projects))) as pool:
+            results = list(pool.map(_search_one, projects))
+    else:
+        results = []
+
+    files_out, snippets_out = [], []
+    files_truncated = snippets_truncated = False
+
+    for p, result in zip(projects, results):
+        if result is None:
+            continue
+        project_path = p.get("path") or p.get("project_path")
+        project_name = p.get("name") or p.get("topic")
         for f in result["files"]:
             if len(files_out) >= global_file_cap:
                 files_truncated = True

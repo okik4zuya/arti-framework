@@ -32,14 +32,17 @@ client updates their install. See `init_db()` in either `db.py` for the current 
 
 ## `paths.py`
 
-Resolves the vendored poppler/tesseract binaries under `~/.arti/bin/`:
+Resolves the vendored poppler/tesseract/ripgrep binaries under `~/.arti/bin/`:
 
 ```python
-from tools._shared.paths import poppler_bin_dir, tesseract_exe
+from tools._shared.paths import poppler_bin_dir, tesseract_exe, ripgrep_exe
 ```
 
 - `poppler_bin_dir()` → `~/.arti/bin/poppler/Library/bin`
 - `tesseract_exe()` → `~/.arti/bin/tesseract/tesseract.exe`
+- `ripgrep_exe()` → `~/.arti/bin/ripgrep/rg.exe` (`rg` on macOS/Linux) — unlike poppler/tesseract,
+  a missing `rg` is not fatal to its one caller (`dashboard/server/search_ops.py`): the dashboard
+  Search panel falls back to a pure-Python file scan when it isn't present.
 
 **`bin/` only exists on a machine that ran the NSIS installer** (`installer/arti-installer.nsi`).
 `install.ps1`/`install.sh` (git-clone/script-based setup) do not provision it. Any tool importing

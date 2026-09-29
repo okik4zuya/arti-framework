@@ -1,7 +1,7 @@
 ; arti-installer.nsi — NSIS installer for the ARTi framework (Windows)
 ; Build with: installer\build_installer.bat  (invokes makensis after staging payload\bin\)
 ;
-; Scope: static payload only (tracked repo files + vendored poppler/tesseract), then delegates
+; Scope: static payload only (tracked repo files + vendored poppler/tesseract/ripgrep), then delegates
 ; to install.ps1 for everything else (vendored Python, pip installs, skill junctions, desktop
 ; shortcut) - one source of truth for that part, unchanged by this installer. No Researcher
 ; Profile prompts, no per-project scaffolding - that stays the job of the ARTi-setup skill,
@@ -86,7 +86,10 @@ Section "Install" SEC01
     File "..\VERSION"
     File "..\.gitignore"
 
-    ; Vendored poppler/tesseract, pre-staged by build_installer.bat into payload\bin
+    ; Vendored poppler/tesseract/ripgrep, pre-staged by build_installer.bat into payload\bin
+    ; (ripgrep staging is optional -- a missing RIPGREP_DIR just means this recurses over
+    ; whatever payload\bin subfolders exist, and the app falls back to its pure-Python
+    ; search path when rg.exe isn't present)
     SetOutPath "$INSTDIR\bin"
     File /r "payload\bin\*.*"
     SetOutPath "$INSTDIR"
