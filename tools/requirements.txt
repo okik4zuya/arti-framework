@@ -16,3 +16,10 @@ pytesseract==0.3.13
 # + token estimation for the context-curation chat panel.
 openai
 tiktoken
+
+# arti-ref-search-mcp MCP server (see .mcp.json): in-house literature-discovery search
+# (OpenAlex for now, more sources added under tools/arti-ref-search-mcp/sources/ over time),
+# replacing the third-party paper-search-mcp package. Targets current mcp unpinned -- this
+# is fresh code, not adapted from paper-search-mcp's stale mcp.server.fastmcp.FastMCP import,
+# so there's no legacy import path to pin against.
+mcp

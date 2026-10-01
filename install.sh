@@ -23,7 +23,7 @@ REPO_URL=""
 
 ARTI_HOME="$HOME/.arti"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md UPDATING.md prompt-templates.md install.ps1 install.sh install.bat VERSION .gitignore)
+TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md UPDATING.md prompt-templates.md install.ps1 install.sh install.bat VERSION .gitignore .mcp.json)
 
 # Copy one tracked item into $ARTI_HOME under its own name.
 #
@@ -256,11 +256,20 @@ fi
 
 # Top-level wrapper so the vendored interpreter is reachable without remembering the
 # python/bin/python3 subpath -- never added to PATH (would risk clashing with any system
-# Python), just a fixed, guessable entry point at the root of ~/.arti.
+# Python), just a fixed, guessable entry point at the root of ~/.arti. The ARTI_PYTHON
+# env var lets a cross-platform, git-tracked file like .mcp.json find it via
+# ${ARTI_PYTHON:-python} without a hardcoded per-machine path baked in.
 if [ -d "$PYTHON_DIR" ]; then
   WRAPPER_PATH="$ARTI_HOME/python3"
   printf '#!/usr/bin/env bash\nexec "%s/bin/python3" "$@"\n' "$PYTHON_DIR" > "$WRAPPER_PATH"
   chmod +x "$WRAPPER_PATH"
+
+  ARTI_PYTHON_LINE="export ARTI_PYTHON=\"$WRAPPER_PATH\""
+  for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+    if [ -f "$rc" ] && ! grep -qF "$ARTI_PYTHON_LINE" "$rc" 2>/dev/null; then
+      printf '\n# Added by ARTi install.sh - lets .mcp.json find the vendored python3.\n%s\n' "$ARTI_PYTHON_LINE" >> "$rc"
+    fi
+  done
 fi
 
 REQ_FILE="$ARTI_HOME/tools/requirements.txt"

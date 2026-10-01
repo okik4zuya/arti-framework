@@ -112,8 +112,9 @@ def ingest(project, manifest, source_dir, keep_source_pdf):
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(markdown)
 
-        if keep_source_pdf:
-            shutil.copy2(pdf_path, os.path.join(fulltext_dir, f"{key}.pdf"))
+        kept_pdf = os.path.join(fulltext_dir, f"{key}.pdf")
+        if keep_source_pdf and not (os.path.exists(kept_pdf) and os.path.samefile(pdf_path, kept_pdf)):
+            shutil.copy2(pdf_path, kept_pdf)  # no-op when the source already is that file
 
         update = arti_lit(
             project, "library", "update", "--key", key,

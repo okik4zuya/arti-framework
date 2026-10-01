@@ -4,7 +4,7 @@
 **Status:** [in progress / ready for ARTi-writing]
 
 > Same convention as ARTi-idea's `idea\handoff.md` — copy decisions, point at content, never
-> transcribe. This document sits in the same project folder as the five source documents below and
+> transcribe. This document sits in the same project folder as the source documents below and
 > is read directly by ARTi-writing at handoff; a transcribed copy goes stale the moment any source
 > is edited.
 
@@ -24,6 +24,9 @@ criteria (see `slr\protocol.md`)
 | Included | [n] | — |
 
 **PRISMA Flow Diagram:** [pointer to `figures/Fig_N_prisma-flow.png`/`.drawio`]
+
+**Prior Review Check:** verdict [clear / partial overlap / near-duplicate], last re-run
+[YYYY-MM-DD] — see `slr\prior-reviews.md`
 
 **Matriks Sintesis:** [pointer to `slr\synthesis-matrix.md`]
 
@@ -45,6 +48,7 @@ criteria (see `slr\protocol.md`)
 | Source file | Feeds |
 |---|---|
 | `slr\judul-rq-pico.md` | Manuscript title, Introduction RQ statement |
+| `slr\prior-reviews.md` | Introduction paragraph 2 (novelty vs. existing reviews) |
 | `slr\protocol.md` | Methods section (eligibility, information sources, search strategy) |
 | `literature\arti-lit.db` (via `library list --screening-stage X`) | PRISMA Flow Diagram counts |
 | `slr\synthesis-matrix.md` | Results/Discussion section content; Idea Canvas gap routing; Journal Target Sheet input |

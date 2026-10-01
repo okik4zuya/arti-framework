@@ -22,6 +22,14 @@ for the trigger condition.
   own verification loop (read the rendered PNG back, check legibility) before treating the figure
   as done. Register it in `figures/figure-register.md` as usual.
 
+## Re-check prior reviews before handoff
+
+- Re-run the Prior Review Check queries (`slr\prior-reviews.md`, same queries, newest year window)
+  before the handoff is written: a review published since Stage 1 can change the Introduction's
+  novelty claim. Add any new review to `arti-lit` as `prior_review`, update the verdict and the
+  differentiating sentence, and log the new date and counts in the document.
+- `prior_review` rows are outside the PRISMA counts above — do not add them to any stage total.
+
 ## Matriks Sintesis — build once every `included` row has a `summary`
 
 - Confirm every `included` row (from the query above) has a non-null `summary` before building the

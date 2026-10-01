@@ -14,7 +14,8 @@
 ## Introduction
 
 - Paragraph 1: [field framing — what area, why it matters]
-- Paragraph 2: [why a review is needed now — prior reviews' scope/date gap, or absence of one]
+- Paragraph 2: [why a review is needed now — prior reviews' scope/date gap, or absence of one;
+  draw it from `slr\prior-reviews.md` (verdict + differentiating sentence), re-checked at Stage 4]
 - Paragraph 3: [RQ + PICO(C) statement, objective sentence]
 
 ## Methods (PRISMA-reported)

@@ -116,10 +116,14 @@ filter on them (substring match); manually-added rows simply won't match either 
 separate table, since a screened source is still one bibliography row. Any `arti-lit` project not
 running an SLR simply never sets them (all three default NULL). `screening_stage` is a closed
 vocabulary (`db.SCREENING_STAGES`): `identified | title_abstract | eligible | included |
-excluded_title_abstract | excluded_eligibility` — validated by both `library add`/`update`, which
+excluded_title_abstract | excluded_eligibility | prior_review` — validated by both `library add`/`update`, which
 raise rather than silently accept an unlisted value. `exclusion_reason` is only meaningful once
 `screening_stage` is one of the two `excluded_*` values, but is not enforced as such — ARTi-SLR's
-own stage protocol is what requires a reason be given on every reject, not this tool. See
+own stage protocol is what requires a reason be given on every reject, not this tool. `prior_review` is not a
+pipeline step: it marks a previously published review recorded during ARTi-SLR's "Cek Review
+Terdahulu" check (Stage 1 Part C), so it is kept in the library without entering the PRISMA flow.
+PRISMA counts use `--screening-stage` exact match, so `prior_review` rows never inflate them; any
+count of *all* rows must exclude the stage explicitly. See
 `ARTi-SLR/references/stage2-search-and-screening.md` for how these fields are populated stage by
 stage, and `stage4-synthesis-and-handoff.md` for how `library list --screening-stage X` (one call
 per stage value) becomes the PRISMA Flow Diagram's counts.

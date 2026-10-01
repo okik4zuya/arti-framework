@@ -8,6 +8,11 @@ Full procedure for building the Gap Map (Core Document #2). Read this when Stage
 - Before generating anything new, Claude runs `idea-bank search <keywords>` (see Reference Files
   for the `arti-db` invocation) for parked ideas relevant to this topic and surfaces them to the
   researcher first
+- Claude may also run `arti-ref-search-mcp`'s `search_openalex_works` for the same keywords and surface
+  candidate papers from the live literature — these are candidates like any other, never
+  auto-folded into the Gap Map. The researcher picks which ones matter; a chosen candidate then
+  goes through Paper Extraction / `ARTi-ref`'s `library add` dedup path exactly like a
+  researcher-supplied paper
 - The researcher feeds literature: papers, summaries, or notes — for a single paper, "summarize
   paper [title]" (see Paper Extraction, in Core Documents) produces the `REFERENCE ENTRY` and
   evidence lines ready to fold in directly

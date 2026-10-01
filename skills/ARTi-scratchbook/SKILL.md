@@ -161,9 +161,10 @@ from the source. Every entry written this way must be:
 **Hallucination Prevention:**
 - Never add citations, references, or factual claims to the Scratchbook that were not explicitly
   provided by the researcher
-- If asked to suggest supporting literature, Claude may search the web but must clearly label any
-  suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and instruct the researcher to verify
-  the actual source before accepting it
+- If asked to suggest supporting literature, Claude should use `arti-ref-search-mcp`'s `search_openalex_works`
+  (structured results with real DOIs) rather than generic web search, but must still clearly label
+  any suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and instruct the researcher to
+  verify the actual source before accepting it
 
 **Literature Feed Protocol:**
 Literature can enter two ways: already ingested into `literature\library.md` (call `ARTi-ref`'s

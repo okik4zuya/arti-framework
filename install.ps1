@@ -37,7 +37,7 @@ $RepoUrl = ''
 
 $ArtiHome  = Join-Path $HOME '.arti'
 $ScriptDir = $PSScriptRoot
-$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'UPDATING.md', 'prompt-templates.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore')
+$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'UPDATING.md', 'prompt-templates.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore', '.mcp.json')
 
 function Write-StubFile {
   # Set-Content -Encoding UTF8 emits a BOM in Windows PowerShell 5.1, which then
@@ -308,10 +308,17 @@ if ($needPython) {
 
 # Top-level wrapper so the vendored interpreter is reachable without remembering the
 # python\python.exe subpath -- never added to PATH (would risk clashing with any system
-# Python), just a fixed, guessable entry point at the root of ~/.arti.
+# Python), just a fixed, guessable entry point at the root of ~/.arti. The ARTI_PYTHON
+# env var lets a cross-platform, git-tracked file like .mcp.json find it via
+# ${ARTI_PYTHON:-python} without a hardcoded per-machine path baked in.
 if (Test-Path $pythonDir) {
   $wrapperPath = Join-Path $ArtiHome 'python.cmd'
   Write-StubFile -Path $wrapperPath -Content "@echo off`r`n`"%~dp0python\python.exe`" %*`r`n"
+  try {
+    [Environment]::SetEnvironmentVariable('ARTI_PYTHON', $wrapperPath, 'User')
+  } catch {
+    Write-Warning "Could not set ARTI_PYTHON env var ($($_.Exception.Message))."
+  }
 }
 
 $reqFile = Join-Path $ArtiHome 'tools\requirements.txt'

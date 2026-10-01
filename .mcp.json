@@ -1,8 +1,12 @@
 {
   "mcpServers": {
-    "scite": {
-      "type": "http",
-      "url": "https://api.scite.ai/mcp"
+    "arti-ref-search-mcp": {
+      "command": "${ARTI_PYTHON:-python}",
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/tools/arti-ref-search-mcp/server.py"],
+      "env": {
+        "OPENALEX_API_KEY": "YeArMQSyxSEefW1LlKZIFd",
+        "ARTI_REF_CONTACT_EMAIL": "okik4zuya@gmail.com"
+      }
     }
   }
 }

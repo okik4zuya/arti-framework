@@ -19,6 +19,36 @@ Stage 1 stub for the trigger condition and output files.
   a real question yet — narrow it.
 - **Output:** `slr\judul-rq-pico.md`, using `references/judul-rq-pico-template.md`.
 
+## Part C — Cek Review Terdahulu
+
+**Trigger:** Judul + RQ + PICO(C) confirmed, before Part B locks the Protocol. A review whose
+scope an existing review already covers is not worth the Protocol and search effort, so check
+first. **Output:** `slr\prior-reviews.md` (`references/prior-review-check-template.md`).
+
+- **OpenAlex, narrow to broad.** Run `count_openalex_works` first (same filters, `group_by="type"`
+  or `"publication_year"`) to measure each query's width without pulling records, then pull hits
+  with `search_openalex_works(work_type="review", search_in="title_abstract",
+  exclude_retracted=True)`. Climb a ladder, one angle per query: the exact material + reaction
+  phrase → the material class (e.g. metal oxide / semiconductor) + reaction → the reaction alone,
+  general. A zero on the narrow rung means nothing until the broader rungs are checked — the
+  review that overlaps is usually written about the class, not the single material. Use
+  `search_in="all"` only deliberately: it also matches full text and is broader and pricier.
+- **Scopus is required, not optional.** Give the researcher a query of the form
+  `TITLE-ABS-KEY(...) AND DOCTYPE(re)` (narrow, one angle per code block, bare and copy-ready, per
+  the Part B conventions below); the researcher runs it and pastes the count and hits in chat. Ask
+  for an RIS export only when there are more than ~50 hits. OpenAlex's `review` type comes from
+  Crossref and misses some reviews Scopus classifies as such, which is why both run.
+- **Read before judging.** For every candidate review, read its abstract (and fulltext when the
+  abstract does not settle scope): material scope, reaction scope, modification strategies,
+  year window, systematic vs. narrative. Fill the template's table; a title match alone is not
+  evidence of overlap.
+- **Store the reviews in `arti-lit`** with `library add --screening-stage prior_review
+  --search-source openalex-prior-review` (or `scopus-prior-review`), after the usual DOI dedup
+  check. `prior_review` rows stay out of the PRISMA counts (exact-match stage queries).
+- **Verdict:** `clear` / `partial overlap` / `near-duplicate`, plus the differentiating sentence
+  for the Introduction. On `near-duplicate`, stop and take the RQ back to the researcher before
+  Part B. Log each query's date and hit count in the template.
+
 ## Part B — Protocol
 
 **Trigger:** Judul + RQ + PICO(C) confirmed.

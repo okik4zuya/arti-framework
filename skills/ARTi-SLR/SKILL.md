@@ -20,13 +20,15 @@ description: >
 
 A document-driven workflow for planning and conducting a standalone, PRISMA-compliant systematic
 literature review — before handing off to `ARTi-writing` for actual drafting. Organized around
-**five core documents** and **four sequential stages**, ending with a confirmed included-paper set,
+**six core documents** and **four sequential stages**, ending with a confirmed included-paper set,
 a real PRISMA Flow Diagram, a synthesis matrix, and a target journal, ready to hand off.
 
 **Not this skill:** an informal literature scoping pass to justify novelty for an *empirical*
 paper — that is `ARTi-idea`'s Gap Map (Stage 2 there). If the researcher's deliverable is an
 experiment/study and the literature review is just its Introduction section, use `ARTi-idea`, not
-this skill. Use this skill only when the review itself is the publishable output.
+this skill. Use this skill only when the review itself is the publishable output. The Prior Review Check is
+not `ARTi-crosscite` (does cluster A cite cluster B) and does not score novelty — it only records
+which published reviews already cover the topic.
 
 ---
 
@@ -42,7 +44,18 @@ Comparison, Outcome, Context), checked against the Researcher Profile. See
 
 ---
 
-### 2. Protocol
+### 2. Prior Review Check
+Run after the Judul + RQ + PICO(C) is confirmed and before the Protocol is locked: do published
+reviews already cover this question? OpenAlex ladder (narrow material to broad class) plus a
+required Scopus `DOCTYPE(re)` query, a table of reviews found with their scope, a verdict (`clear`
+/ `partial overlap` / `near-duplicate`) and the differentiating sentence for the Introduction. See
+`references/stage1-question-and-protocol.md` (Part C) and `references/prior-review-check-template.md`.
+
+**File:** `slr\prior-reviews.md`
+
+---
+
+### 3. Protocol
 Locked before any search runs: the target database list, inclusion/exclusion criteria, search
 strings derived from PICO(C) terms, and the quality-appraisal approach to be applied later. See
 `references/stage1-question-and-protocol.md` (Part B) and `references/protocol-template.md`.
@@ -51,7 +64,7 @@ strings derived from PICO(C) terms, and the quality-appraisal approach to be app
 
 ---
 
-### 3. Literature (via `arti-lit`, no new document)
+### 4. Literature (via `arti-lit`, no new document)
 Every candidate, screened or not, lives as one row in the project's existing `arti-lit.db` — the
 same database `ARTi-ref` already owns. This skill adds three additive columns
 (`search_source`, `screening_stage`, `exclusion_reason`) rather than a parallel store. See
@@ -61,7 +74,7 @@ same database `ARTi-ref` already owns. This skill adds three additive columns
 
 ---
 
-### 4. Matriks Sintesis (Synthesis Matrix)
+### 5. Matriks Sintesis (Synthesis Matrix)
 Cross-paper themes and findings across every `included` source, built once extraction (Stage 3) is
 complete. Has **three separate downstream outputs** — Blueprint content, an Idea Canvas gap-routing
 check, and Journal Target Sheet input — not just one. See
@@ -71,7 +84,7 @@ check, and Journal Target Sheet input — not just one. See
 
 ---
 
-### 5. SLR Manuscript Blueprint
+### 6. SLR Manuscript Blueprint
 A paragraph-level outline for the review manuscript, shaped to drop into `ARTi-writing`'s own
 Manuscript Blueprint stage alongside a Journal Profile. See
 `references/slr-manuscript-blueprint-template.md`.
@@ -89,6 +102,10 @@ Manuscript Blueprint stage alongside a Journal Profile. See
                         ▼
         [M] Judul + RQ + PICO(C)        (title and question decided together)
                         │
+                        ▼
+        [M] Cek Review Terdahulu ──w──► [DB] arti-lit (screening_stage=prior_review,
+                        │                     di luar hitungan PRISMA)
+                        │              (OpenAlex type=review + Scopus DOCTYPE(re), wajib)
                         ▼
         [M] Protokol  (kriteria inklusi/eksklusi + daftar database yang akan dicari)
                         │
@@ -145,9 +162,10 @@ there).
 
 ---
 
-### Stage 1: Judul + RQ + PICO(C), then Protocol
+### Stage 1: Judul + RQ + PICO(C), Prior Review Check, then Protocol
 **Trigger:** Researcher Profile exists (or `ARTi-setup` runs first if not); researcher has a
-review topic in mind. **Output:** `slr\judul-rq-pico.md`, `slr\protocol.md`. See
+review topic in mind. **Output:** `slr\judul-rq-pico.md`, `slr\prior-reviews.md`,
+`slr\protocol.md`. See
 `references/stage1-question-and-protocol.md` for the full procedure.
 
 ---
@@ -194,26 +212,31 @@ Claude must explicitly tell the researcher when the handoff is ready — see the
 
 1. **Judul and RQ are decided together** — never draft a title before the RQ, never confirm an RQ
    without immediately compressing it into a working title.
-2. **Protocol before search** — the database list and inclusion/exclusion criteria are locked
+2. **Check for a prior review before locking the Protocol** — the overlap check (OpenAlex ladder
+   plus the required Scopus `DOCTYPE(re)` query) runs after the RQ is confirmed and before any
+   Protocol effort; a `near-duplicate` verdict sends the RQ back to the researcher. Re-run it
+   before submission.
+3. **Protocol before search** — the database list and inclusion/exclusion criteria are locked
    before Stage 2 runs; a change after search starts is logged, not silently made.
-3. **Search is repeated per database, never assumed single-source** — Stage 2 loops explicitly
+4. **Search is repeated per database, never assumed single-source** — Stage 2 loops explicitly
    over the Protocol's database list.
-4. **Deduplication reads `arti-lit` before every screening pass** — reuse the existing DOI-dedup
+5. **Deduplication reads `arti-lit` before every screening pass** — reuse the existing DOI-dedup
    rule and `library search` pre-check; no new dedup subcommand.
-5. **Every screening reject carries a reason tied to a Protocol criterion** — a pass with no
+6. **Every screening reject carries a reason tied to a Protocol criterion** — a pass with no
    logged reject count, or a reject with no reason, breaks the PRISMA Flow Diagram's honesty.
-6. **PRISMA counts are computed, never asserted** — one `library list --screening-stage X` call
+7. **PRISMA counts are computed, never asserted** — one `library list --screening-stage X` call
    per stage value, not a number recalled from memory or estimated late.
-7. **No new fields for what free text already covers** — quality appraisal and structured
+8. **No new fields for what free text already covers** — quality appraisal and structured
    extraction both live in `sources.summary`; do not propose a parallel table or document for
    either.
-8. **Matriks Sintesis has three outputs, not one** — Blueprint content, Idea Canvas gap-routing,
+9. **Matriks Sintesis has three outputs, not one** — Blueprint content, Idea Canvas gap-routing,
    and Journal Target Sheet input all fire from the same synthesis pass.
-9. **Novelty scoring never happens directly on a review's own gaps** — any future-study gap
+10. **Novelty scoring never happens directly on a review's own gaps** — any future-study gap
    noticed during synthesis is routed through ARTi-idea's existing Idea Canvas gate, keeping the
    Idea Bank's quality bar consistent regardless of source. The review's own journal choice is
-   topic-driven and bypasses that gate entirely.
-10. **Copy decisions, point at content** — the SLR Handoff records what was decided and where each
+   topic-driven and bypasses that gate entirely. The Prior Review Check (Principle 2) is a different
+   thing: a factual overlap check against published reviews, never a novelty score of an idea.
+11. **Copy decisions, point at content** — the SLR Handoff records what was decided and where each
     document lives; it never transcribes those documents.
 
 ---
@@ -225,8 +248,10 @@ python.exe" "~/.arti/tools/arti-lit/cli.py" <subcommand> ... --project PATH` (Ma
 `~/.arti/python/bin/python3`). See `ARTi-ref`'s SKILL.md for the base invocation and
 `~/.arti/tools/arti-lit/README.md`'s Schema section for the `search_source`/`screening_stage`/
 `exclusion_reason` columns this skill adds. `screening_stage` is a closed vocabulary: `identified |
-title_abstract | eligible | included | excluded_title_abstract | excluded_eligibility` — both
-`library add`/`update` reject any other value.
+title_abstract | eligible | included | excluded_title_abstract | excluded_eligibility |
+prior_review` — both `library add`/`update` reject any other value. `prior_review` marks a
+previously published review from the Prior Review Check; it is outside the PRISMA flow, so exact-match
+stage counts never include it.
 
 **`arti-pdf-ingest` invocation** — unmodified, see `ARTi-ref`'s Fulltext ingestion section, used
 for the Fulltext Paper step in Stage 2.
@@ -237,8 +262,9 @@ PRISMA Flow Diagram from the counts Stage 4 computes.
 **`arti-db`/`arti-jfinder` invocation** — unmodified, see `ARTi-idea`'s Reference Files section;
 used for Idea Bank writes (via the Idea Canvas gate) and Journal Target Sheet lookups respectively.
 
-- `references/stage1-question-and-protocol.md` — Stage 1 procedure (Judul+RQ+PICO(C), then
-  Protocol)
+- `references/stage1-question-and-protocol.md` — Stage 1 procedure (Judul+RQ+PICO(C), Prior
+  Review Check, then Protocol)
+- `references/prior-review-check-template.md` — blank Prior Review Check document
 - `references/judul-rq-pico-template.md` — blank Judul + RQ + PICO(C) document
 - `references/protocol-template.md` — blank Protocol document
 - `references/stage2-search-and-screening.md` — Stage 2 procedure: per-database search loop, dedup
@@ -254,6 +280,12 @@ used for Idea Bank writes (via the Idea Canvas gate) and Journal Target Sheet lo
 Read the relevant reference file before starting any stage.
 
 ## Change log
+- 2026-10-01 — Added the Prior Review Check (Stage 1 Part C, `references/prior-review-check-template.md`,
+  output `slr\prior-reviews.md`): OpenAlex narrow-to-broad ladder via the upgraded
+  `arti-ref-search-mcp` (`count_openalex_works`, `search_openalex_works(work_type="review")`) plus a
+  required researcher-run Scopus `DOCTYPE(re)` query; found reviews stored in `arti-lit` with the new
+  `prior_review` screening stage (outside PRISMA counts). Core documents 5 → 6, Principles 10 → 11.
+  Pointers added to the Blueprint template (Introduction paragraph 2), Stage 4 and the Handoff.
 - 2026-09-27 — Added a sanity-check step to Stage 1 Part B (`stage1-question-and-protocol.md`):
   before locking the Intervention angle list, check it against at least one paper already known to
   be in scope, and specifically watch for two commonly-missed angle types in materials/synthesis

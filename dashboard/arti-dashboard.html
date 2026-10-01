@@ -804,12 +804,17 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .chat-project-files-head .files-head-actions{
-    display:flex; align-items:center; gap:2px; flex-wrap:wrap;
+    display:flex; align-items:center; gap:2px; flex-wrap:nowrap; min-width:0;
   }
-  .chat-project-files-head .icon-btn.icon-only{ width:26px; height:26px; flex:none; }
+  /* One row at the default 250px width: buttons may shrink (down to 20px)
+     instead of the trailing ⋮ wrapping onto a second line. */
+  .chat-project-files-head .icon-btn.icon-only{ width:26px; min-width:20px; height:26px; flex:0 1 26px; }
+  .chat-project-files-head .files-head-actions .row-menu{ flex:0 1 26px; min-width:20px; display:flex; }
+  .chat-project-files-head .files-head-actions .menu-toggle{ width:100%; height:26px; padding:0; }
+  .files-action-group .icon-btn.icon-only{ flex:0 1 26px; }
   .chat-project-files-head .icon-btn.icon-only svg{ width:15px; height:15px; }
-  .files-action-group{ display:flex; align-items:center; gap:2px; }
-  .files-action-divider{ width:1px; height:16px; background:var(--border); margin:0 5px; flex:none; }
+  .files-action-group{ display:flex; align-items:center; gap:2px; flex:0 1 auto; min-width:0; }
+  .files-action-divider{ width:1px; height:16px; background:var(--border); margin:0 3px; flex:none; }
   .chat-project-files-search-row{ display:flex; align-items:center; gap:6px; }
   .chat-project-files-search-row .icon-btn.icon-only{ width:30px; height:30px; flex:none; }
   .chat-project-files-head .search-input{ padding:7px 10px; font-size:13px; min-width:0; flex:1; }
@@ -1439,6 +1444,12 @@
                 <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke-linejoin="round"/>
                 <path d="M13 3v5h5" stroke-linejoin="round"/>
                 <path d="M12 12v5M9.5 14.5h5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button type="button" class="icon-btn icon-only" id="chatNewRootFolderBtn" title="New folder in project root">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linejoin="round"/>
+                <path d="M12 10.5v5M9.5 13h5" stroke-linecap="round"/>
               </svg>
             </button>
             <button type="button" class="icon-btn icon-only" id="chatAddFileBtn" title="Upload file (Ctrl+Shift+U)">
@@ -2772,9 +2783,10 @@
     eligible: "Eligibility",
     included: "Included",
     excluded_title_abstract: "Excluded",
-    excluded_eligibility: "Excluded"
+    excluded_eligibility: "Excluded",
+    prior_review: "Prior review"
   };
-  var STAGE_RANK = ["identified", "title_abstract", "eligible", "included", "excluded_title_abstract", "excluded_eligibility"];
+  var STAGE_RANK = ["identified", "title_abstract", "eligible", "included", "excluded_title_abstract", "excluded_eligibility", "prior_review"];
 
   // ---- per-project drawer open/closed persistence ----
   var REFERENCES_DRAWER_OPEN_KEY = "arti-references-drawer-open";
@@ -5582,10 +5594,13 @@
   // more complex than just inserting/removing a node directly, matching how
   // startInlineFileRename above already treats this as DOM-local, not
   // state-driven.
+  // folderPath "" means the project root: the row goes at the top of
+  // #chatFileList instead of inside a folder group.
   function startInlineTreeCreate(folderPath, kind){
-    var group = document.querySelector('.tree-folder-group[data-tree-path="' + CSS.escape(folderPath) + '"]');
-    if (!group) return;
-    if (isFileTreeFolderCollapsed(folderPath)){
+    var isRoot = !folderPath;
+    var group = isRoot ? null : document.querySelector('.tree-folder-group[data-tree-path="' + CSS.escape(folderPath) + '"]');
+    if (!isRoot && !group) return;
+    if (!isRoot && isFileTreeFolderCollapsed(folderPath)){
       chatFileTreeCollapsed[folderPath] = false;
       saveChatFileTreeCollapsed();
       renderFileList();
@@ -5595,9 +5610,9 @@
     var existing = document.querySelector(".tree-inline-create-row");
     if (existing) existing.remove();
 
-    var itemsWrap = group.querySelector(":scope > .chat-folder-items");
+    var itemsWrap = isRoot ? document.getElementById("chatFileList") : group.querySelector(":scope > .chat-folder-items");
     if (!itemsWrap) return;
-    var depth = parseInt(group.getAttribute("data-depth"), 10) || 0;
+    var depth = isRoot ? -1 : (parseInt(group.getAttribute("data-depth"), 10) || 0);
 
     var row = document.createElement("div");
     row.className = "chat-file-item tree-inline-create-row";
@@ -5615,7 +5630,7 @@
       var name = input.value.trim();
       if (!name){ cancel(); return; }
       input.disabled = true;
-      var relPath = folderPath + "/" + name;
+      var relPath = isRoot ? name : folderPath + "/" + name;
       var endpoint = kind === "file" ? "/chat/project-files/create" : "/chat/project-files/create-folder";
       var payload = kind === "file"
         ? { path: filesCurrentProjectPath, file: relPath, content: "" }
@@ -5623,12 +5638,14 @@
       apiRaw(endpoint, {
         method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload)
       }).then(function(result){
-        chatFileTreeCollapsed[folderPath] = false;
-        saveChatFileTreeCollapsed();
+        if (!isRoot){
+          chatFileTreeCollapsed[folderPath] = false;
+          saveChatFileTreeCollapsed();
+        }
         return refreshProjectFiles(filesCurrentProjectPath).then(function(){ return result; });
       }).then(function(result){
         if (kind === "file"){
-          previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path);
+          previewProjectFile(filesCurrentProjectPath, result.abs_path, result.rel_path, null, getPaneForNewFile());
         }
       }).catch(function(err){
         input.disabled = false;
@@ -6156,6 +6173,15 @@
     return panes.length ? panes[0] : null;
   }
 
+  // Pane a brand-new file should open in: the active pane if it's blank,
+  // otherwise a fresh pane, so creating a file never replaces one on screen.
+  function getPaneForNewFile(){
+    var active = getActivePane();
+    var busy = active && (active.relPath || !active.els.content.hidden ||
+      active.els.panel.classList.contains("editing"));
+    return busy ? createPreviewPane() : active;
+  }
+
   // Runs `cb` once CodeMirror is loaded (see the module <script> that sets
   // window.__CM, near the /lib/*.min.js tags). In practice this resolves
   // immediately -- that script sits near the top of the page and evaluates
@@ -6206,6 +6232,33 @@
   // handler below) instead of CM6's built-in search panel -- search() is
   // still included for its match-highlighting decorations and query state,
   // driven programmatically by runPreviewSearchInEditor()/gotoPreviewMatch().
+  // Ctrl+J: join lines, like Notepad++ / VS Code. Each selection range joins
+  // every line it touches into one (a caret or single-line selection joins
+  // with the next line); the newline plus the next line's leading whitespace
+  // collapse to one space, or to nothing when either side is blank.
+  function joinLinesCommand(view){
+    var state = view.state;
+    var changes = [];
+    var seen = -1;
+    state.selection.ranges.forEach(function(r){
+      var first = state.doc.lineAt(r.from);
+      var last = state.doc.lineAt(r.to);
+      var lastNo = Math.max(last.number, first.number + 1);
+      lastNo = Math.min(lastNo, state.doc.lines);
+      for (var n = Math.max(first.number, seen + 1); n < lastNo; n++){
+        var line = state.doc.line(n);
+        var next = state.doc.line(n + 1);
+        var lead = /^\s*/.exec(next.text)[0].length;
+        var sep = (line.text.trim() === "" || next.text.trim() === "" || /\s$/.test(line.text)) ? "" : " ";
+        changes.push({ from: line.to, to: next.from + lead, insert: sep });
+      }
+      seen = Math.max(seen, lastNo - 1);
+    });
+    if (!changes.length) return true;
+    view.dispatch({ changes: changes, scrollIntoView: true, userEvent: "input.join" });
+    return true;
+  }
+
   function createFileEditor(container, opts){
     var CM = window.__CM;
     var content = opts.content || "";
@@ -6219,7 +6272,8 @@
       getFileEditorTheme(),
       CM.Prec.highest(CM.keymap.of([
         { key: "Escape", run: function(){ opts.onEscape(); return true; } },
-        { key: "Shift-Enter", run: function(){ opts.onSave(); return true; } }
+        { key: "Shift-Enter", run: function(){ opts.onSave(); return true; } },
+        { key: "Mod-j", run: joinLinesCommand, preventDefault: true }
       ])),
       CM.keymap.of(CM.defaultKeymap.concat(CM.historyKeymap))
     ];
@@ -7624,9 +7678,16 @@
     document.getElementById("chatPreviewSaveBtn" + pane.suffix).addEventListener("click", save);
   }
 
+  document.getElementById("chatNewRootFolderBtn").addEventListener("click", function(){
+    if (!filesCurrentProjectPath) return;
+    startInlineTreeCreate("", "folder");
+  });
+
   document.getElementById("chatNewFileBtn").addEventListener("click", function(){
     if (!filesCurrentProjectPath) return;
-    enterPreviewCreateMode(filesCurrentProjectPath);
+    // Never clobber a pane that already shows a file (or is mid-edit/create):
+    // open the new file in a fresh pane, reusing the active one only if blank.
+    enterPreviewCreateMode(filesCurrentProjectPath, getPaneForNewFile());
   });
 
   // Close and rename buttons for every preview pane are wired by

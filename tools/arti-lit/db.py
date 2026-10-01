@@ -57,6 +57,9 @@ READ_STATUSES = ("export-only", "abstract", "fulltext", "read")
 SCREENING_STAGES = (
     "identified", "title_abstract", "eligible", "included",
     "excluded_title_abstract", "excluded_eligibility",
+    # Out-of-pipeline marker: a prior review noted during ARTi-SLR's Cek Review Terdahulu step.
+    # Kept in arti-lit for citation/dedup, but never part of the PRISMA identified->included flow.
+    "prior_review",
 )
 
 

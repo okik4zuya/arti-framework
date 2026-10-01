@@ -18,6 +18,31 @@ If a new version changes a SQLite database's schema (`~/.arti/memory/arti.db` or
 `literature/arti-lit.db`), the migration runs automatically the next time that database is
 opened — no manual step needed, and your existing rows are preserved.
 
+## MCP servers (`.mcp.json`) need a manual step after adding/changing one
+
+`.mcp.json` (which registers MCP servers like `arti-ref-search-mcp`) is part of
+what gets replaced on update, same as `tools/`, `skills/`, etc. — so a new version's server
+additions or config changes land automatically in `~/.arti` itself.
+
+That only covers `~/.arti`. Reaching every other paper project without copying `.mcp.json` into
+each one relies on registering the same server at Claude Code's **user scope** (stored in
+`~/.claude.json`, not anything this installer touches or ever will — it's Claude Code's own live
+app state, outside `~/.arti` entirely). The updater never runs this for you. If an update adds a
+new MCP server, or you want an existing one reachable from your paper projects, re-run it by hand
+once per server:
+
+```
+claude mcp add --scope user <name> -- "C:\Users\<you>\.arti\python\python.exe" <script-path>
+```
+
+(substitute the server's actual command/args from `.mcp.json`; an HTTP server uses
+`--transport http <url>` instead). Use the **literal, resolved absolute path** here, not
+`${ARTI_PYTHON:-python}` — env var expansion works fine in the project-scope `.mcp.json`, but a
+`~/.claude.json` (user-scope) change like this needs a full Claude Code restart to take effect
+regardless, and a freshly-set env var doesn't reliably reach an already-running process tree even
+after that, so the literal path avoids stacking a second failure mode on top of the restart
+requirement.
+
 ## ⚠️ Don't uninstall to update
 
 The uninstaller (`Uninstall.exe`, or Windows' "Add or Remove Programs") deletes the **entire**
