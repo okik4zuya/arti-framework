@@ -43,8 +43,9 @@
 - Paragraph 2: [contradictions/debates — from Matriks Sintesis]
 - Paragraph 3: [limitations — search scope, language/date restrictions, quality of included
   studies]
-- Paragraph 4: [implications for future empirical work — any gap routed to Idea Canvas gets named
-  here]
+- Paragraph 4: [implications for future empirical work — written from the Underexplored +
+  Contradictions sections of the synthesis matrix, without scores; mention the Idea Canvas result
+  only if one exists]
 
 ## Conclusion
 

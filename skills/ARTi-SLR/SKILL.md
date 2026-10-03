@@ -20,7 +20,7 @@ description: >
 
 A document-driven workflow for planning and conducting a standalone, PRISMA-compliant systematic
 literature review — before handing off to `ARTi-writing` for actual drafting. Organized around
-**six core documents** and **four sequential stages**, ending with a confirmed included-paper set,
+**seven core documents** and **four sequential stages**, ending with a confirmed included-paper set,
 a real PRISMA Flow Diagram, a synthesis matrix, and a target journal, ready to hand off.
 
 **Not this skill:** an informal literature scoping pass to justify novelty for an *empirical*
@@ -76,8 +76,8 @@ same database `ARTi-ref` already owns. This skill adds three additive columns
 
 ### 5. Matriks Sintesis (Synthesis Matrix)
 Cross-paper themes and findings across every `included` source, built once extraction (Stage 3) is
-complete. Has **three separate downstream outputs** — Blueprint content, an Idea Canvas gap-routing
-check, and Journal Target Sheet input — not just one. See
+complete. Has **up to three downstream outputs** — Blueprint content and Journal Target Sheet input
+(required), plus an Idea Canvas gap-routing check (optional, only for a planned follow-up study). See
 `references/stage4-synthesis-and-handoff.md` and `references/synthesis-matrix-template.md`.
 
 **File:** `slr\synthesis-matrix.md`
@@ -90,6 +90,16 @@ Manuscript Blueprint stage alongside a Journal Profile. See
 `references/slr-manuscript-blueprint-template.md`.
 
 **File:** `slr\manuscript-blueprint.md`
+
+---
+
+### 7. PRISMA Counts
+The funnel log: per-database import counts (raw hits, imported, duplicates), records from other
+methods, exclusions by Protocol criterion code, an "Outside the flow" section, and the Stage 4
+reconciliation against `arti-lit`. `arti-lit` holds per-record decisions; this file holds the
+funnel numbers. See `references/prisma-counts-template.md` and `references/stage2-search-and-screening.md`.
+
+**File:** `slr\prisma-counts.md`
 
 ---
 
@@ -188,7 +198,7 @@ moves to `included`. See `references/stage3-extraction-and-appraisal.md` for the
 ### Stage 4: PRISMA Flow, Synthesis, and Handoff
 **Trigger:** Screening complete (no rows left at `identified`/`title_abstract`/`eligible` that
 should have a final stage). **Output:** PRISMA Flow Diagram (via `ARTi-figure`), `slr
-\synthesis-matrix.md` (with all three outputs fired), `slr\manuscript-blueprint.md`, a Journal
+\prisma-counts.md`, `slr\synthesis-matrix.md` ((a) and (c) done, (b) done or N/A), `slr\manuscript-blueprint.md`, a Journal
 Target Sheet, and the closing `slr\handoff.md`. See `references/stage4-synthesis-and-handoff.md`
 for the full procedure.
 
@@ -224,16 +234,20 @@ Claude must explicitly tell the researcher when the handoff is ready — see the
    rule and `library search` pre-check; no new dedup subcommand.
 6. **Every screening reject carries a reason tied to a Protocol criterion** — a pass with no
    logged reject count, or a reject with no reason, breaks the PRISMA Flow Diagram's honesty.
-7. **PRISMA counts are computed, never asserted** — one `library list --screening-stage X` call
-   per stage value, not a number recalled from memory or estimated late.
+7. **PRISMA reports the recorded funnel, not a census of `arti-lit`** — numbers come from
+   `slr\prisma-counts.md`, logged during Stage 2 and reconciled in Stage 4 against one `library list
+   --screening-stage X` call per stage value (per path). Never a number recalled from memory;
+   differences are shown to the researcher, not resolved silently.
 8. **No new fields for what free text already covers** — quality appraisal and structured
    extraction both live in `sources.summary`; do not propose a parallel table or document for
    either.
-9. **Matriks Sintesis has three outputs, not one** — Blueprint content, Idea Canvas gap-routing,
-   and Journal Target Sheet input all fire from the same synthesis pass.
-10. **Novelty scoring never happens directly on a review's own gaps** — any future-study gap
-   noticed during synthesis is routed through ARTi-idea's existing Idea Canvas gate, keeping the
-   Idea Bank's quality bar consistent regardless of source. The review's own journal choice is
+9. **Matriks Sintesis has up to three outputs** — Blueprint content and Journal Target Sheet input
+   are required; Idea Canvas gap-routing fires only when the researcher plans a follow-up study.
+   Otherwise mark it "N/A, not pursued".
+10. **Novelty scoring never happens directly on a review's own gaps** — when a follow-up study is
+   planned, its gaps are routed through ARTi-idea's existing Idea Canvas gate, keeping the
+   Idea Bank's quality bar consistent regardless of source. "Nobody has done X" holds only for the
+   selected corpus (`[NEEDS CHECK]` plus a targeted search). The review's own journal choice is
    topic-driven and bypasses that gate entirely. The Prior Review Check (Principle 2) is a different
    thing: a factual overlap check against published reviews, never a novelty score of an idea.
 11. **Copy decisions, point at content** — the SLR Handoff records what was decided and where each
@@ -249,9 +263,10 @@ python.exe" "~/.arti/tools/arti-lit/cli.py" <subcommand> ... --project PATH` (Ma
 `~/.arti/tools/arti-lit/README.md`'s Schema section for the `search_source`/`screening_stage`/
 `exclusion_reason` columns this skill adds. `screening_stage` is a closed vocabulary: `identified |
 title_abstract | eligible | included | excluded_title_abstract | excluded_eligibility |
-prior_review` — both `library add`/`update` reject any other value. `prior_review` marks a
-previously published review from the Prior Review Check; it is outside the PRISMA flow, so exact-match
-stage counts never include it.
+prior_review | outside_flow` — both `library add`/`update` reject any other value. `prior_review`
+marks a previously published review from the Prior Review Check; `outside_flow` marks a source that
+is only cited as background. Both are outside the PRISMA flow, so exact-match stage counts never
+include them.
 
 **`arti-pdf-ingest` invocation** — unmodified, see `ARTi-ref`'s Fulltext ingestion section, used
 for the Fulltext Paper step in Stage 2.
@@ -275,11 +290,22 @@ used for Idea Bank writes (via the Idea Canvas gate) and Journal Target Sheet lo
   three-way Matriks Sintesis output, closing SLR Handoff
 - `references/synthesis-matrix-template.md` — blank Matriks Sintesis
 - `references/slr-manuscript-blueprint-template.md` — blank SLR Manuscript Blueprint
+- `references/prisma-counts-template.md` — blank PRISMA Counts funnel log (source of truth for the
+  PRISMA numbers)
 - `references/slr-handoff-template.md` — blank SLR Handoff (closing document)
 
 Read the relevant reference file before starting any stage.
 
 ## Change log
+- 2026-10-03 — Stage 1 Part C points to `ARTi-ref/references/search-routing.md` for search-route rules (Scholar/S2 finds enter as `OTHER:`).
+- 2026-10-01 — Idea Canvas output (b) made optional (only for a planned follow-up study; synthesis
+  matrix serves as Gap Map; `[NEEDS CHECK]` on "nobody has done X"; overlap check against Idea Bank
+  and project-index). `arti-lit` is no longer the PRISMA source of truth: new `slr\prisma-counts.md`
+  funnel log (core document 7, `references/prisma-counts-template.md`), four record paths via
+  `search_source` prefixes (`DB:`, `OTHER:`, `OUTSIDE:`, deviations), new `outside_flow` stage in
+  `arti-lit`, numbered Protocol criteria (E1.., `DUP`) as exclusion-reason codes, Stage 4
+  reconciliation. Handoff template gained an "Open flags" line for the Scopus re-run. Principles 7,
+  9, 10 reworded.
 - 2026-10-01 — Added the Prior Review Check (Stage 1 Part C, `references/prior-review-check-template.md`,
   output `slr\prior-reviews.md`): OpenAlex narrow-to-broad ladder via the upgraded
   `arti-ref-search-mcp` (`count_openalex_works`, `search_openalex_works(work_type="review")`) plus a

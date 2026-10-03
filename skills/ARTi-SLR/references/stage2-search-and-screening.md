@@ -3,6 +3,30 @@
 Full procedure for populating `arti-lit` from the Protocol's database list through both screening
 gates. Read this when Stage 2 fires — see `SKILL.md`'s Stage 2 stub for the trigger condition.
 
+## Funnel log — `slr\prisma-counts.md`
+
+PRISMA reports the funnel as it was recorded, not a census of whatever sits in `arti-lit`.
+`arti-lit` stores the per-record decisions; the funnel numbers come from `slr\prisma-counts.md`
+(`references/prisma-counts-template.md`), reconciled against `arti-lit` in Stage 4. Seed the file
+when the first search runs and append to it after every import and every screening pass.
+
+- After each import, log in the "Import log" table: database/angle, raw hits, newly imported
+  records, duplicates rejected at import. Do it in the same turn as the import, while the numbers
+  are still on screen; a duplicate count reconstructed later is only a derived figure.
+- Records enter `arti-lit` by one of four paths, marked in `search_source` with a prefix (no schema
+  change). PRISMA counts are path × stage, not stage alone:
+  - **A. Database search** — `DB:<database>: <angle>`. The normal route.
+  - **B. Other methods** (citation chase, researcher-supplied, candidate for inclusion) —
+    `OTHER:citation-chase:<seed-key>` or `OTHER:researcher-supplied`. They go in PRISMA 2020's
+    "other methods" arm, must pass Gate 1 and Gate 2 against the same Protocol criteria, and are
+    counted in the included total.
+  - **C. Cited or background only** (not a study that is synthesised) — set
+    `--screening-stage outside_flow`, `search_source` `OUTSIDE:<why>`. Not counted anywhere in the
+    funnel.
+  - **D. Researcher wants to include a paper that fails the criteria** — record it as a Protocol
+    deviation (Principle 3): log it in the Protocol's Change log, report it in Methods, and flag it
+    in the PRISMA box. Never hide it inside the counts.
+
 ## Search — repeated per database
 
 - Loop explicitly over every row in `slr\protocol.md`'s database list — one search pass per
@@ -12,7 +36,7 @@ gates. Read this when Stage 2 fires — see `SKILL.md`'s Stage 2 stub for the tr
   - Batch RIS export → `library import-ris --files PATH --project PATH` (see `ARTi-ref`'s
     Invocation section for the full command).
   - A record without an RIS export (manual entry) → `library add --key KEY --citation TEXT
-    --search-source "DATABASE: SEARCH STRING" --screening-stage identified --project PATH`.
+    --search-source "DB:DATABASE: ANGLE" --screening-stage identified --project PATH`.
   - Every record, regardless of import path, must end up with `search_source` set to which
     database/string surfaced it — `import-ris` doesn't set this automatically (it's not an RIS
     field), so follow an `import-ris` batch with one `library update --key KEY --search-source
@@ -52,9 +76,10 @@ gates. Read this when Stage 2 fires — see `SKILL.md`'s Stage 2 stub for the tr
   import, else fetch/read manually), apply the Protocol's inclusion/exclusion criteria.
 - **Passes:** `library update --key KEY --screening-stage title_abstract --project PATH`
 - **Rejected:** `library update --key KEY --screening-stage excluded_title_abstract
-  --exclusion-reason "REASON" --project PATH` — the reason must cite one of the Protocol's listed
-  exclusion criteria (or a close paraphrase); a reason that doesn't map to a listed criterion is a
-  signal the Protocol's criteria list is incomplete, not that the reject is wrong.
+  --exclusion-reason "E3: REASON" --project PATH` — the reason starts with the code of one of the
+  Protocol's numbered exclusion criteria (`DUP` for a true duplicate); a reason that doesn't map to
+  a listed criterion is a signal the Protocol's criteria list is incomplete, not that the reject is
+  wrong.
 - **Every row gets a stage set, pass or reject — never left at `identified`.** This is what makes
   the PRISMA Flow Diagram's counts real (Stage 4 reads them straight from these stage values)
   rather than reconstructed from memory after the fact.
@@ -66,7 +91,7 @@ gates. Read this when Stage 2 fires — see `SKILL.md`'s Stage 2 stub for the tr
   couldn't — e.g. wrong outcome measure, duplicate dataset, retracted).
 - **Passes:** `library update --key KEY --screening-stage eligible --project PATH`
 - **Rejected:** `library update --key KEY --screening-stage excluded_eligibility --exclusion-reason
-  "REASON" --project PATH` — same rule: reason must cite a Protocol criterion.
+  "E3: REASON" --project PATH` — same rule: reason starts with a Protocol criterion code.
 - Once a row is `eligible`, it proceeds to Stage 3 extraction, after which its stage becomes
   `included`. `eligible` is a transient stage, not a stopping point — Stage 3 always follows
   immediately for every `eligible` row, no separate confirmation step.
@@ -75,4 +100,4 @@ gates. Read this when Stage 2 fires — see `SKILL.md`'s Stage 2 stub for the tr
 
 After each database search or screening pass, report: how many identified, how many deduplicated
 away, how many passed/rejected at this gate, and running totals — the researcher should never have
-to ask "where are we" mid-Stage-2.
+to ask "where are we" mid-Stage-2. Write the same numbers into `slr\prisma-counts.md`.

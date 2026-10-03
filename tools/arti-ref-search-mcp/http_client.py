@@ -21,11 +21,17 @@ USER_AGENT = "arti-ref-search-mcp/0.1 (~/.arti/tools/arti-ref-search-mcp)"
 class SourceFetchError(RuntimeError):
     """Raised when a source's HTTP fetch fails after retries or hits a non-retryable error.
 
-    Any `api_key=` value in the message is redacted -- these errors are shown to the model.
+    `api_key=` and `mailto=` values in the message are redacted (parameter names kept) and
+    control characters dropped -- these errors are shown to the model.
     """
 
     def __init__(self, message):
-        super().__init__(re.sub(r"(api_key=)[^&\s]+", r"***", str(message)))
+        super().__init__(_redact(message))
+
+
+def _redact(message):
+    text = re.sub(r"(api_key|mailto)=[^&\s]*", lambda m: f"{m.group(1)}=***", str(message))
+    return re.sub(r"[\x00-\x1f]", "", text)
 
 
 def _error_detail(e):
@@ -38,13 +44,21 @@ def _error_detail(e):
         return ""
 
 
-def get_json_with_retry(url, params=None, headers=None):
-    """GET url (+ params) and return parsed JSON. Raises SourceFetchError on failure."""
+def get_json_with_retry(url, params=None, headers=None, json_body=None):
+    """GET url (+ params) and return parsed JSON; POST `json_body` as JSON when given.
+
+    Raises SourceFetchError on failure.
+    """
     if params:
         query = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
         url = f"{url}?{query}" if query else url
 
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
+    hdrs = {"User-Agent": USER_AGENT, **(headers or {})}
+    data = None
+    if json_body is not None:
+        data = json.dumps(json_body).encode("utf-8")
+        hdrs["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=data, headers=hdrs)
     delay = 1.0
     for attempt in range(MAX_RETRIES):
         try:

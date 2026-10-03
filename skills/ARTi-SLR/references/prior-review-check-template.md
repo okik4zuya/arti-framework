@@ -36,5 +36,8 @@ One row per review that touches the topic; add each to `arti-lit` as `prior_revi
 
 ## Differentiating sentence (Introduction, paragraph 2)
 
+> If the Scopus `DOCTYPE(re)` re-run is still pending, the Introduction says "to our knowledge"
+> and the handoff carries an open flag (`slr-handoff-template.md`) until it is closed.
+
 [One or two sentences: what the closest prior reviews cover, and what this review adds — the
 material scope, strategy coverage, or time window they do not reach.]

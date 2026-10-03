@@ -11,6 +11,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -612,7 +613,13 @@ def delete_project_file(project_path, abs_path):
     target = _resolve_under_project(project_path, abs_path)
     if not target.exists():
         raise ValueError("File not found")
-    target.unlink()
+    if target.is_dir():
+        # Folder row's "Delete" action -- recursive, but never the project root.
+        if target == Path(project_path).resolve():
+            raise ValueError("Cannot delete the project folder itself")
+        shutil.rmtree(target)
+    else:
+        target.unlink()
     return {"deleted": True}
 
 

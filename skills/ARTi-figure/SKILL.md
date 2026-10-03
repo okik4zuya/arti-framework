@@ -161,11 +161,11 @@ time:**
    a table, read the generated `.md` and compare it cell-by-cell against the source spec or
    original image. Catching an overflowing box, a misrouted edge, or a transposed column is
    Claude's job before the researcher ever opens the file.
-2. **Check legibility/overflow against the target journal's print constraints, not just default
-   canvas size.** Pull print width/column count and figure dpi/resolution requirements from this
-   project's `writing/journal-profile_*.md` (Block A/B) when they're recorded there; if that block
-   says "not confirmed," say so explicitly rather than silently assuming a default, and flag it as
-   an open item rather than guessing a number.
+2. **Check legibility/overflow at print width, not just default canvas size.** Compute the final
+   font size at the print width (a 20 px label that scales to 5.2 pt is a failure). Use
+   `references/artwork-default.md` unless this project's `writing/journal-profile_*.md` (Block
+   A/B) records journal-specific values or the researcher asks for them; a missing Journal Profile
+   is not an open item.
 Only after both checks pass (or their gaps are explicitly flagged) is a render considered done —
 "I rendered it" and "I verified it" are different claims; don't conflate them in the response to
 the researcher.

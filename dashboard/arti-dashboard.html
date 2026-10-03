@@ -313,6 +313,12 @@
   }
   .menu-dropdown button:hover{ background:var(--accent-soft); color:var(--accent); }
   .menu-dropdown button.menu-item-active{ background:var(--accent-soft); color:var(--accent); }
+  .menu-dropdown button.menu-item-danger{ color:#d9534f; display:flex; align-items:center; gap:8px; }
+  .menu-dropdown button.menu-item-danger:hover{ background:rgba(217,83,79,0.12); color:#c9302c; }
+  .menu-dropdown button.menu-item-danger svg{ flex:none; }
+  /* Project Files row menus escape the scrolling list (fixed, placed by JS) so
+     opening one on the last row doesn't extend the list's scroll area. */
+  .menu-dropdown.menu-fixed{ position:fixed; top:auto; right:auto; }
   .menu-dropdown button:disabled{ opacity:.4; cursor:default; }
   .menu-dropdown button:disabled:hover{ background:none; color:var(--text); }
 
@@ -603,6 +609,12 @@
     flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px;
   }
   .files-preview-empty[hidden]{ display:none; }
+  /* An empty pane has no header (and so no close button), which left stray
+     blank columns nothing could dismiss -- this corner button is only shown
+     while more than one pane is open (the last pane always stays). */
+  .files-preview-panel{ position:relative; }
+  .files-preview-empty-close{ display:none; position:absolute; top:10px; right:10px; z-index:2; }
+  .files-preview-panes.multi .files-preview-empty:not([hidden]) + .files-preview-empty-close{ display:inline-flex; }
   .files-preview-content{ flex:1; display:flex; flex-direction:column; min-height:0; }
   .files-preview-content[hidden]{ display:none; }
   .files-preview-panel.editing .files-preview-content{
@@ -973,6 +985,17 @@
     color:var(--note-text);
   }
   .side-note-save-copy-bar .icon-btn.icon-only:hover{ background:rgba(0,0,0,0.08); color:var(--note-text); }
+  .side-note-conflict-bar{
+    flex:none; display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+    padding:4px 6px; border-bottom:1px solid var(--note-border);
+    background:var(--note-bg-2); font-size:11px; color:var(--red);
+  }
+  .side-note-conflict-bar[hidden]{ display:none; }
+  .side-note-conflict-bar span{ flex:1 1 100%; }
+  .side-note-conflict-bar .btn{
+    border-radius:var(--radius); font-size:11.5px; font-weight:500; padding:3px 8px; height:22px;
+    background:var(--note-bg); border-color:var(--note-border); color:var(--note-text);
+  }
   .side-note-status{
     flex:none; padding:2px 8px 0; font-size:11px; color:var(--note-text); opacity:0.7; min-height:13px;
   }
@@ -1021,6 +1044,11 @@
     padding-top:10px; border-top:1px solid var(--border);
   }
   #chatPreviewBody.markdown-body{ font-size:14px; }
+  .markdown-body li.task-list-item{ list-style:none; }
+  .markdown-body li.task-list-item > input.task-list-item-checkbox{
+    display:inline-block; width:auto; flex:none; margin:0 .4em .2em -1.4em; vertical-align:middle;
+  }
+  .markdown-body ul.contains-task-list{ padding-left:1.6em; }
   #chatPreviewBody.markdown-body pre{ position:relative; }
   #chatPreviewBody.markdown-body pre .code-copy-btn{
     position:absolute; top:6px; right:6px; opacity:0; transition:opacity .12s ease;
@@ -1344,7 +1372,7 @@
       <div class="panel-topbar" id="projectsTopbar">
         <div class="panel-topbar-title">Projects <span class="count-badge" id="projectsCount">0</span></div>
         <button class="btn primary" id="openNewProject" title="New project (Ctrl+Shift+N)">New</button>
-        <button class="btn outline-primary" id="openExistingFolder" title="Convert From Folder (Ctrl+Shift+F)">Convert From Folder</button>
+        <button class="btn outline-primary" id="openExistingFolder" title="Convert From Folder (Ctrl+Shift+O)">Convert From Folder</button>
         <span class="panel-topbar-divider"></span>
         <input class="search-input" id="projectSearch" placeholder="Search name or path…" title="Search (Ctrl+P)" />
         <span class="panel-topbar-popover-wrap">
@@ -1465,24 +1493,24 @@
             </button>
           </span>
           <span class="files-action-divider"></span>
-          <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="Toggle references (Ctrl+Shift+F)">
+          <button type="button" class="icon-btn icon-only" id="chatReferencesBtn" title="Toggle references (Ctrl+Alt+R)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
               <path d="M6 4h9l3 3v13H6z" stroke-linejoin="round"/><path d="M9 10h6M9 14h6M9 18h3" stroke-linecap="round"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn icon-only" id="chatOpenVscodeBtn" title="Open in VS Code (Ctrl+Shift+V)">
+          <button type="button" class="icon-btn icon-only" id="chatOpenVscodeBtn" title="Open in VS Code (Ctrl+Alt+V)">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#007ACC" d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn icon-only" id="chatOpenProjectFolderBtn" title="Open in file explorer (Ctrl+Shift+O)">
+          <button type="button" class="icon-btn icon-only" id="chatOpenProjectFolderBtn" title="Open in file explorer (Ctrl+Alt+O)">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#FFA000" d="M2 6a2 2 0 0 1 2-2h4.17a2 2 0 0 1 1.41.59L11 6h9a2 2 0 0 1 2 2v1H2z"/>
               <path fill="#FFCA28" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
             </svg>
           </button>
           <span class="row-menu">
-            <button type="button" class="menu-toggle" id="chatFilesMoreToggle" title="More actions (Ctrl+Shift+M)" aria-label="More actions">&#8942;</button>
+            <button type="button" class="menu-toggle" id="chatFilesMoreToggle" title="More actions" aria-label="More actions">&#8942;</button>
             <div class="menu-dropdown" id="chatFilesMoreDropdown" hidden>
               <button type="button" id="chatAddClaudeMdBtn">Add CLAUDE.md</button>
               <button type="button" id="chatScaffoldPaperBtn">Scaffold Paper Project</button>
@@ -1556,6 +1584,7 @@
     <div class="files-preview-panes" id="filesPreviewPanes">
     <div class="files-preview-panel" id="filesPreviewPanel">
       <div class="files-preview-empty" id="filesPreviewEmpty">No file selected.</div>
+      <button class="icon-btn icon-only files-preview-empty-close" type="button" title="Close pane">&times;</button>
       <div class="files-preview-content" id="filesPreviewContent" hidden>
         <div class="files-preview-head">
           <h2 id="chatPreviewFileName"></h2>
@@ -1671,6 +1700,11 @@
         <input type="text" id="sideNoteSaveCopyInput" placeholder="filename.md" autocomplete="off" />
         <button type="button" class="btn" id="sideNoteSaveCopyConfirmBtn">Save</button>
         <button type="button" class="icon-btn icon-only" id="sideNoteSaveCopyCancelBtn" title="Cancel">&times;</button>
+      </div>
+      <div class="side-note-conflict-bar" id="sideNoteConflictBar" hidden>
+        <span>File changed outside the panel.</span>
+        <button type="button" class="btn" id="sideNoteConflictReloadBtn" title="Discard the panel's text and load the file from disk">Reload</button>
+        <button type="button" class="btn" id="sideNoteConflictOverwriteBtn" title="Replace the file on disk with the panel's text">Overwrite</button>
       </div>
       <div class="side-note-status" id="sideNoteStatus"></div>
       <textarea class="side-note-body" id="sideNoteBody" placeholder="Jot an idea…"></textarea>
@@ -2386,7 +2420,7 @@
         var dropdown = btn.nextElementSibling;
         var wasHidden = dropdown.hidden;
         closeAllRowMenus();
-        dropdown.hidden = !wasHidden;
+        if (wasHidden) openRowMenuFixed(btn, dropdown);
       });
     });
   }
@@ -3181,12 +3215,21 @@
   }
 
   // Single reachability path for both entry points (per-project-row button
-  // and the Files workspace toolbar button/Ctrl+Shift+F): navigate to the
-  // Files workspace for the project, then force the drawer open there.
+  // and the Files workspace toolbar button/Ctrl+Alt+R): navigate to the
+  // Files workspace for the project, then force the drawer open there. Both
+  // explicit opens put the cursor in the drawer's search box (like Ctrl+P does
+  // for project files); restoring a remembered-open drawer on a project switch
+  // deliberately doesn't, so it never steals focus.
+  function focusReferencesSearch(){
+    referencesSearch.focus();
+    referencesSearch.select();
+  }
+
   function openReferencesPanel(path, name){
     return openProjectInFiles(path, name).then(function(){
       setReferencesDrawerVisible(true);
       saveReferencesDrawerOpenForProject(path, true);
+      focusReferencesSearch();
       return prepareReferencesForProject(path);
     });
   }
@@ -3196,7 +3239,10 @@
     var willOpen = document.getElementById("referencesDrawer").hidden;
     setReferencesDrawerVisible(willOpen);
     saveReferencesDrawerOpenForProject(filesCurrentProjectPath, willOpen);
-    if (willOpen) prepareReferencesForProject(filesCurrentProjectPath);
+    if (willOpen){
+      focusReferencesSearch();
+      prepareReferencesForProject(filesCurrentProjectPath);
+    }
   }
 
   document.getElementById("closeReferencesDrawerBtn").addEventListener("click", function(){
@@ -3296,7 +3342,13 @@
   function parseMarkdownWithMath(text){
     var protectedMath = protectMathSegments(text || "");
     var html = marked.parse(protectedMath.text, { gfm: true, breaks: true });
-    return restoreMathSegments(html, protectedMath.segments);
+    html = restoreMathSegments(html, protectedMath.segments);
+    // marked emits a bare <input type=checkbox> with no class on the <li> or
+    // the input; github-markdown.css's task-list rules key off these two.
+    return html
+      .replace(/<li>(\s*(?:<p>)?\s*)<input ([^>]*type="checkbox"[^>]*)>/g,
+        '<li class="task-list-item">$1<input class="task-list-item-checkbox" $2>')
+      .replace(/<ul>(\s*<li class="task-list-item">)/g, '<ul class="contains-task-list">$1');
   }
 
   function renderMsgContent(content){
@@ -3751,12 +3803,52 @@
     el.classList.toggle("error", !!isError);
   }
 
-  function loadSideNoteForProject(projectPath){
+  // The file can also be edited from outside the panel (Claude Code, another
+  // editor, a script), so the panel tracks the mtime it last read/wrote
+  // (sideNoteMtime; null = no file then) and `sideNoteDirty` (typed, not yet
+  // saved). Clean panel + newer file on disk -> silently reload; dirty panel +
+  // newer file -> never overwrite, show the conflict bar instead.
+  var SIDE_NOTE_POLL_MS = 4000;
+  var sideNoteMtime = null;
+  var sideNoteDirty = false;
+  var sideNoteSaving = false;
+  var sideNoteQueuedAnnounce = null; // a save requested mid-flight: null = none, else its `announce`
+  var sideNoteConflict = false;
+
+  function setSideNoteConflict(on){
+    sideNoteConflict = on;
+    var bar = document.getElementById("sideNoteConflictBar");
+    if (bar) bar.hidden = !on;
+  }
+
+  // mtime of the note file, or null if it doesn't exist; rejects on any other error.
+  function statSideNote(projectPath){
+    var url = "/chat/project-files/stat?path=" + encodeURIComponent(projectPath) +
+      "&file=" + encodeURIComponent(sideNoteFileAbsPath(projectPath));
+    return fetch(API + url).then(function(r){
+      if (r.status === 404) return null;
+      return r.json().then(function(d){
+        if (!r.ok) throw new Error(d.error || "stat failed");
+        return d.mtime;
+      });
+    });
+  }
+
+  // `quiet` = a refresh of the already-loaded project (no "Loading…" flash).
+  function loadSideNoteForProject(projectPath, quiet){
+    if (!quiet && projectPath && projectPath === sideNoteProjectPath && sideNoteDirty) return; // keep unsaved typing
+    if (!quiet && sideNoteProjectPath && projectPath !== sideNoteProjectPath && sideNoteDirty){
+      clearTimeout(sideNoteSaveTimer);
+      writeSideNote(false); // flush the previous project's unsaved text before swapping
+    }
     sideNoteProjectPath = projectPath;
     var body = document.getElementById("sideNoteBody");
     var title = document.getElementById("sideNoteTitle");
     if (title) title.textContent = projectPath ? "Side note — " + filesProjectNameForPath(projectPath) : "Side note";
     if (!body) return;
+    sideNoteDirty = false;
+    sideNoteMtime = null;
+    setSideNoteConflict(false);
     if (!projectPath){
       body.value = "";
       body.disabled = true;
@@ -3765,47 +3857,81 @@
     }
     body.disabled = false;
     var token = ++sideNoteLoadToken;
-    setSideNoteStatus("Loading…");
+    if (!quiet) setSideNoteStatus("Loading…");
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
       "&file=" + encodeURIComponent(sideNoteFileAbsPath(projectPath));
     apiRaw(url).then(function(d){
-      if (token !== sideNoteLoadToken) return; // project switched again before this resolved
-      body.value = d.content || "";
+      if (token !== sideNoteLoadToken || sideNoteDirty) return; // project switched / user typed before this resolved
+      var text = d.content || "";
+      if (body.value !== text) body.value = text;
+      sideNoteMtime = d.mtime == null ? null : d.mtime;
       setSideNoteStatus("");
     }).catch(function(){
-      if (token !== sideNoteLoadToken) return;
+      if (token !== sideNoteLoadToken || sideNoteDirty) return;
       body.value = ""; // no note saved yet for this project
+      sideNoteMtime = null;
       setSideNoteStatus("");
     });
+  }
+
+  // Pulls in edits made outside the panel while it's open and clean.
+  function syncSideNote(){
+    if (!sideNoteProjectPath || sideNoteDirty || sideNoteSaving || sideNoteConflict || !isSideNoteOpen()) return;
+    var projectPath = sideNoteProjectPath, token = sideNoteLoadToken;
+    statSideNote(projectPath).then(function(mtime){
+      if (token !== sideNoteLoadToken || sideNoteDirty || sideNoteSaving) return;
+      if (mtime !== sideNoteMtime) loadSideNoteForProject(projectPath, true);
+    }).catch(function(){ /* transient; the next poll retries */ });
   }
 
   // Writes the note to disk. `announce` controls whether a "Saved" status is
   // shown on success -- the debounced autosave path stays silent (per the
   // user's ask to only surface "Saved" when they actually asked for it),
   // while an explicit save (Ctrl+S) always announces. Failures are always
-  // shown either way, since a silently-lost note would be worse.
-  function writeSideNote(announce){
-    if (!sideNoteProjectPath) return;
+  // shown either way, since a silently-lost note would be worse. Unless
+  // `force`, a write is refused (conflict bar) when the file's mtime moved
+  // since the panel last read/wrote it.
+  function writeSideNote(announce, force){
+    if (!sideNoteProjectPath || (sideNoteConflict && !force)) return;
+    if (sideNoteSaving){ sideNoteQueuedAnnounce = !!(announce || sideNoteQueuedAnnounce); return; }
     var projectPath = sideNoteProjectPath;
     var body = document.getElementById("sideNoteBody");
     if (!body) return;
-    apiRaw("/chat/project-files/write", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ path: projectPath, file: sideNoteFileAbsPath(projectPath), content: body.value })
-    }).then(function(){
-      if (sideNoteProjectPath !== projectPath) return;
-      if (announce){
-        setSideNoteStatus("Saved");
-        clearTimeout(sideNoteSaveTimer);
-        sideNoteSaveTimer = setTimeout(function(){ setSideNoteStatus(""); }, 1500);
+    var content = body.value;
+    sideNoteSaving = true;
+    var check = force ? Promise.resolve(sideNoteMtime) : statSideNote(projectPath);
+    check.then(function(mtime){
+      if (mtime !== sideNoteMtime){
+        if (sideNoteProjectPath === projectPath) setSideNoteConflict(true);
+        return null;
       }
+      return apiRaw("/chat/project-files/write", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: projectPath, file: sideNoteFileAbsPath(projectPath), content: content })
+      }).then(function(d){
+        if (sideNoteProjectPath !== projectPath) return;
+        sideNoteMtime = d.mtime == null ? null : d.mtime;
+        sideNoteDirty = body.value !== content; // more typing landed mid-flight
+        setSideNoteConflict(false);
+        if (announce){
+          setSideNoteStatus("Saved");
+          clearTimeout(sideNoteSaveTimer);
+          sideNoteSaveTimer = setTimeout(function(){ setSideNoteStatus(""); }, 1500);
+        }
+      });
     }).catch(function(err){
       if (sideNoteProjectPath === projectPath) setSideNoteStatus("Failed to save: " + (err && err.message ? err.message : "unknown error"), true);
+    }).then(function(){
+      sideNoteSaving = false;
+      var queued = sideNoteQueuedAnnounce;
+      sideNoteQueuedAnnounce = null;
+      if (queued !== null && sideNoteProjectPath === projectPath) writeSideNote(queued);
     });
   }
 
   function scheduleSideNoteSave(){
     if (!sideNoteProjectPath) return;
+    sideNoteDirty = true;
     clearTimeout(sideNoteSaveTimer);
     sideNoteSaveTimer = setTimeout(function(){ writeSideNote(false); }, 800);
   }
@@ -3828,6 +3954,7 @@
     panel.hidden = collapsed;
     pill.hidden = !collapsed;
     saveSideNoteUiState({ collapsed: collapsed });
+    if (!collapsed) syncSideNote();
   }
 
   function openSideNote(){
@@ -3923,6 +4050,17 @@
     initSideNoteDrag();
 
     body.addEventListener("input", scheduleSideNoteSave);
+    document.getElementById("sideNoteConflictReloadBtn").addEventListener("click", function(){
+      clearTimeout(sideNoteSaveTimer);
+      loadSideNoteForProject(sideNoteProjectPath, true);
+    });
+    document.getElementById("sideNoteConflictOverwriteBtn").addEventListener("click", function(){
+      clearTimeout(sideNoteSaveTimer);
+      writeSideNote(false, true);
+    });
+    window.addEventListener("focus", syncSideNote);
+    document.addEventListener("visibilitychange", function(){ if (!document.hidden) syncSideNote(); });
+    setInterval(syncSideNote, SIDE_NOTE_POLL_MS); // native pywebview windows may not fire focus/visibility events
     toggleBtn.addEventListener("click", toggleSideNote);
     pill.addEventListener("click", function(){ setSideNoteCollapsed(false); saveSideNoteUiState({ open: true }); });
     closeBtn.addEventListener("click", closeSideNote);
@@ -4554,12 +4692,15 @@
     });
   }
 
-  // Global Ctrl+K / Cmd+K -- opens Search with the query input focused from
-  // anywhere in the dashboard. Triggered from the Workspace panel with a
-  // project loaded, it scopes the search to that same project instead of
-  // opening in global "All projects" scope.
+  // Global Ctrl+K / Cmd+K, and Ctrl+Shift+F (VS Code's "search all files"
+  // habit) -- opens Search with the query input focused from anywhere in the
+  // dashboard. Triggered from the Workspace panel with a project loaded, it
+  // scopes the search to that same project instead of opening in global "All
+  // projects" scope.
   document.addEventListener("keydown", function(e){
-    var isOpenSearch = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
+    var primary = e.ctrlKey || e.metaKey;
+    var isOpenSearch = primary && (e.key.toLowerCase() === "k" ||
+      (e.shiftKey && !e.altKey && e.key.toLowerCase() === "f"));
     if (!isOpenSearch) return;
     e.preventDefault();
     var fromWorkspace = !filesPanel.hidden && !!filesCurrentProjectPath;
@@ -4788,6 +4929,13 @@
         e.preventDefault();
         var ideaSearch = document.getElementById("ideaSearch");
         if (ideaSearch){ ideaSearch.focus(); ideaSearch.select(); }
+      } else {
+        var searchPanelForSearch = document.getElementById("searchPanel");
+        if (searchPanelForSearch && !searchPanelForSearch.hidden && searchQueryInputEl){
+          e.preventDefault();
+          searchQueryInputEl.focus();
+          searchQueryInputEl.select();
+        }
       }
       return;
     }
@@ -4815,10 +4963,32 @@
       return;
     }
 
+    // Ctrl+Alt+R/V/O -- the rest of the Workspace's "show a surface / leave for
+    // another app" layer, alongside Ctrl+Alt+I (Fine AI) and Ctrl+Alt+N (side
+    // note): References drawer, Open in VS Code, Open in file explorer. Each
+    // dispatches a click on its existing toolbar button, Workspace panel open only.
+    if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey){
+      var altBtnId = null;
+      if (e.key === "r" || e.key === "R" || e.code === "KeyR") altBtnId = "chatReferencesBtn";
+      else if (e.key === "v" || e.key === "V" || e.code === "KeyV") altBtnId = "chatOpenVscodeBtn";
+      else if (e.key === "o" || e.key === "O" || e.code === "KeyO") altBtnId = "chatOpenProjectFolderBtn";
+      if (altBtnId){
+        var altHostPanel = document.getElementById("filesPanel");
+        if (altHostPanel && !altHostPanel.hidden){
+          e.preventDefault();
+          document.getElementById(altBtnId).click();
+        }
+        return;
+      }
+    }
+
     // Ctrl+S -- explicit save of the side note, only while it's open (the
     // note otherwise autosaves silently on a debounce; this both forces an
     // immediate write and is the one path that shows a "Saved" status).
-    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && isSideNoteOpen()){
+    // Skipped when the keystroke already saved a file / chat message in an editor
+    // (those handlers preventDefault), so a file save never also force-saves the note.
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && isSideNoteOpen() &&
+        !e.defaultPrevented && !(e.target && e.target.closest && e.target.closest(".cm-editor, .chat-msg-edit, .file-preview-edit"))){
       e.preventDefault();
       saveSideNoteNow();
       return;
@@ -4837,9 +5007,9 @@
       return;
     }
 
-    // Ctrl+Shift+N/U/R/F/V/O -- Workspace file-list actions, only while the
-    // Workspace panel is open and (for the project-scoped ones) a project is
-    // selected. Mirrors the toolbar buttons' click handlers.
+    // Ctrl+Shift+N/U/R -- Workspace file-list actions (new / upload / refresh),
+    // only while the Workspace panel is open. Mirrors the toolbar buttons'
+    // click handlers.
     if (ctrlShift){
       var wsPanel = document.getElementById("filesPanel");
       if (wsPanel && !wsPanel.hidden){
@@ -4858,30 +5028,10 @@
           document.getElementById("chatRefreshFilesBtn").click();
           return;
         }
-        if (e.key === "f" || e.key === "F"){
-          e.preventDefault();
-          document.getElementById("chatReferencesBtn").click();
-          return;
-        }
-        if (e.key === "v" || e.key === "V"){
-          e.preventDefault();
-          document.getElementById("chatOpenVscodeBtn").click();
-          return;
-        }
-        if (e.key === "o" || e.key === "O"){
-          e.preventDefault();
-          document.getElementById("chatOpenProjectFolderBtn").click();
-          return;
-        }
-        if (e.key === "m" || e.key === "M"){
-          e.preventDefault();
-          document.getElementById("chatAddClaudeMdBtn").click();
-          return;
-        }
       }
     }
 
-    // Ctrl+Shift+N/F -- Projects panel actions: New project / Convert From
+    // Ctrl+Shift+N/O -- Projects panel actions: New project / Convert From
     // Folder. Mirrors the toolbar buttons' click handlers, only while the
     // Projects panel is open.
     if (ctrlShift){
@@ -4892,7 +5042,7 @@
           document.getElementById("openNewProject").click();
           return;
         }
-        if (e.key === "f" || e.key === "F"){
+        if (e.key === "o" || e.key === "O"){
           e.preventDefault();
           document.getElementById("openExistingFolder").click();
           return;
@@ -5104,7 +5254,10 @@
     if (!dropdown) return;
     var wasHidden = dropdown.hidden;
     closeAllRowMenus();
-    dropdown.hidden = !wasHidden;
+    if (wasHidden){
+      var toggle = item.querySelector(".menu-toggle");
+      if (toggle) openRowMenuFixed(toggle, dropdown); else dropdown.hidden = false;
+    }
     chatFileRowMenuActiveIndex = -1;
   }
 
@@ -5204,6 +5357,27 @@
     return n;
   }
 
+  // Nested groups already accumulate their ancestors' margins, so each level
+  // only adds one small constant step (not depth * step).
+  var TREE_INDENT_PX = 6;
+
+  var ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+  // Opens a row menu as a fixed-position popup anchored to its toggle button,
+  // flipping above the toggle when there is no room below. Fixed positioning
+  // keeps the popup out of the scrolling file list's scroll height.
+  function openRowMenuFixed(toggle, dropdown){
+    dropdown.hidden = false;
+    dropdown.classList.add("menu-fixed");
+    var tr = toggle.getBoundingClientRect();
+    var dh = dropdown.offsetHeight, dw = dropdown.offsetWidth;
+    var top = tr.bottom + 4;
+    if (top + dh > window.innerHeight - 8) top = Math.max(8, tr.top - dh - 4);
+    var left = Math.max(8, Math.min(tr.right - dw, window.innerWidth - dw - 8));
+    dropdown.style.top = top + "px";
+    dropdown.style.left = left + "px";
+  }
+
   function renderFileTreeItemHtml(f, i, depth, attached){
     var isPreviewable = _isPreviewableFile(f.rel_path);
     var isAttached = !!attached[f.rel_path];
@@ -5214,7 +5388,7 @@
     var attachedTag = isAttached
       ? '<span class="chat-file-attached-tag" title="Attached to chat context">&#10003;</span>' : "";
     var activeClass = i === chatFileListActiveIndex ? " keynav-active" : "";
-    return '<div class="chat-file-item' + activeClass + '" style="padding-left:' + (8 + depth * 14) + 'px" data-row-index="' + i + '" data-rel="' + escapeHtml(f.rel_path) + '" data-abs="' + escapeHtml(f.abs_path) + '">' +
+    return '<div class="chat-file-item' + activeClass + '" style="padding-left:' + (8 + (depth > 0 ? TREE_INDENT_PX : 0)) + 'px" data-row-index="' + i + '" data-rel="' + escapeHtml(f.rel_path) + '" data-abs="' + escapeHtml(f.abs_path) + '">' +
       '<input type="checkbox" class="chat-file-select" data-role="select-file"' + checked + ' title="Select for bulk actions" />' +
       _fileTypeIcon(f.rel_path) +
       '<span class="' + nameClass + '"' + nameAttrs + ' title="' + escapeHtml(f.rel_path) + '">' + escapeHtml(displayName) + '</span>' +
@@ -5233,7 +5407,7 @@
             '<button type="button" data-role="export-pdf-file">Export PDF</button>') +
           '<button type="button" data-role="rename-file">Rename</button>' +
           '<button type="button" data-role="move-file">Move to&hellip;</button>' +
-          '<button type="button" data-role="delete-file">Delete</button>' +
+          '<button type="button" class="menu-item-danger" data-role="delete-file">' + ICON_TRASH + 'Delete</button>' +
         '</div>' +
       '</span>' +
     '</div>';
@@ -5248,7 +5422,7 @@
       rows.push({ type: "folder", path: child.path, name: child.name });
       var activeClass = rowIndex === chatFileListActiveIndex ? " keynav-active" : "";
       html.push(
-        '<div class="chat-folder-group tree-folder-group' + (collapsed ? " collapsed" : "") + '" style="margin-left:' + (depth * 14) + 'px" data-tree-path="' + escapeHtml(child.path) + '" data-depth="' + depth + '">' +
+        '<div class="chat-folder-group tree-folder-group' + (collapsed ? " collapsed" : "") + '" style="margin-left:' + (depth > 0 ? TREE_INDENT_PX : 0) + 'px" data-tree-path="' + escapeHtml(child.path) + '" data-depth="' + depth + '">' +
           '<div class="chat-folder-label tree-folder-label' + activeClass + '" data-row-index="' + rowIndex + '" data-tree-toggle="' + escapeHtml(child.path) + '">' +
             '<span class="chat-folder-chevron">' + ICON_CHEVRON + '</span>' +
             '<span class="chat-folder-name" title="' + escapeHtml(child.path) + '">' + escapeHtml(child.name) + '</span>' +
@@ -5257,6 +5431,7 @@
               '<div class="menu-dropdown" hidden>' +
                 '<button type="button" data-role="new-file-in-folder">New file</button>' +
                 '<button type="button" data-role="new-folder-in-folder">New folder</button>' +
+                '<button type="button" class="menu-item-danger" data-role="delete-folder">' + ICON_TRASH + 'Delete</button>' +
               '</div>' +
             '</span>' +
             '<span class="chat-folder-count">' + count + '</span>' +
@@ -5363,7 +5538,7 @@
         var dropdown = btn.nextElementSibling;
         var wasHidden = dropdown.hidden;
         closeAllRowMenus();
-        dropdown.hidden = !wasHidden;
+        if (wasHidden) openRowMenuFixed(btn, dropdown);
       });
     });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="folder-menu-toggle"]'), function(btn){
@@ -5372,7 +5547,7 @@
         var dropdown = btn.nextElementSibling;
         var wasHidden = dropdown.hidden;
         closeAllRowMenus();
-        dropdown.hidden = !wasHidden;
+        if (wasHidden) openRowMenuFixed(btn, dropdown);
       });
     });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="new-file-in-folder"]'), function(btn){
@@ -5391,6 +5566,15 @@
         startInlineTreeCreate(folderPath, "folder");
       });
     });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-role="delete-folder"]'), function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        closeAllRowMenus();
+        var folderPath = btn.closest(".tree-folder-group").getAttribute("data-tree-path");
+        deleteProjectFolder(folderPath);
+      });
+    });
+    list.addEventListener("scroll", closeAllRowMenus, { passive: true });
     Array.prototype.forEach.call(list.querySelectorAll('[data-role="open-file"]'), function(btn){
       btn.addEventListener("click", function(){
         closeAllRowMenus();
@@ -5536,6 +5720,32 @@
     });
   }
 
+  // Recursively deletes a project folder after a confirm() prompt (server
+  // refuses the project root). Closes previews of files inside it and drops
+  // them from the bulk-selection set.
+  function deleteProjectFolder(relFolder){
+    if (!relFolder || !filesCurrentProjectPath) return;
+    var count = chatProjectFiles.filter(function(f){ return f.rel_path.indexOf(relFolder + "/") === 0; }).length;
+    var msg = 'Delete folder "' + relFolder + '" and everything in it' +
+      (count ? " (" + count + " file" + (count === 1 ? "" : "s") + ")" : "") + "? This cannot be undone.";
+    if (!confirm(msg)) return;
+    var absFolder = filesCurrentProjectPath.replace(/[\\\/]+$/, "") + "/" + relFolder;
+    apiRaw("/chat/project-files/delete", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: filesCurrentProjectPath, file: absFolder })
+    }).then(function(){
+      Object.keys(chatFileSelection).forEach(function(k){
+        if (k.indexOf(relFolder + "/") === 0) delete chatFileSelection[k];
+      });
+      panes.slice().forEach(function(p){
+        if (p.relPath && p.relPath.indexOf(relFolder + "/") === 0) closePreviewPane(p);
+      });
+      return refreshProjectFiles(filesCurrentProjectPath);
+    }).catch(function(err){
+      alert("Failed to delete folder: " + (err && err.message ? err.message : "unknown error"));
+    });
+  }
+
   // Inline rename for a Project Files row: swaps the filename span for a text
   // input, same interaction shape as enterPreviewRenameMode() in the preview
   // header. Keeps only the basename editable; the folder prefix is preserved.
@@ -5616,7 +5826,7 @@
 
     var row = document.createElement("div");
     row.className = "chat-file-item tree-inline-create-row";
-    row.style.paddingLeft = (8 + (depth + 1) * 14) + "px";
+    row.style.paddingLeft = (8 + (isRoot ? 0 : TREE_INDENT_PX)) + "px";
     var icon = kind === "file" ? _fileTypeIcon("") : '<span class="chat-file-type-icon tree-inline-create-icon">' + ICON_FOLDER + '</span>';
     row.innerHTML = icon +
       '<input type="text" class="chat-file-rename-input tree-inline-create-input" placeholder="' +
@@ -6226,7 +6436,7 @@
 
   // Mounts a CodeMirror EditorView into `container` for the file-edit /
   // create-file panels. `opts.onEscape`/`opts.onSave` back the same
-  // Esc-to-cancel / Shift+Enter-to-save shortcuts the old plain textarea had;
+  // Esc-to-cancel / Ctrl+S-to-save shortcuts (Shift+Enter is a plain newline);
   // Ctrl/Cmd+F is deliberately left out of the editor's own keymap so it
   // keeps triggering the dashboard's own #chatPreviewSearchBar (global
   // handler below) instead of CM6's built-in search panel -- search() is
@@ -6272,7 +6482,7 @@
       getFileEditorTheme(),
       CM.Prec.highest(CM.keymap.of([
         { key: "Escape", run: function(){ opts.onEscape(); return true; } },
-        { key: "Shift-Enter", run: function(){ opts.onSave(); return true; } },
+        { key: "Mod-s", run: function(){ opts.onSave(); return true; }, preventDefault: true },
         { key: "Mod-j", run: joinLinesCommand, preventDefault: true }
       ])),
       CM.keymap.of(CM.defaultKeymap.concat(CM.historyKeymap))
@@ -6602,7 +6812,14 @@
     panes.push(pane);
     wireupPreviewPaneButtons(pane);
     redistributePaneWidths();
+    syncMultiPaneClass();
     return pane;
+  }
+
+  // Marks the pane row as multi-pane so blank panes show their close button.
+  function syncMultiPaneClass(){
+    var c = document.getElementById("filesPreviewPanes");
+    if (c) c.classList.toggle("multi", panes.length > 1);
   }
 
   // Closes a pane: if it's the only pane left, resets it in place to the
@@ -6640,6 +6857,7 @@
       }
     }
     if (lastFocusedPane === pane) lastFocusedPane = null;
+    syncMultiPaneClass();
   }
 
   // Wires the rename/search/close/edit-toggle buttons shared by every
@@ -6648,6 +6866,9 @@
   function wireupPreviewPaneButtons(pane){
     pane.els.panel.addEventListener("mousedown", function(){ lastFocusedPane = pane; });
     pane.els.panel.addEventListener("focusin", function(){ lastFocusedPane = pane; });
+
+    var emptyCloseBtn = pane.els.panel.querySelector(".files-preview-empty-close");
+    if (emptyCloseBtn) emptyCloseBtn.addEventListener("click", function(){ closePreviewPane(pane); });
 
     pane.els.searchToggleBtn.addEventListener("click", function(){
       if (pane.els.searchBar.hidden) openPreviewSearchBar(pane);
@@ -7525,15 +7746,42 @@
     };
     actions.querySelector("#chatPreviewEditBtn" + pane.suffix).onclick = function(){ enterPreviewEditMode(projectPath, absPath, pane); };
     var wrap = pane.els.bodyWrap;
-    if (wrap) wrap.ondblclick = function(){ enterPreviewEditMode(projectPath, absPath, pane); };
+    if (wrap) wrap.ondblclick = function(e){ enterPreviewEditMode(projectPath, absPath, pane, e); };
   }
 
-  function enterPreviewEditMode(projectPath, absPath, pane){
+  // Rendered text has no markdown syntax (bold markers, link urls), so match
+  // the snippet's first word-run that survives in the source; returns -1 if
+  // nothing reliable is found.
+  function _findSnippetInSource(src, snippet){
+    var idx = src.indexOf(snippet);
+    if (idx >= 0) return idx;
+    var words = snippet.split(" ").filter(function(w){ return w.length > 3 && /^[\w-]+$/.test(w); });
+    for (var n = Math.min(3, words.length); n >= 1; n--){
+      idx = src.indexOf(words.slice(0, n).join(" "));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  }
+
+  function enterPreviewEditMode(projectPath, absPath, pane, clickEvent){
     pane = pane || getActivePane() || createPreviewPane();
     if (_isImagePreviewableFile(pane.relPath) || _isPdfPreviewableFile(pane.relPath)) return;
     var panel = pane.els.panel;
     panel.classList.add("editing");
     var wrapEl = pane.els.bodyWrap;
+    // Capture where the preview was scrolled (and, for a double-click, which
+    // block was clicked and how far down the viewport) before the rendered
+    // view is torn down, so the editor can open at the same spot.
+    var wrapRange = wrapEl.scrollHeight - wrapEl.clientHeight;
+    var openScrollFrac = wrapRange > 0 ? wrapEl.scrollTop / wrapRange : 0;
+    var clickSnippet = "", clickOffsetY = 0;
+    if (clickEvent && clickEvent.target && clickEvent.target.closest){
+      var blockEl = clickEvent.target.closest("li, p, h1, h2, h3, h4, h5, h6, td, th, pre, blockquote");
+      if (blockEl){
+        clickSnippet = (blockEl.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+        clickOffsetY = clickEvent.clientY - wrapEl.getBoundingClientRect().top;
+      }
+    }
     wrapEl.classList.add("flush");
     var editContainerId = "chatPreviewEditContainer" + pane.suffix;
     wrapEl.innerHTML =
@@ -7541,9 +7789,9 @@
     var actions = pane.els.actions;
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">Editing</span>' +
-      '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
+      '<span class="chat-msg-edit-hint">Esc to cancel &middot; Ctrl+S to save</span>' +
       '<button type="button" class="btn" id="chatPreviewCancelBtn' + pane.suffix + '">Cancel</button>' +
-      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '">Save</button>';
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '" title="Save (Ctrl+S)">Save</button>';
     var cancelBtn = actions.querySelector("#chatPreviewCancelBtn" + pane.suffix);
     var saveBtn = actions.querySelector("#chatPreviewSaveBtn" + pane.suffix);
     var searchBar = pane.els.searchBar;
@@ -7556,8 +7804,21 @@
       restorePreviewViewActions(projectPath, absPath, pane);
       if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
     }
+    // Esc / Cancel only discards silently when nothing changed; Ctrl+S is the
+    // way out with edits, so an accidental Esc must not lose them.
+    function requestCancel(){
+      if (pane.editorView && pane.editorView.state.doc.toString() !== pane.rawText &&
+          !confirm("Discard changes?")) return;
+      cancel();
+    }
     function save(){
       var next = pane.editorView.state.doc.toString();
+      // The rendered view replaces the editor on save, so carry the scroll
+      // position across as a fraction of the scrollable height (the two
+      // layouts differ in height, so absolute pixels wouldn't line up).
+      var scroller = pane.editorView.scrollDOM;
+      var scrollRange = scroller.scrollHeight - scroller.clientHeight;
+      var scrollFrac = scrollRange > 0 ? scroller.scrollTop / scrollRange : 0;
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving…";
       apiRaw("/chat/project-files/write", {
@@ -7573,6 +7834,13 @@
         panel.classList.remove("editing");
         renderPreviewView(pane);
         restorePreviewViewActions(projectPath, absPath, pane);
+        // Images/math may still be loading; apply now and once more next frame.
+        var applyScroll = function(){
+          var w = pane.els.bodyWrap;
+          w.scrollTop = scrollFrac * (w.scrollHeight - w.clientHeight);
+        };
+        applyScroll();
+        requestAnimationFrame(applyScroll);
         if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
       }).catch(function(err){
         alert("Failed to save file: " + (err && err.message ? err.message : "unknown error"));
@@ -7588,18 +7856,33 @@
         content: pane.rawText,
         onEscape: function(){
           if (searchBar && !searchBar.hidden){ closePreviewSearchBar(pane); return; }
-          cancel();
+          requestCancel();
         },
         onSave: save,
         onDocChanged: function(){
           if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
         }
       });
+      // Restore position: if a block was double-clicked and its text is found
+      // in the source, put the cursor there and keep that line at the same
+      // height in the viewport; otherwise fall back to the scroll fraction.
+      var view = pane.editorView, sc = view.scrollDOM;
+      var srcPos = clickSnippet ? _findSnippetInSource(pane.rawText, clickSnippet) : -1;
+      var applyEditScroll = function(){
+        if (srcPos >= 0){
+          sc.scrollTop = Math.max(0, view.lineBlockAt(srcPos).top - clickOffsetY);
+        } else {
+          sc.scrollTop = openScrollFrac * (sc.scrollHeight - sc.clientHeight);
+        }
+      };
+      if (srcPos >= 0) view.dispatch({ selection: { anchor: srcPos } });
+      applyEditScroll();
+      requestAnimationFrame(applyEditScroll);
       // If search was already open while viewing the rendered file, re-run it
       // against the editor now that #chatPreviewBody is gone from the DOM.
       if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
     });
-    cancelBtn.addEventListener("click", cancel);
+    cancelBtn.addEventListener("click", requestCancel);
     saveBtn.addEventListener("click", save);
   }
 
@@ -7625,15 +7908,25 @@
     actions.style.display = "";
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">New file</span>' +
+      '<span class="chat-msg-edit-hint">Esc to cancel &middot; Ctrl+S to create</span>' +
       '<button type="button" class="btn" id="chatPreviewCancelBtn' + pane.suffix + '">Cancel</button>' +
-      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '">Create</button>';
+      '<button type="button" class="btn primary" id="chatPreviewSaveBtn' + pane.suffix + '" title="Create (Ctrl+S)">Create</button>';
     var nameInput = document.getElementById("chatPreviewNewFileName" + pane.suffix);
     nameInput.focus();
 
     function cancel(){
       if (pane.editorView){ pane.editorView.destroy(); pane.editorView = null; }
       panel.classList.remove("editing");
-      resetPaneToEmpty(pane);
+      // Cancelling a create in an extra pane closes it instead of leaving a blank column.
+      if (panes.indexOf(pane) !== -1) closePreviewPane(pane);
+      else resetPaneToEmpty(pane);
+    }
+    // Same rule as edit mode: only a blank draft (no name, no content) cancels silently.
+    function requestCancel(){
+      var dirty = nameInput.value.trim() !== "" ||
+        (pane.editorView && pane.editorView.state.doc.length > 0);
+      if (dirty && !confirm("Discard this new file?")) return;
+      cancel();
     }
     function save(){
       var name = nameInput.value.trim();
@@ -7663,7 +7956,7 @@
       pane.editorView = createFileEditor(container, {
         content: "",
         placeholder: "Start typing…",
-        onEscape: cancel,
+        onEscape: requestCancel,
         onSave: save
       });
       // createFileEditor() focuses the editor on construction; the filename
@@ -7671,10 +7964,11 @@
       nameInput.focus();
     });
     nameInput.addEventListener("keydown", function(e){
-      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(); }
+      if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); requestCancel(); }
       else if (e.key === "Enter"){ e.preventDefault(); if (pane.editorView) pane.editorView.focus(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")){ e.preventDefault(); save(); }
     });
-    document.getElementById("chatPreviewCancelBtn" + pane.suffix).addEventListener("click", cancel);
+    document.getElementById("chatPreviewCancelBtn" + pane.suffix).addEventListener("click", requestCancel);
     document.getElementById("chatPreviewSaveBtn" + pane.suffix).addEventListener("click", save);
   }
 
@@ -7902,9 +8196,9 @@
         '<textarea class="chat-msg-edit-input">' + escapeHtml(original) + '</textarea>' +
         '<div class="chat-msg-edit-actions">' +
           '<span class="chat-msg-edit-badge">Editing</span>' +
-          '<span class="chat-msg-edit-hint">Esc to cancel &middot; Shift+Enter to save</span>' +
+          '<span class="chat-msg-edit-hint">Esc to cancel &middot; Ctrl+S to save</span>' +
           '<button type="button" data-role="cancel-edit-msg">Cancel</button>' +
-          '<button type="button" class="primary" data-role="save-edit-msg">Save</button>' +
+          '<button type="button" class="primary" data-role="save-edit-msg" title="Save (Ctrl+S)">Save</button>' +
         '</div>' +
       '</div>';
     var textarea = bubble.querySelector(".chat-msg-edit-input");
@@ -7933,11 +8227,16 @@
         updateTokenEstimate();
       });
     }
+    // Esc / Cancel discards silently only when the text is unchanged.
+    function requestCancel(){
+      if (textarea.value !== original && !confirm("Discard changes?")) return;
+      cancel();
+    }
     textarea.addEventListener("keydown", function(e){
-      if (e.key === "Escape"){ e.preventDefault(); cancel(); }
-      else if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); save(); }
+      if (e.key === "Escape"){ e.preventDefault(); requestCancel(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")){ e.preventDefault(); save(); }
     });
-    bubble.querySelector('[data-role="cancel-edit-msg"]').addEventListener("click", cancel);
+    bubble.querySelector('[data-role="cancel-edit-msg"]').addEventListener("click", requestCancel);
     bubble.querySelector('[data-role="save-edit-msg"]').addEventListener("click", save);
   }
 

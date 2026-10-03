@@ -23,3 +23,6 @@ tiktoken
 # is fresh code, not adapted from paper-search-mcp's stale mcp.server.fastmcp.FastMCP import,
 # so there's no legacy import path to pin against.
 mcp
+# search_googlescholar_papers (sources/googlescholar.py): direct HTML fetch + parse.
+requests
+beautifulsoup4

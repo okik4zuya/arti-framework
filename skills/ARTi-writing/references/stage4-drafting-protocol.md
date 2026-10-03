@@ -65,7 +65,7 @@ any later revision:
 - Write exclusively from the Scratchbook — never draft by rephrasing the original source text directly
 - All literature from the Scratchbook must be fully paraphrased into original prose; do not reproduce sentence structures from the original paper even if the words differ
 - Direct quotes are not acceptable in scientific manuscripts — if a Scratchbook entry contains a direct quote, rewrite it before including it in the draft
-- Cite as you write — every claim derived from literature must carry its citation inline; never plan to add citations later
+- Cite as you write — every claim derived from literature must carry its citation inline; never plan to add citations later. Write each citation as the marker `[LIT: key]` (several sources: `[LIT: key1, key2]`), with `key` exactly as in `arti-lit` — never a hand-typed `(Author, Year)`. The `(Author, Year)` form only appears in the rendered `.docx`, where `arti-docx --cite zotero` turns each marker into a Zotero field; sources need `csl_json` first (`arti-lit library enrich`)
 - Flag any Methods section content that appears reused from a prior paper — self-plagiarism is a violation
 - Add a note at the end of each drafted section: *"Please review this section for unintended similarity to source texts before proceeding."*
 

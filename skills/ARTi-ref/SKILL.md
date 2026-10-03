@@ -6,7 +6,8 @@ description: >
   for: adding/updating/removing a reference, checking for a DOI duplicate before adding one,
   regenerating `writing\references.md` from a Scratchbook's citation tags, batch-converting PDFs to
   fulltext Markdown, and answering "what does this paper say" / "summarize paper X" / "extract this
-  paper" style requests about one specific reference. This skill owns the mechanics of *retrieving
+  paper" style requests about one specific reference, and choosing which search route (OpenAlex,
+  Semantic Scholar, Google Scholar, citation tracing) finds new literature. This skill owns the mechanics of *retrieving
   and storing* literature; it does not decide what a paper's content is used *for* — that stays
   with the calling skill. Do NOT use this skill for: Scratchbook population mechanics, paraphrase/
   plagiarism/hallucination rules, or `[LIT: key]` tagging inside manuscript prose (ARTi-writing);
@@ -57,6 +58,7 @@ the full subcommand surface.
 "~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library search KEYWORDS... --project PATH
 "~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library remove --key KEY --project PATH
 "~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library import-ris --files PATH[,PATH...] --project PATH
+"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library enrich [--keys KEY,KEY,...] --project PATH
 "~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" library list [--status TEXT] [--journal TEXT] [--article-type TEXT] --project PATH
 "~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py" refs generate --keys KEY,KEY,... --order appearance|alpha --project PATH
 ```
@@ -121,6 +123,13 @@ empty too.
 
 This rule applies regardless of which skill is active — `ARTi-writing` mid-drafting, `ARTi-idea`
 mid-Gap-Map, or a standalone question with no other skill running.
+
+## Finding new literature (route choice)
+
+Which search route fits which task (OpenAlex keyword route, Scholar, Semantic Scholar, tracing,
+resolving a list, counts, full-text download), what not to use routinely, and the working rules
+(pauses, Scholar limits, `in_library` filter, search log) are in `references/search-routing.md`.
+Candidates are discovery only and never enter the library automatically.
 
 ## Fulltext ingestion
 
@@ -205,8 +214,12 @@ caller decides which of its own documents (if any) get the folded-in pieces.
   when the paper's text is available in-conversation
 - `references/notebooklm-extraction-prompt.md` — same field set, wrapped as a copy-paste prompt for
   NotebookLM
+- `references/search-routing.md` — which search route finds new literature, and the rules for using it
 
 ## Change log
+- 2026-10-03 — added "Finding new literature (route choice)" and `references/search-routing.md`
+  (task-to-route table from the 2026-10-03 MCP comparison); search-routing detail removed from
+  ARTi-scratchbook, ARTi-idea stage 2 and ARTi-SLR stage 1 in favor of pointers.
 - 2026-09-15 — documented `library import-ris`/`library list --journal/--article-type` in the
   Invocation block, added the Bulk import subsection (search-log Layer-1 logging obligation after
   an import-ris call), and noted `journal_name`/`article_type` are import-only fields with no

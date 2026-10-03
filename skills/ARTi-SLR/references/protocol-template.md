@@ -25,19 +25,21 @@
 
 ## Inclusion Criteria
 
-- [Criterion 1 — e.g. peer-reviewed original research or review article]
-- [Criterion 2 — e.g. published [YYYY]–present]
-- [Criterion 3 — e.g. addresses [P] in the context of [I]]
+- I1: [e.g. peer-reviewed original research or review article]
+- I2: [e.g. published [YYYY]–present]
+- I3: [e.g. addresses [P] in the context of [I]]
 
 ## Exclusion Criteria
 
-- [Criterion 1 — e.g. non-English, no translation available]
-- [Criterion 2 — e.g. conference abstract only, no full text]
-- [Criterion 3 — e.g. does not report [O]]
+- E1: [e.g. non-English, no translation available]
+- E2: [e.g. conference abstract only, no full text]
+- E3: [e.g. does not report [O]]
 
-> Every screening reject in Stage 2 must cite one of these criteria (or a close paraphrase) as its
-> `exclusion_reason` — a reason that doesn't map back to a listed criterion is a signal the
-> criteria list itself is incomplete, not that the reject was wrong.
+> Every screening reject in Stage 2 must cite one of these criteria by code, followed by a short
+> reason, as its `exclusion_reason` (e.g. `E3: no baseline control`). A genuine duplicate record
+> uses the code `DUP`. A reason that doesn't map back to a listed criterion is a signal the
+> criteria list itself is incomplete, not that the reject was wrong. Stage 4 groups the PRISMA
+> exclusion table by code.
 
 ---
 

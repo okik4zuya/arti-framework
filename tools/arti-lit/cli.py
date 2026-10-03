@@ -86,6 +86,10 @@ def build_parser():
     le = libsub.add_parser("export")
     le.add_argument("--project")
 
+    len_ = libsub.add_parser("enrich")
+    len_.add_argument("--keys", help="comma-separated keys (default: all sources)")
+    len_.add_argument("--project")
+
     lir = libsub.add_parser("import-ris")
     lir.add_argument("--files", required=True, help="comma-separated RIS file paths")
     lir.add_argument("--project")
@@ -150,6 +154,9 @@ def main():
             elif args.library_cmd == "export":
                 db.library_export(args.project)
                 _ok()
+            elif args.library_cmd == "enrich":
+                keys = [k.strip() for k in args.keys.split(",") if k.strip()] if args.keys else None
+                _ok(**db.library_enrich(args.project, keys))
             elif args.library_cmd == "import-ris":
                 files = [f.strip() for f in args.files.split(",") if f.strip()]
                 result = db.library_import_ris(args.project, files)

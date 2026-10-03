@@ -505,6 +505,7 @@ session rather than blocking Stage 5 on it.
 Read the relevant reference file before starting any stage.
 
 ## Change log
+- 2026-10-03 — Stage 2 protocol: live-search route detail replaced by a pointer to `ARTi-ref/references/search-routing.md`.
 - 2026-09-17 — Split Stages 1–5's procedural bodies (and the schema-blended process sentences in
   Core Documents #4/#5) out of this dispatcher into five new `references/stage<N>-*-protocol.md`
   files, per `skill-modularization.md`'s framing (same skill, same stages — only where the prose

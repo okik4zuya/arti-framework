@@ -161,10 +161,10 @@ from the source. Every entry written this way must be:
 **Hallucination Prevention:**
 - Never add citations, references, or factual claims to the Scratchbook that were not explicitly
   provided by the researcher
-- If asked to suggest supporting literature, Claude should use `arti-ref-search-mcp`'s `search_openalex_works`
-  (structured results with real DOIs) rather than generic web search, but must still clearly label
-  any suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and instruct the researcher to
-  verify the actual source before accepting it
+- If asked to suggest supporting literature, Claude should use the search MCP routes rather than
+  generic web search (route choice: `ARTi-ref/references/search-routing.md`; results carry real DOIs),
+  but must still clearly label any suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and
+  instruct the researcher to verify the actual source before accepting it
 
 **Literature Feed Protocol:**
 Literature can enter two ways: already ingested into `literature\library.md` (call `ARTi-ref`'s
@@ -327,6 +327,7 @@ is done. Manuscript drafting itself — synthesizing this raw material into form
 `ARTi-writing` Stage 4; that skill picks up from here.
 
 ## Change log
+- 2026-10-03 — search-route rules (OpenAlex keyword route, defaults) removed from Hallucination Prevention; now one pointer to `ARTi-ref/references/search-routing.md`.
 - 2026-09-15 — created, extracting Core Document #4 and Stage 3 out of `ARTi-writing` (which had
   them fully self-contained, referenced but not required by any earlier stage), plus new
   large-corpus session-chunking guidance generalized from a working project's own workflow/tracker

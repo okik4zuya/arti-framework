@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from config import get_env
 from http_client import SourceFetchError, download_file, get_json_with_retry
 from paper import Paper
 from sources.base import PaperSource
@@ -43,8 +44,11 @@ SORTS = {
 
 GROUP_BY = {
     "publication_year", "type", "primary_topic.id", "primary_location.source.id",
-    "open_access.is_oa", "language",
+    "open_access.is_oa", "language", "open_access.oa_status", "has_content.pdf",
 }
+
+# Boolean fields reject cursor paging (they only ever have two buckets).
+_BOOL_GROUP_BY = {"has_content.pdf", "open_access.is_oa"}
 
 ENTITY_KINDS = {"topics", "sources", "institutions", "authors"}
 
@@ -75,13 +79,37 @@ def _reconstruct_abstract(inverted_index: Optional[dict]) -> str:
 
 def _auth_params() -> Dict:
     params = {}
-    api_key = os.environ.get("OPENALEX_API_KEY")
+    api_key = get_env("OPENALEX_API_KEY")
     if api_key:
         params["api_key"] = api_key
-    mailto = os.environ.get("ARTI_REF_CONTACT_EMAIL")
+    mailto = get_env("ARTI_REF_CONTACT_EMAIL")
     if mailto:
         params["mailto"] = mailto
     return params
+
+
+_STOPWORDS = {
+    "a", "an", "and", "the", "of", "in", "on", "for", "to", "with", "by", "at", "from", "as",
+    "is", "are", "or", "not", "versus", "vs", "between", "among", "using", "use", "how", "what",
+    "does", "do", "its", "their", "than", "that", "this", "into",
+}
+
+
+def _is_semantic_outage(err: Exception) -> bool:
+    """True for OpenAlex-side embedding failures (not a bad filter or a network error here)."""
+    msg = str(err)
+    return "Failed to embed query" in msg or "embeddings" in msg and "HTTP 5" in msg
+
+
+_FALLBACK_MIN_HITS = 5
+
+
+def _content_words(query: str) -> List[str]:
+    """Content words of a natural-language query, de-duplicated, capped at 8 (Boolean modes AND
+    everything, so a sentence-length query returns 0; an OR of everything ranks generic
+    high-citation papers first, which is worse)."""
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z0-9'-]+", query) if w.lower() not in _STOPWORDS]
+    return list(dict.fromkeys(words))[:8]
 
 
 def _short_id(value: Optional[str]) -> str:
@@ -128,7 +156,7 @@ class OpenAlexSource(PaperSource):
     def _build_query(
         self,
         query: Optional[str],
-        search_in: str = "all",
+        search_in: str = "title_abstract",
         work_type=None,
         exclude_retracted: bool = False,
         year_from: Optional[int] = None,
@@ -142,6 +170,7 @@ class OpenAlexSource(PaperSource):
         source_issn: Optional[str] = None,
         cites: Optional[str] = None,
         cited_by: Optional[str] = None,
+        related_to: Optional[str] = None,
         filters: Optional[str] = None,
     ) -> Dict:
         """Return request params (search param + `filter`) shared by search and count."""
@@ -194,6 +223,8 @@ class OpenAlexSource(PaperSource):
             flt.append(f"cites:{self._resolve_work_ref(cites)}")
         if cited_by:
             flt.append(f"cited_by:{self._resolve_work_ref(cited_by)}")
+        if related_to:
+            flt.append(f"related_to:{self._resolve_work_ref(related_to)}")
         if filters:
             flt.append(filters.strip().strip(","))
 
@@ -203,7 +234,144 @@ class OpenAlexSource(PaperSource):
 
     # ---- tools ----------------------------------------------------------------------------
 
-    def search(
+    def search(self, query: str, **kwargs) -> Dict:
+        """Search works; `search_in='semantic'` falls back to Boolean `title_abstract` when
+        OpenAlex's embedding backend is down (seen 2026-10-03: its Databricks gateway failed TLS
+        verification, so every semantic call returned HTTP 400 "Failed to embed query").
+
+        The fallback is never silent: `meta.fallback` names it and `meta.semantic_error` keeps the
+        upstream message. A semantic call that fails for any other reason still raises.
+        """
+        try:
+            return self._search(query, **kwargs)
+        except SourceFetchError as e:
+            if kwargs.get("search_in") != "semantic" or not _is_semantic_outage(e):
+                raise
+            s2_error = None
+            if get_env("SEMANTIC_SCHOLAR_API_KEY"):
+                try:
+                    return self._semantic_via_s2(query, e, **kwargs)
+                except SourceFetchError as s2_exc:
+                    s2_error = str(s2_exc)[:300]
+            kwargs = dict(kwargs, search_in="title_abstract")
+            words = _content_words(query)
+            while True:  # AND all content words; drop the shortest (most generic) until it hits
+                q = " ".join(words) or query
+                out = self._search(q, **kwargs)
+                if out["meta"]["returned"] >= _FALLBACK_MIN_HITS or len(words) <= 2:
+                    break
+                words.remove(min(reversed(words), key=len))
+            out["meta"]["fallback"] = ("semantic search unavailable upstream; ran title_abstract "
+                                       f"with progressively relaxed AND query: {q}. For a concept-level search from a "
+                                       "trusted seed paper, use related_openalex_works.")
+            out["meta"]["semantic_error"] = str(e)[:300]
+            if s2_error:
+                out["meta"]["semanticscholar_error"] = s2_error
+            return out
+
+    def _semantic_via_s2(self, query: str, openalex_error: Exception, **kwargs) -> Dict:
+        """Concept search through Semantic Scholar when OpenAlex's embedding backend is down.
+
+        Only the filters S2 supports are forwarded (years, min_citations, open access); work_type,
+        language, topic and the like are ignored, and meta.fallback says so.
+        """
+        from sources.semanticscholar import SemanticScholarSource  # lazy: avoids an import cycle
+
+        out = SemanticScholarSource().search(
+            query,
+            max_results=kwargs.get("max_results", 10),
+            year_from=kwargs.get("year_from"),
+            year_to=kwargs.get("year_to"),
+            min_citations=kwargs.get("min_citations"),
+            open_access_only=bool(kwargs.get("open_access_only")),
+            abstract_max_chars=kwargs.get("abstract_max_chars"),
+        )
+        ignored = [k for k in ("work_type", "language", "topic_id", "source_issn", "cites", "cited_by",
+                               "related_to", "filters", "has_abstract", "has_content_pdf")
+                   if kwargs.get(k)]
+        out["meta"]["fallback"] = ("OpenAlex semantic search unavailable upstream; results are from "
+                                   "Semantic Scholar (embedding relevance over title+abstract)"
+                                   + (f"; ignored filters: {ignored}" if ignored else "")
+                                   + ". Paper ids are S2 ids; resolve DOIs with get_openalex_work.")
+        out["meta"]["semantic_error"] = str(openalex_error)[:300]
+        return out
+
+    def trace(
+        self,
+        seeds: List[str],
+        direction: str = "forward",
+        query: Optional[str] = None,
+        max_results: int = 20,
+        year_from: Optional[int] = None,
+        year_to: Optional[int] = None,
+        min_citations: Optional[int] = None,
+        abstract_max_chars: Optional[int] = None,
+    ) -> Dict:
+        """Citation tracing from trusted seed works, merged across seeds.
+
+        direction: 'forward' (works that cite a seed), 'backward' (a seed's references) or 'both'.
+        A work linked to several seeds ranks first (`link_count`): citing or being cited by two
+        trusted seeds is a stronger on-topic signal than any single link. `query`, when given,
+        narrows by title/abstract keywords. Seeds themselves are excluded from the results.
+        """
+        if not seeds:
+            raise ValueError("seeds is empty")
+        if len(seeds) > 5:
+            raise ValueError("at most 5 seeds per call; run several calls and merge")
+        if direction not in {"forward", "backward", "both"}:
+            raise ValueError("direction must be forward | backward | both")
+        if max_results < 1:
+            raise ValueError("max_results must be >= 1")
+
+        seed_ids = [self._resolve_work_ref(s) for s in seeds]
+        per_call = min(_PAGE_MAX, max(50, max_results))
+        directions = ["forward", "backward"] if direction == "both" else [direction]
+        merged: Dict[str, Dict] = {}
+        per_seed: List[Dict] = []
+        cost = 0.0
+
+        for sid in seed_ids:
+            for d in directions:
+                link = {"cites": sid} if d == "forward" else {"cited_by": sid}
+                out = self._search(
+                    query or "",
+                    max_results=per_call,
+                    sort="citations",
+                    abstract_max_chars=abstract_max_chars,
+                    search_in="title_abstract" if query else "all",
+                    exclude_retracted=True,
+                    year_from=year_from,
+                    year_to=year_to,
+                    min_citations=min_citations,
+                    **link,
+                )
+                cost += out["meta"].get("cost_usd") or 0.0
+                per_seed.append({"seed": sid, "direction": d, "total": out["meta"]["count"],
+                                 "fetched": out["meta"]["returned"]})
+                for r in out["results"]:
+                    if r["paper_id"] in seed_ids:
+                        continue
+                    row = merged.setdefault(r["paper_id"], {**r, "linked_to_seeds": [], "directions": []})
+                    if sid not in row["linked_to_seeds"]:
+                        row["linked_to_seeds"].append(sid)
+                    if d not in row["directions"]:
+                        row["directions"].append(d)
+
+        rows = list(merged.values())
+        for r in rows:
+            r["link_count"] = len(r["linked_to_seeds"])
+        rows.sort(key=lambda r: (-r["link_count"], -(r.get("citations") or 0)))
+        return {
+            "meta": {"seeds": seed_ids, "direction": direction, "query": query,
+                     "unique_found": len(rows), "returned": min(len(rows), max_results),
+                     "per_seed": per_seed, "cost_usd": round(cost, 6),
+                     "note": "Each call fetches at most "
+                             f"{per_call} works per seed/direction, ranked by citations; "
+                             "raise max_results or add a query to go deeper."},
+            "results": rows[:max_results],
+        }
+
+    def _search(
         self,
         query: str,
         max_results: int = 10,
@@ -223,7 +391,7 @@ class OpenAlexSource(PaperSource):
             raise ValueError(f"sort must be one of {sorted(SORTS)}, got {sort!r}")
         if max_results < 1:
             raise ValueError("max_results must be >= 1")
-        search_in = query_kwargs.get("search_in", "all")
+        search_in = query_kwargs.get("search_in", "title_abstract")
         if search_in == "semantic":
             max_results = min(max_results, 50)  # API ceiling for semantic search
 
@@ -277,7 +445,8 @@ class OpenAlexSource(PaperSource):
         params["per_page"] = 1
         if group_by:
             params["group_by"] = group_by
-            params["cursor"] = "*"  # group_by has no `page`; cursor is required
+            if group_by not in _BOOL_GROUP_BY:
+                params["cursor"] = "*"  # group_by has no `page`; cursor is required
             params.pop("per_page")
         params.update(_auth_params())
 
@@ -410,7 +579,7 @@ class OpenAlexSource(PaperSource):
         if len(items) > max_files:
             raise ValueError(f"{len(items)} items exceeds max_files={max_files}; raise it "
                              "deliberately or split the batch (each content download costs $0.01)")
-        api_key = os.environ.get("OPENALEX_API_KEY")
+        api_key = get_env("OPENALEX_API_KEY")
         need_key = source in {"auto", "openalex_content"}
         if need_key and not api_key and not dry_run:
             raise SourceFetchError(

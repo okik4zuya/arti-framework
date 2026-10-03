@@ -25,7 +25,7 @@ Stage 1 stub for the trigger condition and output files.
 scope an existing review already covers is not worth the Protocol and search effort, so check
 first. **Output:** `slr\prior-reviews.md` (`references/prior-review-check-template.md`).
 
-- **OpenAlex, narrow to broad.** Run `count_openalex_works` first (same filters, `group_by="type"`
+- **OpenAlex, narrow to broad** (route rules: `ARTi-ref/references/search-routing.md`). Run `count_openalex_works` first (same filters, `group_by="type"`
   or `"publication_year"`) to measure each query's width without pulling records, then pull hits
   with `search_openalex_works(work_type="review", search_in="title_abstract",
   exclude_retracted=True)`. Climb a ladder, one angle per query: the exact material + reaction

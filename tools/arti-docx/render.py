@@ -29,11 +29,17 @@ import os
 import re
 
 import docx
+import zotero_fields
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
 DEFAULT_TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "default-academic-template.docx")
+ZOTERO_TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "default-academic-template-zotero.docx")
+
+# Set by render() only for `--cite zotero`; None keeps the plain-text behaviour byte-for-byte.
+# Module-level because add_runs() is called from tables/captions/body alike.
+_CITER = None
 
 INLINE_RE = re.compile(r"(\*\*.+?\*\*|\*.+?\*)")
 TRAILING_ASIDE_RE = re.compile(r"\s*\*\[[^\]]*\]\*\s*$")
@@ -65,12 +71,34 @@ def add_runs(paragraph, text, force_italic=False, mono=False):
     for run_text, bold, italic in parse_inline_runs(text):
         if not run_text:
             continue
-        run = paragraph.add_run(run_text)
-        run.bold = bold
-        run.italic = italic or force_italic
-        if mono:
-            run.font.name = "Consolas"
-            run.font.size = Pt(9)
+        # With --cite zotero, [LIT: key] markers inside a run become Zotero fields; the
+        # surrounding text keeps the run's bold/italic.
+        pieces = _split_cites(run_text) if _CITER else [(run_text, None)]
+        for piece, keys in pieces:
+            if keys:
+                for r in _CITER.citation_runs(keys):
+                    paragraph._p.append(r)
+                continue
+            if not piece:
+                continue
+            run = paragraph.add_run(piece)
+            run.bold = bold
+            run.italic = italic or force_italic
+            if mono:
+                run.font.name = "Consolas"
+                run.font.size = Pt(9)
+
+
+def _split_cites(text):
+    """[(text, None) | ("", [keys])] -- plain stretches and citation markers, in order."""
+    out = []
+    pos = 0
+    for m in zotero_fields.CITE_RE.finditer(text):
+        out.append((text[pos:m.start()], None))
+        out.append(("", zotero_fields.split_keys(m.group(1))))
+        pos = m.end()
+    out.append((text[pos:], None))
+    return out
 
 
 def style_names(document):
@@ -180,6 +208,7 @@ def render_body(document, md_text, base_dir):
     i = 0
     title_used = False
     in_references = False
+    ref_anchor = None
 
     while i < n:
         line = lines[i]
@@ -206,6 +235,8 @@ def render_body(document, md_text, base_dir):
                 p = document.add_paragraph(style=style)
                 add_runs(p, heading_text)
             in_references = heading_text.strip().lower() == "references"
+            if in_references and _CITER:
+                ref_anchor = p._p
             i += 1
             continue
 
@@ -250,6 +281,11 @@ def render_body(document, md_text, base_dir):
             i += 1
             continue
 
+        if in_references and _CITER:
+            # the ZOTERO_BIBL field replaces any hand-written reference list
+            i += 1
+            continue
+
         if in_references:
             p = document.add_paragraph(style=bib_style)
             add_runs(p, stripped)
@@ -260,6 +296,13 @@ def render_body(document, md_text, base_dir):
         add_runs(p, stripped)
         i += 1
 
+    if _CITER and _CITER.cited:
+        if ref_anchor is None:
+            ref_anchor = document.add_paragraph(style=heading_style_for(1, names))._p
+            add_runs(document.paragraphs[-1], "References")
+        for para in reversed(_CITER.bibliography_paragraphs(bib_style)):
+            ref_anchor.addnext(para)
+
 
 def clear_body(document):
     body = document.element.body
@@ -269,15 +312,23 @@ def clear_body(document):
             body.remove(child)
 
 
-def render(md_path, out_path, template_path):
-    document = docx.Document(template_path)
-    clear_body(document)
-
+def render(md_path, out_path, template_path, cite="none", project=None, cite_style=None):
+    global _CITER
     with open(md_path, "r", encoding="utf-8") as f:
         md_text = f.read()
 
+    _CITER = None
+    if cite == "zotero":
+        keys = zotero_fields.scan_keys(md_text)
+        _CITER = zotero_fields.ZoteroCiter(zotero_fields.load_items(project, keys))
+
+    document = docx.Document(template_path)
+    clear_body(document)
+
     base_dir = os.path.dirname(os.path.abspath(md_path))
     render_body(document, md_text, base_dir)
+    if _CITER and _CITER.cited:
+        zotero_fields.set_style_pref(document, cite_style or zotero_fields.DEFAULT_STYLE)
 
     os.makedirs(os.path.dirname(os.path.abspath(out_path)) or ".", exist_ok=True)
     document.save(out_path)
@@ -288,9 +339,16 @@ def main():
     parser = argparse.ArgumentParser(description="Render a Markdown manuscript to a styled .docx")
     parser.add_argument("--md", required=True, help="path to the source Markdown file")
     parser.add_argument("--out", required=True, help="path to write the .docx to")
-    parser.add_argument("--template", default=DEFAULT_TEMPLATE, help="style template .docx (default: ARTi's academic template)")
+    parser.add_argument("--template", default=None, help="style template .docx (default: ARTi's academic template; the Zotero-carrying one with --cite zotero)")
+    parser.add_argument("--cite", choices=["none", "zotero"], default="none", help="zotero: emit [LIT: key] markers as Zotero Word fields + a ZOTERO_BIBL reference list (needs enriched arti-lit.db)")
+    parser.add_argument("--project", default=None, help="paper project root holding literature/arti-lit.db (default: cwd); used by --cite zotero")
+    parser.add_argument("--cite-style", default=None, help="Zotero style id stored in the .docx (default: apa)")
     args = parser.parse_args()
-    render(args.md, args.out, args.template)
+    template = args.template or (ZOTERO_TEMPLATE if args.cite == "zotero" else DEFAULT_TEMPLATE)
+    try:
+        render(args.md, args.out, template, args.cite, args.project, args.cite_style)
+    except zotero_fields.CiteError as e:
+        raise SystemExit("arti-docx: %s" % e)
 
 
 if __name__ == "__main__":

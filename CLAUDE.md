@@ -9,43 +9,15 @@ directly.
 
 ## What lives here
 
-- `skills/` — the live skills (`ARTi-crosscite`, `ARTi-figure`, `ARTi-idea`, `ARTi-jfinder`,
-  `ARTi-ref`, `ARTi-scratchbook`, `ARTi-setup`, `ARTi-writing`), junction-linked into
-  `~/.claude/skills/` by the installer. A paper project's root
-  `CLAUDE.md` is generated from `skills/ARTi-setup/references/project-claude-template.md` —
+- `skills/` and `tools/` — the live skills (junction-linked into `~/.claude/skills/` by the installer) and
+  the standalone tools; the full one-line-each map, with who calls whom, is `CAPABILITIES.md`. A paper
+  project's root `CLAUDE.md` is generated from `skills/ARTi-setup/references/project-claude-template.md` —
   the one canonical copy, rendered by both ARTi-setup and the dashboard scaffolder
-- `tools/` — standalone export/render tools (`arti-render`, `arti-plot`, `arti-table`,
-  `arti-docx`, `arti-pdf`, `arti-db`, `arti-lit`, `scopus-ris-batch-export`, …)
 - `dashboard/` — the local launcher (`dashboard/server/server.py` + `arti-dashboard.html`), a general
   project launcher with ARTi-specific detail for paper projects — see `dashboard/README.md`
-- `.mcp.json` — configures one MCP server, `arti-ref-search-mcp` (live topic-discovery search — OpenAlex for
-  now, see `tools/arti-ref-search-mcp/README.md` — discovery only, never writes to `arti-lit.db`
-  directly). `arti-ref-search-mcp` is an in-house server under `tools/arti-ref-search-mcp/`
-  (not pip-installed itself; only its `mcp` SDK dependency is, via `tools/requirements.txt`,
-  unpinned now — it replaced the third-party `openags/paper-search-mcp` package, which needed
-  `mcp<2` pinned because its 0.1.4 release imported `mcp.server.fastmcp.FastMCP`, renamed to
-  `MCPServer` in `mcp` 2.x; an unpinned install crashed on launch. That package also swallowed
-  every OpenAlex/Semantic Scholar HTTP failure into a silently-empty result list and had no
-  OpenAlex API-key support at all — both fixed in the replacement, see its README). Launched as
-  `${ARTI_PYTHON:-python} tools/arti-ref-search-mcp/server.py` (a script path, not `-m <module>` —
-  unlike the old pip-installed package, this one isn't on the interpreter's module search path):
-  `install.ps1`/`install.sh` already create a top-level `python.cmd`/`python3` wrapper for the
-  vendored interpreter (see `python/` below) and now also point the `ARTI_PYTHON` env var at it,
-  so a cross-platform, git-tracked file like this one can find it without a hardcoded
-  per-machine path. This project-scope `.mcp.json` only applies when Claude Code's working
-  directory is `~/.arti` itself — a paper project scaffolded from ARTi-setup has no `.mcp.json`
-  of its own. It is also registered at **user scope** (`~/.claude.json`'s top-level
-  `mcpServers`), which is what actually makes it available inside every paper project; a
-  project-scope entry with the same name would override the user-scope one, but none exists
-  outside this repo. `~/.claude.json` is live app state Claude Code manages itself, not a file
-  this repo tracks or scaffolds, so its `arti-ref-search-mcp` entry hardcodes the resolved
-  absolute path (`python/python.exe` + `tools/arti-ref-search-mcp/server.py`'s absolute path)
-  instead of using `${ARTI_PYTHON:-python}` — env var changes there don't reliably reach an
-  already-running Claude Code process tree (confirmed: setting a User-scope env var doesn't
-  propagate to processes already running, even after opening a new terminal inside them — a full
-  app restart is needed either way, so the literal path avoids an extra failure mode on top of
-  that). The user-scope entry was added once by hand (`claude mcp add --scope user <name>
-  ...`, or an equivalent direct edit) and aren't re-applied by `install.ps1`/`install.sh`
+- `.mcp.json` — configures one MCP server, `arti-ref-search-mcp` (in-house, live literature discovery, never
+  writes `arti-lit.db`). Launch, registration at project and user scope, keys, and limits are in
+  `tools/arti-ref-search-mcp/README.md`; which route to use is `skills/ARTi-ref/references/search-routing.md`
 - `python/` — vendored interpreter, fetched by `install.ps1`/`install.sh`, not tracked. **Never
   invoke a bare `python`/`python3`/`py` — nothing on this machine puts it on `PATH` (deliberate, to
   avoid clashing with any system Python), so that command has nothing to resolve to on a clean

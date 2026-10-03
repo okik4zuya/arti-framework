@@ -54,6 +54,12 @@ library list [--status TEXT] [--journal TEXT] [--article-type TEXT] [--screening
 library search KEYWORDS... [--project PATH]   # LIKE-match over citation/key/used_in -- cheap dedup check before adding
 library remove --key KEY [--project PATH]
 library export [--project PATH]         # regenerates literature\library.md
+library enrich [--keys K,K,...] [--project PATH]
+    # fills the `csl_json` column (full CSL-JSON per source, from Crossref via DOI) for `arti-docx
+    # --cite zotero`. Idempotent (rows already filled are reported under `already`). Result JSON:
+    # `enriched`, `already`, `no_doi` (add the DOI or fill metadata by hand), `failed` ({key, error}),
+    # `unknown_keys`. Set env ARTI_REF_CONTACT_EMAIL so requests use Crossref's polite pool.
+    # `csl_json` never appears in library.md.
 library import-ris --files PATH[,PATH...] [--project PATH]
     # batch-imports RIS exports (Scopus, ScienceDirect, or any other database that exports RIS)
     # in one call, so DOI-dedup works across files in the same batch. Synthesizes `citation` from
@@ -116,12 +122,14 @@ filter on them (substring match); manually-added rows simply won't match either 
 separate table, since a screened source is still one bibliography row. Any `arti-lit` project not
 running an SLR simply never sets them (all three default NULL). `screening_stage` is a closed
 vocabulary (`db.SCREENING_STAGES`): `identified | title_abstract | eligible | included |
-excluded_title_abstract | excluded_eligibility | prior_review` — validated by both `library add`/`update`, which
+excluded_title_abstract | excluded_eligibility | prior_review | outside_flow` — validated by both `library add`/`update`, which
 raise rather than silently accept an unlisted value. `exclusion_reason` is only meaningful once
 `screening_stage` is one of the two `excluded_*` values, but is not enforced as such — ARTi-SLR's
 own stage protocol is what requires a reason be given on every reject, not this tool. `prior_review` is not a
 pipeline step: it marks a previously published review recorded during ARTi-SLR's "Cek Review
 Terdahulu" check (Stage 1 Part C), so it is kept in the library without entering the PRISMA flow.
+`outside_flow` likewise marks a source that is only cited as background and is not a synthesised
+study (ARTi-SLR's path C).
 PRISMA counts use `--screening-stage` exact match, so `prior_review` rows never inflate them; any
 count of *all* rows must exclude the stage explicitly. See
 `ARTi-SLR/references/stage2-search-and-screening.md` for how these fields are populated stage by

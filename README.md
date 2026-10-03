@@ -1,7 +1,7 @@
 # ARTi Framework
 
 A Claude Code workflow for taking a research paper from "I don't have an idea yet" to
-"it's submitted" — eight skills, a set of export tools, and a local dashboard.
+"it's submitted" — nine skills, a set of export tools, and a local dashboard.
 
 - **ARTi-setup** — one-time onboarding; scaffolds each new paper project
 - **ARTi-idea** — gap map → idea canvas → novelty scoring → research design → journal target
@@ -13,6 +13,7 @@ A Claude Code workflow for taking a research paper from "I don't have an idea ye
   drafting
 - **ARTi-jfinder** — ad-hoc journal lookup and ranking questions (SJR, quartile, aims & scope)
 - **ARTi-crosscite** — cross-citation overlap check between two literature clusters
+- **ARTi-SLR** — PRISMA systematic literature review, from research question to synthesis
 
 Everything installs into `~/.arti`, including a private, vendored Python 3.11 — nothing is
 added to your PATH and no system Python is touched or required.
@@ -90,7 +91,7 @@ You never have to run the tools in `tools/` by hand — the skills invoke them.
 ```
 
 and in Claude Code, `/skills` should list `ARTi-setup`, `ARTi-idea`, `ARTi-writing`,
-`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`.
+`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`, `ARTi-SLR`.
 
 ## Troubleshooting
 
@@ -100,13 +101,13 @@ and in Claude Code, `/skills` should list `ARTi-setup`, `ARTi-idea`, `ARTi-writi
 | `install.ps1 is not digitally signed` | You skipped step 2. Right-click the **ZIP** → Properties → Unblock, then re-extract. |
 | Python download fails | A proxy or firewall is blocking `github.com`. Fix the connection and re-run the installer; nothing else has to be undone. |
 | `pip install failed` warning | Harmless unless you need `.docx` export. Re-run the installer when you're back online. |
-| Skills don't appear in Claude Code | Restart Claude Code, then check `~/.claude/skills/` contains the eight `ARTi-*` entries. |
+| Skills don't appear in Claude Code | Restart Claude Code, then check `~/.claude/skills/` contains the nine `ARTi-*` entries. |
 | Desktop icon does nothing | Check `~/.arti/dashboard/server.log` — the launcher writes any traceback there. |
 | `tar.exe not found` (Windows) | Needs Windows 10 build 1803 or later. |
 
 ## Uninstall
 
-Delete `~/.arti`, the eight `ARTi-*` entries in `~/.claude/skills/`, and the Desktop icon.
+Delete `~/.arti`, the nine `ARTi-*` entries in `~/.claude/skills/`, and the Desktop icon.
 Your paper project folders are separate and are not touched.
 
 ## Platform support
@@ -123,8 +124,9 @@ Your paper project folders are separate and are not touched.
 
 ```
 ~/.arti/
-  skills/     the eight ARTi-* skills (linked into ~/.claude/skills/)
-  tools/      arti-render, arti-docx, arti-pdf, arti-table, arti-memcheck, ...
+  skills/     the nine ARTi-* skills (linked into ~/.claude/skills/)
+  tools/      arti-lit, arti-render, arti-docx, arti-pdf, arti-memcheck, arti-ref-search-mcp, ...
+  CAPABILITIES.md  one-line map of every skill, tool and MCP server
   dashboard/  local launcher (127.0.0.1:4174)
   python/     vendored Python 3.11 - downloaded by the installer, never tracked
   memory/     your profile, idea bank, project index  (yours; never in git)

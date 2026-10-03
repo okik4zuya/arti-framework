@@ -3,20 +3,26 @@
 Full procedure for the closing stage. Read this when Stage 4 fires — see `SKILL.md`'s Stage 4 stub
 for the trigger condition.
 
-## PRISMA Flow Diagram — computed from `screening_stage` counts, not a late-stage input
+## PRISMA Flow Diagram — funnel log reconciled with `arti-lit`
+
+`arti-lit` is a reference store, not the source of truth for PRISMA. The numbers come from
+`slr\prisma-counts.md` (`references/prisma-counts-template.md`), the funnel log kept during Stage 2.
 
 - Run one `library list --screening-stage X --project PATH` call per stage value: `identified`,
-  `title_abstract`, `eligible`, `included`, `excluded_title_abstract`, `excluded_eligibility`. The
-  length of each `rows` array is that stage's PRISMA count — never ask the researcher for these
-  numbers or reconstruct them from memory, they are queries against real screening history.
-- "After deduplication" is `identified` minus whatever `library import-ris`/`library add` already
-  rejected as duplicates during Stage 2 — read those totals back from Stage 2's own reporting, or
-  re-derive by comparing raw search-hit totals (logged during Stage 2) against the `identified`
-  count now.
+  `title_abstract`, `eligible`, `included`, `excluded_title_abstract`, `excluded_eligibility`,
+  plus `prior_review` and `outside_flow` for the "Outside the flow" section. The length of each
+  `rows` array is the `arti-lit` side of the reconciliation — never ask the researcher for these
+  numbers or reconstruct them from memory.
+- **Reconcile per path × stage** (path = the `search_source` prefix: `DB:`, `OTHER:`, `OUTSIDE:`).
+  Row counts per path must equal the funnel log. Show any difference to the researcher; do not
+  settle it silently. A row with no path prefix is "unclassified": the researcher decides A / B / C
+  / D (see Stage 2) before the counts are locked.
+- "After deduplication" and import duplicates come from the funnel log's import table, not from
+  re-deriving `identified` minus something.
 - Feed these counts into the standard PRISMA 2020 flow shape (Identification → Screening →
-  Eligibility → Included, with exclusion counts + top reasons at each screening gate — group
-  `excluded_title_abstract`/`excluded_eligibility` rows by `exclusion_reason` text to get "top
-  reasons").
+  Eligibility → Included, with the "other methods" arm, and exclusion counts + reasons at each
+  gate — group `excluded_*` rows by the code that starts `exclusion_reason`: E1, E2, ..., DUP). A
+  Protocol deviation (path D) is flagged in the box, not folded into the counts.
 - Render via **ARTi-figure**'s diagram lane: author a JSON spec (`figures/Fig_N.json`) with one
   node per PRISMA box and the counts filled in, render with `arti-render`, then run ARTi-figure's
   own verification loop (read the rendered PNG back, check legibility) before treating the figure
@@ -39,14 +45,22 @@ for the trigger condition.
   included paper, one column per recurring theme, plus Contradictions and Underexplored Areas
   sections (same shape as `ARTi-idea`'s Gap Map, deliberately — a review's synthesis matrix and an
   empirical paper's gap map are the same kind of document).
-- Fire the **three separate outputs** — do not stop after (a):
+- Fire up to **three outputs**. (a) and (c) are required; (b) only when the researcher plans a
+  follow-up empirical study:
   - **(a) SLR Manuscript Blueprint** — theme rows become the Results/Discussion outline directly;
     fill `slr\manuscript-blueprint.md` (`references/slr-manuscript-blueprint-template.md`).
-  - **(b) Idea Canvas gate** — for every gap noticed that looks like a future empirical study (not
-    just "more review needed"), invoke `ARTi-idea`'s existing Idea Canvas step (Stage 3 there) —
-    never score it here, never write directly to the Research Idea Bank. This keeps the Idea
-    Bank's quality bar identical regardless of whether the gap was noticed during an SLR or a Gap
-    Map.
+  - **(b) Idea Canvas gate (optional)** — the gate exists for follow-up studies and the Idea Bank,
+    not for the review itself. Ask one question first: "is there a planned follow-up study?" If
+    not, mark (b) "N/A, not pursued" and move on. If yes, for every gap that looks like a future
+    empirical study (not just "more review needed"), invoke `ARTi-idea`'s existing Idea Canvas
+    step (Stage 3 there) — never score it here, never write directly to the Research Idea Bank.
+    - The synthesis matrix (Contradictions + Underexplored) serves as the Gap Map; ARTi-idea is
+      not asked to build a new one.
+    - A claim of the form "nobody has done X" holds only for the selected corpus. Tag it
+      `[NEEDS CHECK]` and run a targeted search before it becomes a novelty claim in the
+      manuscript.
+    - Before writing a canvas, check the Idea Bank and `~/.arti/memory/project-index.md` (the
+      researcher's other projects) for overlap.
   - **(c) Journal Target Sheet input** — feed the Theme Table + Contradictions into
     `journal-target-sheet-template.md`'s Free-Signal Ranking directly. This journal choice is
     topic-driven (which journals publish reviews on this subject), not routed through Idea
@@ -54,8 +68,8 @@ for the trigger condition.
 
 ## Closing: SLR Handoff
 
-- Once the PRISMA Flow Diagram, Matriks Sintesis (all three outputs fired), and Journal Target
-  Sheet are all in place, write `slr\handoff.md` using `references/slr-handoff-template.md` — copy
+- Once the PRISMA Flow Diagram, Matriks Sintesis ((a) and (c) done; (b) done or N/A), and Journal
+  Target Sheet are all in place, write `slr\handoff.md` using `references/slr-handoff-template.md` — copy
   the decisions, point at the content, same "never transcribe" rule `ARTi-idea`'s own handoff
   documents.
 - Run `project upsert` for this project's row (status "SLR complete / handed off") — phase-boundary

@@ -60,6 +60,9 @@ SCREENING_STAGES = (
     # Out-of-pipeline marker: a prior review noted during ARTi-SLR's Cek Review Terdahulu step.
     # Kept in arti-lit for citation/dedup, but never part of the PRISMA identified->included flow.
     "prior_review",
+    # Out-of-pipeline marker: cited/background only, not a synthesised study (ARTi-SLR path C).
+    # Kept for citation/dedup, never part of the PRISMA flow.
+    "outside_flow",
 )
 
 
@@ -125,6 +128,9 @@ def init_db(project=None):
                 conn.commit()
             if "exclusion_reason" not in cols:
                 conn.execute("ALTER TABLE sources ADD COLUMN exclusion_reason TEXT")
+                conn.commit()
+            if "csl_json" not in cols:
+                conn.execute("ALTER TABLE sources ADD COLUMN csl_json TEXT")
                 conn.commit()
             if is_new:
                 _migrate_legacy(conn, paths["legacy_library"])
@@ -303,6 +309,47 @@ def library_list(project, status=None, journal=None, article_type=None, screenin
             query += " ORDER BY key"
             rows = conn.execute(query, params).fetchall()
             return [_row_to_dict(r) for r in rows]
+        finally:
+            conn.close()
+
+
+def library_enrich(project, keys=None):
+    """Fill `csl_json` from each source's DOI via Crossref. Idempotent: rows that already have
+    csl_json are skipped (reported as `already`). Failures are reported, never swallowed.
+    Not followed by library_export -- csl_json never appears in library.md."""
+    import crossref
+    import json
+
+    paths = _paths(project)
+    with _lock:
+        conn = _connect(paths["db"])
+        try:
+            query = "SELECT key, doi, csl_json FROM sources"
+            params = []
+            if keys:
+                query += " WHERE key IN (%s)" % ",".join("?" * len(keys))
+                params = list(keys)
+            rows = conn.execute(query + " ORDER BY key", params).fetchall()
+            found = {r["key"] for r in rows}
+            result = {"enriched": [], "already": [], "no_doi": [], "failed": [],
+                      "unknown_keys": [k for k in (keys or []) if k not in found]}
+            for r in rows:
+                if r["csl_json"]:
+                    result["already"].append(r["key"])
+                    continue
+                if not (r["doi"] or "").strip():
+                    result["no_doi"].append(r["key"])
+                    continue
+                try:
+                    csl = crossref.fetch_csl(r["doi"])
+                except crossref.CrossrefError as e:
+                    result["failed"].append({"key": r["key"], "error": str(e)})
+                    continue
+                conn.execute("UPDATE sources SET csl_json = ?, updated_at = ? WHERE key = ?",
+                             (json.dumps(csl, ensure_ascii=False), _now(), r["key"]))
+                conn.commit()
+                result["enriched"].append(r["key"])
+            return result
         finally:
             conn.close()
 

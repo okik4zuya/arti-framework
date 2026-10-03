@@ -50,4 +50,5 @@ shifts the framing.]
 
 > Read `~/.arti/memory/researcher-profile.md` for these fields — do not re-ask what it already
 > records, and do not re-derive a Novelty Ceiling here (an SLR's "novelty" is in Stage 4's Matriks
-> Sintesis gap-routing through the existing Idea Canvas gate, not scored on this document).
+> Sintesis gap section, optionally routed through the Idea Canvas gate, not scored on this
+> document).

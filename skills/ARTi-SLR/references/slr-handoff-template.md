@@ -38,6 +38,10 @@ criteria (see `slr\protocol.md`)
 **Journal Target Sheet decision:** [confirmed journal] (fallback: [journal]) — see
 `slr\journal-target-sheet.md`
 
+**Open flags:**
+- Scopus `DOCTYPE(re)` re-run: [pending / YYYY-MM-DD]. The Introduction says "to our knowledge"
+  until this flag is closed (see `slr\prior-reviews.md`).
+
 **Open notes:** [unresolved contradictions, low-quality papers kept with justification, dangling
 `[DATA NEEDED]`/`[NEEDS MORE LITERATURE]` flags, or "none"]
 
@@ -50,8 +54,8 @@ criteria (see `slr\protocol.md`)
 | `slr\judul-rq-pico.md` | Manuscript title, Introduction RQ statement |
 | `slr\prior-reviews.md` | Introduction paragraph 2 (novelty vs. existing reviews) |
 | `slr\protocol.md` | Methods section (eligibility, information sources, search strategy) |
-| `literature\arti-lit.db` (via `library list --screening-stage X`) | PRISMA Flow Diagram counts |
-| `slr\synthesis-matrix.md` | Results/Discussion section content; Idea Canvas gap routing; Journal Target Sheet input |
+| `slr\prisma-counts.md` (reconciled with `arti-lit.db`) | PRISMA Flow Diagram counts |
+| `slr\synthesis-matrix.md` | Results/Discussion section content; Idea Canvas gap routing (optional); Journal Target Sheet input |
 | `slr\manuscript-blueprint.md` | ARTi-writing's Manuscript Blueprint (paragraph-level shape) |
 | `slr\journal-target-sheet.md` | Journal Profile Block A + D threshold |
 

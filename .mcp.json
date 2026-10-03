@@ -5,6 +5,7 @@
       "args": ["${CLAUDE_PROJECT_DIR:-.}/tools/arti-ref-search-mcp/server.py"],
       "env": {
         "OPENALEX_API_KEY": "YeArMQSyxSEefW1LlKZIFd",
+        "SEMANTIC_SCHOLAR_API_KEY": "s2k-1fArliYc3JjhCKCQWzFJut7UVH2a4kA39hyHLAie",
         "ARTI_REF_CONTACT_EMAIL": "okik4zuya@gmail.com"
       }
     }

@@ -13,6 +13,9 @@ call the vendored interpreter by full path: `"~/.arti/python/python.exe" <script
 `~/.arti/python.cmd` / `~/.arti/python3` wrapper also forwards to the same binary if the subpath
 is forgotten.
 
+Skills and tools available: `~/.arti/CAPABILITIES.md`; choosing a literature search route:
+`~/.arti/skills/ARTi-ref/references/search-routing.md`.
+
 ## Memory rules
 
 - `memory/` holds exactly three files flat (`MEMORY.md`, `todo-list.md`, `status.md`). Every topic

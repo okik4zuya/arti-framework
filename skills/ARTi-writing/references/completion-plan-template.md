@@ -95,6 +95,13 @@ philosophy as this plan's own PDF pipeline:
 `--template` defaults to ARTi's shared academic template if the project has not saved its own
 `writing\manuscript-template.docx` house-style copy yet.
 
+For a manuscript with `[LIT: key]` citations, first run `arti-lit library enrich --project .`
+(fills `csl_json` from Crossref via DOI), then add `--cite zotero --project .` to the render
+command. Every `[LIT: ...]` becomes a Zotero field and `## References` becomes a Zotero
+bibliography field; open the `.docx` in Word with Zotero and click **Refresh** to format it in the
+journal's style. The render fails, listing the keys, if any cited key is missing from `arti-lit`
+or has no `csl_json` — fix those first (sources without a DOI need metadata filled by hand).
+
 ## Change log
 Keep this template's own history to a one-line-per-date list if it is ever revised; do not
 document individual project plans here — those live in each project's own
