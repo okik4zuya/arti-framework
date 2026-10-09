@@ -13,6 +13,7 @@ A Claude Code workflow for taking a research paper from "I don't have an idea ye
   drafting
 - **ARTi-jfinder** — ad-hoc journal lookup and ranking questions (SJR, quartile, aims & scope)
 - **ARTi-crosscite** — cross-citation overlap check between two literature clusters
+- **ARTi-annotate** — resolve the inline comments and suggested edits you made in the dashboard md preview
 - **ARTi-SLR** — PRISMA systematic literature review, from research question to synthesis
 
 Everything installs into `~/.arti`, including a private, vendored Python 3.11 — nothing is
@@ -91,7 +92,7 @@ You never have to run the tools in `tools/` by hand — the skills invoke them.
 ```
 
 and in Claude Code, `/skills` should list `ARTi-setup`, `ARTi-idea`, `ARTi-writing`,
-`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`, `ARTi-SLR`.
+`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`, `ARTi-annotate`, `ARTi-SLR`.
 
 ## Troubleshooting
 

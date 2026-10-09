@@ -1,0 +1,53 @@
+[
+  {
+    "name": "comment open",
+    "input": "A {==bad word==}{>>#a1 open | change this word<<} here.",
+    "parse": [{"id": "a1", "kind": "comment", "status": "open", "text": "bad word", "was": null, "note": "change this word"}],
+    "strip": "A bad word here.",
+    "accept": {"a1": "A bad word here."},
+    "revert": {"a1": "A bad word here."}
+  },
+  {
+    "name": "comment revised keeps old text",
+    "input": "A {==good word==}{>>#a1 revised | was \"bad word\" | change this word<<} here.",
+    "parse": [{"id": "a1", "kind": "comment", "status": "revised", "text": "good word", "was": "bad word", "note": "change this word"}],
+    "strip": "A good word here.",
+    "accept": {"a1": "A good word here."},
+    "revert": {"a1": "A bad word here."}
+  },
+  {
+    "name": "suggestion",
+    "input": "We {~~utilize~>use~~}{>>#a2 open<<} it.",
+    "parse": [{"id": "a2", "kind": "suggestion", "status": "open", "old": "utilize", "new": "use", "was": null, "note": ""}],
+    "strip": "We utilize it.",
+    "accept": {"a2": "We use it."},
+    "revert": {"a2": "We utilize it."}
+  },
+  {
+    "name": "two annotations, multi-line span, no note",
+    "input": "{==line one\nline two==}{>>#a1 open<<} and {==x==}{>>#a2 open | n<<}",
+    "parse": [
+      {"id": "a1", "kind": "comment", "status": "open", "text": "line one\nline two", "was": null, "note": ""},
+      {"id": "a2", "kind": "comment", "status": "open", "text": "x", "was": null, "note": "n"}
+    ],
+    "strip": "line one\nline two and x",
+    "accept": {"a1": "line one\nline two and {==x==}{>>#a2 open | n<<}"},
+    "revert": {"a2": "{==line one\nline two==}{>>#a1 open<<} and x"}
+  },
+  {
+    "name": "ignored inside code fence and inline code",
+    "input": "```\n{==nope==}{>>#a9 open<<}\n```\n`{==nope==}{>>#a8 open<<}` {==yes==}{>>#a1 open<<}",
+    "parse": [{"id": "a1", "kind": "comment", "status": "open", "text": "yes", "was": null, "note": ""}],
+    "strip": "```\n{==nope==}{>>#a9 open<<}\n```\n`{==nope==}{>>#a8 open<<}` yes",
+    "accept": {},
+    "revert": {}
+  },
+  {
+    "name": "unannotated critic markup is not ours",
+    "input": "{==plain highlight==} and {>>stray<<}",
+    "parse": [],
+    "strip": "{==plain highlight==} and {>>stray<<}",
+    "accept": {},
+    "revert": {}
+  }
+]

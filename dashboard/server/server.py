@@ -830,6 +830,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", mime)
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             self.wfile.write(body)
             return None
@@ -917,11 +918,14 @@ class Handler(BaseHTTPRequestHandler):
             if not project_path or not file_path or content is None:
                 return self._send_json(400, {"error": "path, file, and content required"})
             try:
-                mtime = chat.write_project_file(project_path, file_path, content)
+                mtime = chat.write_project_file(project_path, file_path, content, body.get("expected_mtime"))
+            except chat.ProjectFileConflict:
+                return self._send_json(409, {"error": "File changed on disk", "conflict": True})
             except ValueError as e:
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
                 return self._send_json(404, {"error": str(e)})
+            db.touch_project_updated(project_path)
             return self._send_json(200, {"success": True, "mtime": mtime})
 
         if pathname == "/api/chat/project-files/create" and method == "POST":
@@ -938,6 +942,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"error": str(e)})
             except OSError as e:
                 return self._send_json(404, {"error": str(e)})
+            db.touch_project_updated(project_path)
             return self._send_json(200, result)
 
         if pathname == "/api/chat/project-files/create-folder" and method == "POST":

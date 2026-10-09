@@ -4,7 +4,7 @@ One line per skill, tool and MCP server, plus who calls whom. Pointers only: det
 linked `SKILL.md` or `tools/<name>/README.md`, never here. **Maintenance: add one line here whenever a
 skill, tool or MCP server is added, renamed or removed.**
 
-## Skills (9, in `~/.arti/skills/`, linked into `~/.claude/skills/`)
+## Skills (10, in `~/.arti/skills/`, linked into `~/.claude/skills/`)
 
 | Skill | Owns | Calls |
 |---|---|---|
@@ -17,8 +17,9 @@ skill, tool or MCP server is added, renamed or removed.**
 | [ARTi-figure](skills/ARTi-figure/SKILL.md) | Diagrams (`.drawio`), tables, data plots | `arti-render`, `arti-table`, `arti-plot` |
 | [ARTi-jfinder](skills/ARTi-jfinder/SKILL.md) | Ad-hoc Scimago journal lookup and ranking | `arti-jfinder` |
 | [ARTi-crosscite](skills/ARTi-crosscite/SKILL.md) | Cross-citation overlap between two paper sets | `citation-chase` |
+| [ARTi-annotate](skills/ARTi-annotate/SKILL.md) | Resolve the researcher's inline md comments and suggested edits (dashboard annotations) | `arti-annotate` |
 
-## Tools (13 folders in `~/.arti/tools/`)
+## Tools (14 folders in `~/.arti/tools/`)
 
 | Tool | What | Called by |
 |---|---|---|
@@ -30,6 +31,7 @@ skill, tool or MCP server is added, renamed or removed.**
 | [arti-table](tools/arti-table/README.md) | Table lane for ARTi-figure (stub) | ARTi-figure |
 | [arti-plot](tools/arti-plot/README.md) | Per-project matplotlib plot pattern (no shared renderer) | ARTi-figure |
 | [arti-docx](tools/arti-docx/README.md) | Markdown to styled `.docx` manuscript | ARTi-writing |
+| [arti-annotate](tools/arti-annotate/README.md) | Inline CriticMarkup comments/suggestions in any md file: parse, revise, accept, revert, strip | ARTi-annotate, dashboard |
 | [arti-jfinder](tools/arti-jfinder/README.md) | Scimago SJR snapshot database | ARTi-jfinder, ARTi-idea |
 | [citation-chase](tools/citation-chase/README.md) | Does set A cite or get cited by set B (OpenAlex, S2 fallback) | ARTi-crosscite |
 | [scopus-ris-batch-export](tools/scopus-ris-batch-export/HANDOFF.md) | Handoff brief for batch RIS export from Scopus (no code yet) | ARTi-SLR, researcher |

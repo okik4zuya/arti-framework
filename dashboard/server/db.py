@@ -46,6 +46,7 @@ def _to_dashboard_row(row):
         "lifecycle": row["lifecycle"],
         "added_at": row["added_at"],
         "last_opened_at": row["last_opened_at"],
+        "updated_at": row["updated_at"],
     }
 
 
@@ -104,6 +105,22 @@ def upsert_project(path, name=None, category=None, tags=None, touch_opened=False
             conn.close()
     arti_db.project_export()
     return _to_dashboard_row(result)
+
+
+def touch_project_updated(path):
+    """Bumps updated_at to now on an existing project_index row (no-op when the
+    path isn't registered). Called when a file inside the project is saved."""
+    path_str = str(Path(path))
+    with arti_db._lock:
+        conn = arti_db._connect()
+        try:
+            conn.execute(
+                "UPDATE project_index SET updated_at=? WHERE project_path=?",
+                (arti_db._now(), path_str),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
 
 def set_project_lifecycle(path, lifecycle):

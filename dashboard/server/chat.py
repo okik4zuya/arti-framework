@@ -479,7 +479,13 @@ def copy_project_files_to_clipboard(project_path, abs_paths):
     platform_ops.copy_files_to_clipboard(targets)
 
 
-def write_project_file(project_path, abs_path, content):
+class ProjectFileConflict(Exception):
+    """The file changed on disk since the caller read it (expected_mtime mismatch)."""
+
+
+def write_project_file(project_path, abs_path, content, expected_mtime=None):
+    """`expected_mtime` (optional): the mtime the caller last read -- if the file has moved
+    on since (e.g. Claude edited it), raise ProjectFileConflict instead of clobbering it."""
     with arti_db._lock:
         conn = arti_db._connect()
         try:
@@ -487,6 +493,8 @@ def write_project_file(project_path, abs_path, content):
         finally:
             conn.close()
     target = _resolve_under_project(project_path, abs_path)
+    if expected_mtime is not None and abs(target.stat().st_mtime - float(expected_mtime)) > 1e-3:
+        raise ProjectFileConflict()
     target.write_text(content, encoding="utf-8")
     return target.stat().st_mtime
 

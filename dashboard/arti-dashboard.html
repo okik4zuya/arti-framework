@@ -58,6 +58,13 @@
     width:26px; height:26px; border-radius:var(--radius);
   }
   body.sidebar-collapsed #mainSidebarExpandBtn{ display:flex; }
+  /* Force-refresh button: fixed in the window's top-right corner (sits in the
+     page margin above/right of every panel's topbar), reloads the whole page. */
+  #appRefreshBtn{
+    position:fixed; top:3px; right:6px; z-index:50; width:26px; height:26px;
+    border-radius:var(--radius); padding:0;
+  }
+  #appRefreshBtn svg{ width:14px; height:14px; }
   /* Files view has its own sidebar toggle in the topbar strip
      (#filesSidebarToggleBtn) -- hide the floating collapsed-state button
      while that view is active, so there is only ever one sidebar control
@@ -100,6 +107,14 @@
   .cat-badge.cat-paper{ color:var(--accent); background:var(--accent-soft); }
   .cat-badge.cat-project{ color:var(--slate); background:var(--slate-soft); }
   .cat-badge.cat-other{ color:var(--amber); background:var(--amber-soft); }
+
+  #projectsRefreshBtn.spinning svg{ animation:refresh-spin .7s linear infinite; }
+  @keyframes refresh-spin{ to{ transform:rotate(360deg); } }
+  .name-line{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .name-line strong{ min-width:0; }
+  .name-line .cat-badge, .name-line .lifecycle-tag{ flex:none; }
+  .name-line .cat-badge{ padding:2px 8px; font-size:11.5px; }
+  td.updated-col, th.updated-col{ white-space:nowrap; width:1%; color:var(--text-muted); font-size:13px; }
 
   .tags-line{ font-size:13px; color:var(--text-muted); margin-top:3px; }
 
@@ -1027,6 +1042,9 @@
     margin:0; font-size:14px; font-family:"SFMono-Regular",Consolas,monospace; font-weight:500;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
+  /* margin-right:auto keeps title + copy button left, the action buttons right */
+  .preview-copy-path-btn{ flex:none; margin-right:auto; margin-left:-6px; }
+  .preview-copy-path-btn svg{ width:15px; height:15px; }
   .preview-filename-input{
     width:100%; font-size:14px; font-family:"SFMono-Regular",Consolas,monospace; font-weight:500;
     padding:6px 9px; border:1px solid var(--border); border-radius:var(--radius);
@@ -1044,6 +1062,62 @@
     padding-top:10px; border-top:1px solid var(--border);
   }
   #chatPreviewBody.markdown-body{ font-size:14px; }
+  /* md annotations (inline CriticMarkup): open = blue, revised by Claude = yellow, suggestion = diff */
+  mark.annot{ color:inherit; cursor:pointer; padding:0; }
+  mark.annot-open{ background:rgba(59,130,246,.22); border-bottom:2px solid #3b82f6; }
+  mark.annot-revised{ background:rgba(250,204,21,.5); border-bottom:2px solid #eab308; }
+  mark.annot-suggest{ background:rgba(139,92,246,.12); border-bottom:2px solid #8b5cf6; }
+  mark.annot-suggest del{ color:var(--red); text-decoration:line-through; }
+  mark.annot-suggest ins{ color:var(--green); text-decoration:none; background:var(--green-soft); }
+  mark.annot.annot-flash{ outline:2px solid var(--accent); outline-offset:1px; }
+  .files-preview-content{ position:relative; }
+  #annotFloat{
+    position:fixed; z-index:9000; display:flex; gap:2px; padding:3px;
+    background:var(--surface); border:1px solid var(--border); box-shadow:0 4px 14px rgba(16,24,40,.18);
+  }
+  #annotFloat[hidden]{ display:none; }
+  #annotFloat button, .annot-pop button, .annot-panel button{
+    font:inherit; font-size:12px; padding:3px 9px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+  }
+  #annotFloat button:hover, .annot-pop button:hover, .annot-panel button:hover{ background:var(--accent-soft); }
+  .annot-pop{
+    position:fixed; z-index:9001; width:320px; max-width:calc(100vw - 16px); padding:10px;
+    background:var(--surface); color:var(--text); border:1px solid var(--border);
+    box-shadow:0 8px 24px rgba(16,24,40,.22); font-size:13px;
+  }
+  .annot-pop-title{ font-weight:600; margin-bottom:6px; }
+  .annot-pop-quote{
+    margin-bottom:6px; padding:4px 6px; background:var(--surface-2); color:var(--text-muted);
+    max-height:90px; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:12px;
+  }
+  .annot-pop textarea{
+    width:100%; box-sizing:border-box; margin-bottom:6px; padding:5px 7px; resize:vertical;
+    font:inherit; font-size:13px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+  }
+  .annot-pop-row{ display:flex; gap:6px; justify-content:flex-end; }
+  .annot-pop button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .annot-panel{
+    position:absolute; top:0; right:0; bottom:0; width:270px; max-width:85%; z-index:5; overflow:auto;
+    background:var(--surface); border-left:1px solid var(--border); box-shadow:-4px 0 14px rgba(16,24,40,.1);
+    font-size:12.5px;
+  }
+  .annot-panel-head{
+    display:flex; gap:6px; justify-content:space-between; align-items:center; padding:6px 8px;
+    position:sticky; top:0; background:var(--surface); border-bottom:1px solid var(--border);
+  }
+  .annot-panel-empty{ padding:12px 10px; color:var(--text-muted); }
+  .annot-item{ padding:8px 10px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .annot-item:hover{ background:var(--surface-2); }
+  .annot-item-top{ display:flex; gap:6px; align-items:center; margin-bottom:3px; }
+  .annot-chip{ padding:0 6px; font-size:11px; border:1px solid var(--border); }
+  .annot-chip-open{ background:#dbeafe; }
+  .annot-chip-revised{ background:#fef08a; }
+  .annot-chip-suggest{ background:#ede9fe; }
+  .annot-item-id{ color:var(--text-muted); font-size:11px; }
+  .annot-item-quote{ color:var(--text-muted); font-style:italic; word-break:break-word; }
+  .annot-item-note{ margin-top:2px; word-break:break-word; }
+  .annot-item-actions{ display:flex; gap:4px; margin-top:5px; }
   .markdown-body li.task-list-item{ list-style:none; }
   .markdown-body li.task-list-item > input.task-list-item-checkbox{
     display:inline-block; width:auto; flex:none; margin:0 .4em .2em -1.4em; vertical-align:middle;
@@ -1365,6 +1439,12 @@
   </div>
 </div>
 <button type="button" class="sidebar-toggle-btn" id="mainSidebarExpandBtn" title="Show sidebar (Ctrl+B)">&#9776;</button>
+<button type="button" class="icon-btn icon-only" id="appRefreshBtn" title="Force refresh page (F5)">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <path d="M20 12a8 8 0 1 1-2.3-5.7" stroke-linecap="round"/>
+    <path d="M20 4v4.5h-4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
 <main id="mainEl">
   <div class="col">
@@ -1385,6 +1465,12 @@
             <div class="chip-row" id="categoryChips"></div>
           </div>
         </span>
+        <button type="button" class="icon-btn icon-only" id="projectsRefreshBtn" title="Refresh projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.3-5.7" stroke-linecap="round"/>
+            <path d="M20 4v4.5h-4.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
         <button type="button" class="icon-btn icon-only" id="showArchivedToggleBtn" title="Show archived projects">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <path d="M3 7l1-3h16l1 3" stroke-linejoin="round" stroke-linecap="round"/>
@@ -1396,7 +1482,7 @@
       <div class="proj-list">
         <table id="projectsTable">
           <thead>
-            <tr><th>Category</th><th>Name</th><th></th></tr>
+            <tr><th>Name</th><th class="updated-col">Last updated</th><th></th></tr>
           </thead>
           <tbody id="projectsBody"></tbody>
         </table>
@@ -1588,6 +1674,12 @@
       <div class="files-preview-content" id="filesPreviewContent" hidden>
         <div class="files-preview-head">
           <h2 id="chatPreviewFileName"></h2>
+          <button class="icon-btn icon-only preview-copy-path-btn" id="chatPreviewCopyPathBtn" type="button" title="Copy full path">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="9" y="9" width="11" height="11" rx="1.5"/>
+              <path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15" stroke-linecap="round"/>
+            </svg>
+          </button>
           <div class="chat-preview-head-actions">
             <button class="icon-btn icon-only" id="chatPreviewRenameBtn" type="button" title="Rename file">&#9998;</button>
             <button class="icon-btn icon-only" id="chatPreviewSearchToggleBtn" type="button" title="Search in file (Ctrl+F)">
@@ -2113,6 +2205,7 @@
 <link rel="stylesheet" href="/lib/katex.min.css">
 <link rel="stylesheet" href="/lib/pdf_viewer.min.css">
 <script src="/lib/marked.min.js"></script>
+<script src="/lib/arti-annotate.js"></script>
 <script src="/lib/katex.min.js"></script>
 <script src="/lib/auto-render.min.js"></script>
 <script src="/lib/pdf.min.js"></script>
@@ -2248,6 +2341,16 @@
     });
   }
 
+  (function(){
+    var btn = document.getElementById("projectsRefreshBtn");
+    btn.addEventListener("click", function(){
+      btn.disabled = true;
+      btn.classList.add("spinning");
+      var done = function(){ btn.disabled = false; btn.classList.remove("spinning"); };
+      loadAll().then(done, done);
+    });
+  })();
+
   function loadAll(){
     return api("/data").then(function(data){
       allProjects = data.projects;
@@ -2310,8 +2413,35 @@
       return (p.name || "").toLowerCase().indexOf(q) !== -1 || (p.path || "").toLowerCase().indexOf(q) !== -1;
     });
     rows = rows.slice();
-    rows.sort(function(a, b){ return (a.name || "").localeCompare(b.name || ""); });
+    rows.sort(function(a, b){
+      return projectActivityTime(b) - projectActivityTime(a) || (a.name || "").localeCompare(b.name || "");
+    });
     return rows;
+  }
+
+  // Latest of the paper-workflow update, last open, and registration time.
+  function projectActivityTime(p){
+    var best = 0;
+    [p.updated_at, p.last_opened_at, p.added_at].forEach(function(s){
+      var t = s ? Date.parse(s) : NaN;
+      if (!isNaN(t) && t > best) best = t;
+    });
+    return best;
+  }
+
+  function formatRelativeTime(ms){
+    if (!ms) return "—";
+    var diff = Date.now() - ms;
+    var min = Math.floor(diff / 60000);
+    if (min < 1) return "Just now";
+    if (min < 60) return min + "m ago";
+    var hr = Math.floor(min / 60);
+    if (hr < 24) return hr + "h ago";
+    var day = Math.floor(hr / 24);
+    if (day < 7) return day + "d ago";
+    var d = new Date(ms);
+    var opts = d.getFullYear() === new Date().getFullYear() ? { month:"short", day:"numeric" } : { month:"short", day:"numeric", year:"numeric" };
+    return d.toLocaleDateString(undefined, opts);
   }
 
   function renderProjects(){
@@ -2328,6 +2458,7 @@
     }
     body.innerHTML = rows.map(function(r){
       var badge = '<span class="cat-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span>';
+      var activity = projectActivityTime(r);
       var lifecycle = r.lifecycle || "active";
       var doneTag = lifecycle === "complete" ? '<span class="lifecycle-tag">Done</span>' : '';
       var editBtn = '<button type="button" data-role="edit-project" data-path="' + escapeHtml(r.path) + '">Edit</button>';
@@ -2349,9 +2480,9 @@
           '<button type="button" data-role="lifecycle" data-path="' + escapeHtml(r.path) + '" data-lifecycle="archived">Archive</button>';
       }
       return '<tr>' +
-        '<td>' + badge + '</td>' +
-        '<td class="name-cell" title="' + escapeHtml(r.path) + '"><strong>' + escapeHtml(r.name) + '</strong>' + doneTag +
+        '<td class="name-cell" title="' + escapeHtml(r.path) + '"><div class="name-line"><strong>' + escapeHtml(r.name) + '</strong>' + badge + doneTag + '</div>' +
           '<div class="proj-path">' + escapeHtml(r.path) + '</div></td>' +
+        '<td class="updated-col" title="' + (activity ? escapeHtml(new Date(activity).toLocaleString()) : '') + '">' + formatRelativeTime(activity) + '</td>' +
         '<td><div class="row-actions">' +
           '<button class="icon-btn primary" data-role="open-folder" data-path="' + escapeHtml(r.path) + '">' + ICON_FOLDER + '<span>Open folder</span></button>' +
           '<button class="icon-btn icon-only" data-role="open-vscode" data-path="' + escapeHtml(r.path) + '" title="Open VS Code">' + ICON_VSCODE + '</button>' +
@@ -6314,7 +6445,7 @@
   function buildPaneEls(suffix){
     var ids = {
       panel: "filesPreviewPanel", empty: "filesPreviewEmpty", content: "filesPreviewContent",
-      fileName: "chatPreviewFileName", renameBtn: "chatPreviewRenameBtn",
+      fileName: "chatPreviewFileName", renameBtn: "chatPreviewRenameBtn", copyPathBtn: "chatPreviewCopyPathBtn",
       searchToggleBtn: "chatPreviewSearchToggleBtn", closeBtn: "chatPreviewCloseBtn",
       searchBar: "chatPreviewSearchBar", searchInput: "chatPreviewSearchInput",
       searchCount: "chatPreviewSearchCount", searchPrevBtn: "chatPreviewSearchPrevBtn",
@@ -6664,7 +6795,7 @@
       pane.rawText = "";
       pane.relPath = relPath;
       pane.rawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
-        "&file=" + encodeURIComponent(absPath);
+        "&file=" + encodeURIComponent(absPath) + "&_=" + Date.now(); // cache-buster: a regenerated PNG/PDF must not be served from the webview cache
       pane.mtime = null; // no live-refresh polling for image/PDF previews yet
       pane.els.fileName.textContent = relPath;
       pane.els.panel.classList.remove("editing");
@@ -6899,6 +7030,14 @@
       }
     });
     pane.els.closeBtn.addEventListener("click", function(){ closePreviewPane(pane); });
+    pane.els.copyPathBtn.addEventListener("click", function(){
+      if (!pane.absPath) return;
+      navigator.clipboard.writeText(pane.absPath).then(function(){
+        showToast("Full path copied to clipboard");
+      }).catch(function(err){
+        alert("Failed to copy path: " + (err && err.message ? err.message : "unknown error"));
+      });
+    });
     pane.els.renameBtn.addEventListener("click", function(){
       if (!pane.projectPath || !pane.absPath || !pane.relPath) return;
       enterPreviewRenameMode(pane.projectPath, pane.absPath, pane);
@@ -7129,7 +7268,9 @@
     // "content" alongside "markdown-body" so a source file's own embedded
     // <style> block (see EXPORT_PAGE_STYLE's comment) has something to match.
     body.className = "markdown-body content";
-    body.innerHTML = parseMarkdownWithMath(rawText);
+    // Exports carry clean prose: annotation markup is stripped (comments keep their span,
+    // suggestions keep the original text).
+    body.innerHTML = parseMarkdownWithMath(window.ArtiAnnotate ? ArtiAnnotate.strip(rawText) : rawText);
     var prevProjectPath = chatPreviewProjectPath, prevAbsPath = chatPreviewAbsPath;
     chatPreviewProjectPath = projectPath;
     chatPreviewAbsPath = absPath;
@@ -7228,7 +7369,11 @@
       // and apply normally, same as the PDF export now does.
       wrap.innerHTML = '<div class="markdown-body content" id="' + bodyId + '"></div>';
       var body = document.getElementById(bodyId);
-      body.innerHTML = parseMarkdownWithMath(pane.rawText);
+      // Inline annotations become <mark> elements (ArtiAnnotate, lib/arti-annotate.js).
+      var ann = window.ArtiAnnotate ? ArtiAnnotate.toMarkers(pane.rawText) : { text: pane.rawText, annotations: [] };
+      body.innerHTML = parseMarkdownWithMath(ann.text);
+      if (window.ArtiAnnotate) ArtiAnnotate.markersToDom(body, ann.annotations);
+      pane.annotations = ann.annotations;
       resolveMarkdownPreviewImages(body, pane);
       renderMathIn(body);
       addCodeCopyButtons(body);
@@ -7236,7 +7381,345 @@
       wrap.innerHTML = '<pre class="plain-text-body" id="' + bodyId + '"></pre>';
       document.getElementById(bodyId).textContent = pane.rawText;
     }
+    if (!isMarkdownPreview(pane.relPath)) pane.annotations = [];
+    annotAfterRender(pane);
   }
+
+  // ---- md annotations: comments and suggested edits written into the md file itself as inline
+  // CriticMarkup (spec: tools/arti-annotate/README.md; parser: lib/arti-annotate.js, a mirror of
+  // tools/arti-annotate/annot.py pinned to the same fixtures). Claude resolves them in a later
+  // session (ARTi-annotate skill) and marks them "revised" (yellow) until accepted here. ----
+  var AN = window.ArtiAnnotate || null;
+  var annotFloatEl = null, annotPopEl = null, annotPending = null;
+
+  function paneForElement(el){
+    var panelEl = el && el.closest ? el.closest(".files-preview-panel") : null;
+    if (!panelEl) return null;
+    var all = panes.slice();
+    if (idlePane) all.push(idlePane);
+    for (var i = 0; i < all.length; i++) if (all[i].els.panel === panelEl) return all[i];
+    return null;
+  }
+
+  // The rendered md body of a pane that can be annotated right now (not editing), else null.
+  function annotPaneBody(pane){
+    var panel = pane.els.panel;
+    if (!AN || !panel || panel.classList.contains("editing") || !isMarkdownPreview(pane.relPath)) return null;
+    return pane.els.bodyWrap.querySelector(".markdown-body");
+  }
+
+  function annotTrunc(s, n){ s = String(s || ""); return s.length > n ? s.slice(0, n) + "…" : s; }
+
+  function annotSelectionInfo(){
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    var range = sel.getRangeAt(0);
+    var node = range.commonAncestorContainer;
+    var el = node.nodeType === 1 ? node : node.parentElement;
+    var bodyEl = el && el.closest ? el.closest(".markdown-body") : null;
+    var pane = bodyEl ? paneForElement(bodyEl) : null;
+    if (!pane || annotPaneBody(pane) !== bodyEl) return null;
+    var text = sel.toString();
+    if (!text.trim()) return null;
+    var pre = document.createRange();
+    pre.selectNodeContents(bodyEl);
+    pre.setEnd(range.startContainer, range.startOffset);
+    var post = document.createRange();
+    post.selectNodeContents(bodyEl);
+    post.setStart(range.endContainer, range.endOffset);
+    function topIndex(n){
+      while (n && n.parentNode !== bodyEl) n = n.parentNode;
+      return n ? Array.prototype.indexOf.call(bodyEl.children, n) : -1;
+    }
+    return {
+      pane: pane, body: bodyEl, text: text,
+      prefix: pre.toString().slice(-40), suffix: post.toString().slice(0, 40),
+      startBlock: topIndex(range.startContainer), endBlock: topIndex(range.endContainer),
+      rect: range.getBoundingClientRect()
+    };
+  }
+
+  // Top-level block offsets in the source, or null if marked's token stream doesn't tile it.
+  function annotBlockRanges(src){
+    var toks = marked.lexer(src, { gfm: true, breaks: true }), pos = 0, out = [];
+    toks.forEach(function(t){
+      var raw = t.raw || "";
+      if (t.type !== "space") out.push({ type: t.type, start: pos, end: pos + raw.length, raw: raw });
+      pos += raw.length;
+    });
+    return pos === src.length ? out : null;
+  }
+
+  // Selection -> {start,end} in pane.rawText. Exact text match first (unique, or disambiguated
+  // by surrounding rendered text); otherwise snap to the whole paragraph/heading blocks touched.
+  function annotMapSelection(info){
+    var src = info.pane.rawText;
+    var loc = AN.locate(src, info.text, info.prefix, info.suffix);
+    if (loc) return loc;
+    if (info.startBlock < 0 || info.endBlock < info.startBlock) return null;
+    var blocks = annotBlockRanges(src);
+    if (!blocks || blocks.length !== info.body.children.length) return null;
+    for (var i = info.startBlock; i <= info.endBlock; i++){
+      if (!blocks[i] || (blocks[i].type !== "paragraph" && blocks[i].type !== "heading")) return null;
+    }
+    var first = blocks[info.startBlock], last = blocks[info.endBlock];
+    var start = first.start + first.raw.match(/^\s*(?:#{1,6}[ \t]+)?/)[0].length;
+    var end = last.start + last.raw.replace(/\s+$/, "").length;
+    return start < end ? { start: start, end: end } : null;
+  }
+
+  function annotEnsureFloat(){
+    if (annotFloatEl) return annotFloatEl;
+    var el = document.createElement("div");
+    el.id = "annotFloat";
+    el.hidden = true;
+    el.innerHTML = '<button type="button" data-act="comment">Comment</button>' +
+      '<button type="button" data-act="suggest">Suggest edit</button>';
+    el.addEventListener("mousedown", function(e){ e.preventDefault(); }); // keep the text selection
+    el.addEventListener("click", function(e){
+      var btn = e.target.closest("button");
+      if (!btn) return;
+      var info = annotPending;
+      annotHideFloat();
+      if (info) annotStartNew(info, btn.getAttribute("data-act"));
+    });
+    document.body.appendChild(el);
+    annotFloatEl = el;
+    return el;
+  }
+
+  function annotHideFloat(){
+    annotPending = null;
+    if (annotFloatEl) annotFloatEl.hidden = true;
+  }
+
+  function annotStartNew(info, kind){
+    var loc = annotMapSelection(info);
+    if (!loc){
+      showToast("Couldn't map this selection to the file text. Select plain text within one paragraph.", true);
+      return;
+    }
+    annotOpenPop({ mode: kind === "suggest" ? "new-suggest" : "new-comment", pane: info.pane, loc: loc,
+      src: info.pane.rawText, rect: info.rect });
+  }
+
+  function annotClosePop(){
+    if (annotPopEl){ annotPopEl.remove(); annotPopEl = null; }
+  }
+
+  function annotFindAnn(pane, id){
+    var list = pane.annotations || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function annotOpenPop(spec){
+    annotClosePop();
+    var pane = spec.pane, a = null, h = "", f;
+    var field = function(name){ return annotPopEl.querySelector('[data-f="' + name + '"]'); };
+    if (spec.mode === "view"){
+      a = annotFindAnn(pane, spec.id);
+      if (!a) return;
+    }
+    var btn = function(act, label, primary){
+      return '<button type="button" data-act="' + act + '"' + (primary ? ' class="primary"' : '') + '>' + label + '</button>';
+    };
+    if (spec.mode === "new-comment"){
+      h = '<div class="annot-pop-title">Comment</div>' +
+        '<div class="annot-pop-quote">' + escapeHtml(annotTrunc(spec.src.slice(spec.loc.start, spec.loc.end), 300)) + '</div>' +
+        '<textarea data-f="note" rows="3" placeholder="What should change? e.g. make this paragraph more concise"></textarea>' +
+        '<div class="annot-pop-row">' + btn("cancel", "Cancel") + btn("add-comment", "Add comment", true) + '</div>';
+    } else if (spec.mode === "new-suggest"){
+      h = '<div class="annot-pop-title">Suggest edit</div>' +
+        '<textarea data-f="new" rows="3" placeholder="Replacement text"></textarea>' +
+        '<textarea data-f="note" rows="2" placeholder="Reason (optional)"></textarea>' +
+        '<div class="annot-pop-row">' + btn("cancel", "Cancel") + btn("add-suggest", "Add suggestion", true) + '</div>';
+    } else if (a.kind === "comment"){
+      h = '<div class="annot-pop-title">Comment &middot; ' + a.status + '</div>' +
+        '<div class="annot-pop-quote">' + escapeHtml(annotTrunc(a.text, 300)) + '</div>' +
+        (a.status === "revised" && a.was !== null ?
+          '<div class="annot-pop-quote">was: ' + escapeHtml(annotTrunc(a.was, 300)) + '</div>' : '') +
+        '<textarea data-f="note" rows="3"></textarea>' +
+        '<div class="annot-pop-row">' +
+          (a.status === "revised" ? btn("revert", "Revert") + btn("accept", "Accept", true) : btn("revert", "Delete")) +
+          btn("save", "Save note") + '</div>';
+    } else {
+      h = '<div class="annot-pop-title">Suggested edit</div>' +
+        '<div class="annot-pop-quote"><del>' + escapeHtml(annotTrunc(a.old, 300)) + '</del></div>' +
+        '<textarea data-f="new" rows="3"></textarea>' +
+        '<textarea data-f="note" rows="2" placeholder="Reason (optional)"></textarea>' +
+        '<div class="annot-pop-row">' + btn("revert", "Reject") + btn("save", "Save") + btn("accept", "Accept", true) + '</div>';
+    }
+    var el = document.createElement("div");
+    el.className = "annot-pop";
+    el.innerHTML = h;
+    document.body.appendChild(el);
+    annotPopEl = el;
+    if (a){
+      if ((f = field("note"))) f.value = a.note;
+      if ((f = field("new"))) f.value = a.new;
+    }
+    if (spec.mode === "new-suggest") field("new").value = spec.src.slice(spec.loc.start, spec.loc.end);
+    var r = spec.rect;
+    var top = r.bottom + 8;
+    if (top + el.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - el.offsetHeight - 8);
+    el.style.top = top + "px";
+    el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - el.offsetWidth - 8)) + "px";
+    var first = field("new") || field("note");
+    if (first) first.focus();
+    el.addEventListener("click", function(e){
+      var b = e.target.closest("button");
+      if (!b) return;
+      var act = b.getAttribute("data-act");
+      var note = field("note") ? field("note").value : "";
+      var repl = field("new") ? field("new").value : "";
+      if (act === "cancel") annotClosePop();
+      else if (act === "add-comment") annotCommit(pane, spec.src, function(t){ return AN.addComment(t, spec.loc.start, spec.loc.end, note); });
+      else if (act === "add-suggest") annotCommit(pane, spec.src, function(t){ return AN.addSuggestion(t, spec.loc.start, spec.loc.end, repl, note); });
+      else if (act === "accept") annotAct(pane, spec.id, "accept");
+      else if (act === "revert") annotAct(pane, spec.id, "revert");
+      else if (act === "save") annotCommit(pane, null, function(t){
+        if (a.kind === "suggestion") t = AN.setSuggestionNew(t, spec.id, repl);
+        return AN.setNote(t, spec.id, note);
+      });
+    });
+    el.addEventListener("keydown", function(e){
+      if (e.key === "Escape"){ e.stopPropagation(); annotClosePop(); }
+    });
+  }
+
+  // Applies fn(text) -> newText and writes it with an mtime guard so a concurrent edit
+  // (e.g. Claude resolving comments) is never clobbered. `expectedSrc`: the text the caller's
+  // offsets were computed against.
+  function annotCommit(pane, expectedSrc, fn){
+    if (expectedSrc != null && pane.rawText !== expectedSrc){
+      showToast("The file changed. Select the text again.", true);
+      annotClosePop();
+      return;
+    }
+    var next;
+    try { next = fn(pane.rawText); } catch (err){ showToast(err.message, true); return; }
+    if (next === pane.rawText){ annotClosePop(); return; }
+    apiRaw("/chat/project-files/write", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path: pane.projectPath, file: pane.absPath, content: next, expected_mtime: pane.mtime })
+    }).then(function(d){
+      pane.rawText = next;
+      pane.mtime = d.mtime;
+      annotClosePop();
+      var wrap = pane.els.bodyWrap, top = wrap.scrollTop;
+      renderPreviewView(pane);
+      wrap.scrollTop = top;
+    }).catch(function(err){
+      if (/changed on disk/.test(err.message)){
+        showToast("File changed on disk, so it was reloaded. Please redo that annotation.", true);
+        annotClosePop();
+        previewProjectFile(pane.projectPath, pane.absPath, pane.relPath, null, pane);
+      } else {
+        showToast("Failed to save: " + err.message, true);
+      }
+    });
+  }
+
+  function annotAct(pane, id, act){
+    annotCommit(pane, null, function(t){ return act === "accept" ? AN.accept(t, id) : AN.revert(t, id); });
+  }
+
+  function annotUpdateButton(pane){
+    var btn = pane.els.actions && pane.els.actions.querySelector('[id^="chatPreviewAnnotBtn"]');
+    if (!btn) return;
+    var n = (pane.annotations || []).length;
+    btn.textContent = n ? "Annotations (" + n + ")" : "Annotations";
+  }
+
+  function annotAfterRender(pane){
+    annotUpdateButton(pane);
+    if (document.getElementById("annotPanel" + pane.suffix)) annotRenderPanel(pane);
+  }
+
+  function annotTogglePanel(pane){
+    var id = "annotPanel" + pane.suffix, panel = document.getElementById(id);
+    if (panel){ panel.remove(); return; }
+    panel = document.createElement("div");
+    panel.id = id;
+    panel.className = "annot-panel";
+    panel.addEventListener("click", function(e){
+      var b = e.target.closest("button"), item = e.target.closest(".annot-item");
+      if (b && b.getAttribute("data-act") === "close"){ panel.remove(); return; }
+      if (!item) return;
+      var itemId = item.getAttribute("data-id");
+      if (b){ annotAct(pane, itemId, b.getAttribute("data-act")); return; }
+      var mark = pane.els.bodyWrap.querySelector('mark.annot[data-id="' + itemId + '"]');
+      if (!mark) return;
+      mark.scrollIntoView({ block: "center", behavior: "smooth" });
+      mark.classList.add("annot-flash");
+      setTimeout(function(){ mark.classList.remove("annot-flash"); }, 1400);
+    });
+    panel.addEventListener("change", function(e){
+      if (e.target.getAttribute("data-f") === "filter"){ pane.annotFilter = e.target.value; annotRenderPanel(pane); }
+    });
+    pane.els.content.appendChild(panel);
+    annotRenderPanel(pane);
+  }
+
+  function annotRenderPanel(pane){
+    var panel = document.getElementById("annotPanel" + pane.suffix);
+    if (!panel) return;
+    if (!isMarkdownPreview(pane.relPath)){ panel.remove(); return; }
+    var filter = pane.annotFilter || "all";
+    var list = (pane.annotations || []).filter(function(a){ return filter === "all" || a.status === filter; });
+    var html = '<div class="annot-panel-head"><select data-f="filter">' +
+      ["all", "open", "revised"].map(function(v){
+        return '<option value="' + v + '"' + (v === filter ? " selected" : "") + '>' + v + '</option>';
+      }).join("") + '</select><button type="button" data-act="close" title="Close">&times;</button></div>';
+    if (!list.length) html += '<div class="annot-panel-empty">No annotations. Select text in the preview to add one.</div>';
+    list.forEach(function(a){
+      var sug = a.kind === "suggestion", chip = sug ? "suggest" : a.status;
+      var acts = sug ? '<button type="button" data-act="revert">Reject</button><button type="button" data-act="accept">Accept</button>'
+        : a.status === "revised" ? '<button type="button" data-act="revert">Revert</button><button type="button" data-act="accept">Accept</button>'
+        : '<button type="button" data-act="revert">Delete</button>';
+      html += '<div class="annot-item" data-id="' + a.id + '"><div class="annot-item-top">' +
+        '<span class="annot-chip annot-chip-' + chip + '">' + (sug ? "suggestion" : a.status) + '</span>' +
+        '<span class="annot-item-id">' + a.id + '</span></div>' +
+        '<div class="annot-item-quote">' + escapeHtml(annotTrunc(sug ? a.old + " → " + a.new : a.text, 90)) + '</div>' +
+        (a.note ? '<div class="annot-item-note">' + escapeHtml(annotTrunc(a.note, 200)) + '</div>' : '') +
+        '<div class="annot-item-actions">' + acts + '</div></div>';
+    });
+    panel.innerHTML = html;
+  }
+
+  document.addEventListener("mouseup", function(e){
+    if (!AN || (e.target.closest && e.target.closest("#annotFloat, #annotPop"))) return;
+    setTimeout(function(){
+      var info = annotSelectionInfo();
+      if (!info){ annotHideFloat(); return; }
+      annotPending = info;
+      var el = annotEnsureFloat();
+      el.hidden = false;
+      var r = info.rect, top = r.top - el.offsetHeight - 6;
+      if (top < 8) top = r.bottom + 6;
+      el.style.top = top + "px";
+      el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - el.offsetWidth - 8)) + "px";
+    }, 0);
+  });
+  document.addEventListener("mousedown", function(e){
+    var t = e.target;
+    if (t.closest && t.closest("#annotFloat, .annot-pop")) return;
+    annotHideFloat();
+    if (annotPopEl && !(t.closest && t.closest("mark.annot"))) annotClosePop();
+  });
+  document.addEventListener("click", function(e){
+    var m = AN && e.target.closest ? e.target.closest("mark.annot") : null;
+    if (!m) return;
+    var pane = paneForElement(m);
+    if (!pane || !annotPaneBody(pane)) return;
+    var sel = window.getSelection();
+    if (sel && !sel.isCollapsed) return;
+    annotOpenPop({ mode: "view", pane: pane, id: m.getAttribute("data-id"), rect: m.getBoundingClientRect() });
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && annotPopEl) annotClosePop();
+  });
 
   // ---- image preview: CSS-transform zoom/pan, driven by buttons, ctrl+wheel
   // (trackpad pinch), touch pinch, drag-to-pan, and double-click to toggle ----
@@ -7739,8 +8222,15 @@
       return;
     }
     actions.style.display = "";
-    actions.innerHTML = '<button class="btn" id="chatPreviewExportPdfBtn' + pane.suffix + '" type="button" title="Export PDF">Export PDF</button>' +
+    actions.innerHTML = (isMarkdownPreview(pane.relPath) && window.ArtiAnnotate ?
+        '<button class="btn" id="chatPreviewAnnotBtn' + pane.suffix + '" type="button" title="List comments and suggestions in this file">Annotations</button>' : '') +
+      '<button class="btn" id="chatPreviewExportPdfBtn' + pane.suffix + '" type="button" title="Export PDF">Export PDF</button>' +
       '<button class="btn" id="chatPreviewEditBtn' + pane.suffix + '" type="button" title="Edit (Ctrl+E)">Edit</button>';
+    var annotBtn = actions.querySelector("#chatPreviewAnnotBtn" + pane.suffix);
+    if (annotBtn){
+      annotBtn.onclick = function(){ annotTogglePanel(pane); };
+      annotUpdateButton(pane);
+    }
     actions.querySelector("#chatPreviewExportPdfBtn" + pane.suffix).onclick = function(e){
       exportProjectFileToPdf(projectPath, absPath, pane.relPath, pane.rawText, e.currentTarget);
     };
@@ -9452,6 +9942,21 @@
 
   loadAll();
 })();
+
+  // Force refresh of the whole page (top-right #appRefreshBtn, F5 / Ctrl+F5).
+  // Reloads with a fresh query string so the webview cannot reuse a cached
+  // copy; asks first if a preview pane is in edit mode (unsaved text is lost).
+  function forceRefreshPage(){
+    if (document.querySelector(".editing") && !window.confirm("A file is being edited. Reload anyway and discard unsaved changes?")) return;
+    location.replace(location.pathname + "?r=" + Date.now() + location.hash);
+  }
+  document.getElementById("appRefreshBtn").addEventListener("click", forceRefreshPage);
+  document.addEventListener("keydown", function(e){
+    if (e.key === "F5" && !e.altKey && !e.shiftKey){
+      e.preventDefault();
+      forceRefreshPage();
+    }
+  });
 </script>
 </body>
 </html>
