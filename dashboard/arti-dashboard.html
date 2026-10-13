@@ -1405,6 +1405,12 @@
     width:28px; height:28px; border-radius:var(--radius); object-fit:cover; flex:none; background:var(--surface);
   }
   .add-file-staged-list .staged-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .add-file-staged-list input.staged-name{
+    min-width:0; font:inherit; color:var(--text); background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:2px 6px; overflow:visible;
+  }
+  .add-file-staged-list input.staged-name:focus{ outline:none; border-color:var(--accent); }
+  .add-file-staged-list input.staged-name.invalid{ border-color:#d9534f; }
   .add-file-staged-list .staged-size{ color:var(--text-muted); flex:none; }
   .add-file-staged-list .staged-status{ flex:none; color:var(--text-muted); }
   .add-file-staged-list .staged-remove{
@@ -2570,7 +2576,7 @@
   }
 
   function scaffoldPaperProject(path, name){
-    if (!confirm("Scaffold full ARTi paper-project boilerplate (idea/, writing/, literature/, data/, figures/, submission/, inbox/, memory/, CLAUDE.md) in " + name + "? Existing files are never overwritten.")) return;
+    if (!confirm("Scaffold full ARTi paper-project boilerplate (idea/, writing/, literature/, data/, figures/, submission/, memory/, CLAUDE.md) in " + name + "? Existing files are never overwritten.")) return;
     api("/projects/scaffold-paper", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ path: path, name: name }) })
       .then(function(){ showToast("Paper project boilerplate added to " + name); loadAll(); })
       .catch(function(err){ showToast(err.message || "Failed to scaffold paper project", true); });
@@ -3941,6 +3947,7 @@
   // newer file -> never overwrite, show the conflict bar instead.
   var SIDE_NOTE_POLL_MS = 4000;
   var sideNoteMtime = null;
+  var sideNoteDiskText = null; // text last read from / written to disk; lets a touched-but-identical file (cloud sync) pass as no conflict
   var sideNoteDirty = false;
   var sideNoteSaving = false;
   var sideNoteQueuedAnnounce = null; // a save requested mid-flight: null = none, else its `announce`
@@ -3978,7 +3985,9 @@
     if (title) title.textContent = projectPath ? "Side note — " + filesProjectNameForPath(projectPath) : "Side note";
     if (!body) return;
     sideNoteDirty = false;
-    sideNoteMtime = null;
+    // A quiet refresh keeps the last known mtime until the response lands; nulling it here
+    // made any save fired before then look like a conflict.
+    if (!quiet){ sideNoteMtime = null; sideNoteDiskText = null; }
     setSideNoteConflict(false);
     if (!projectPath){
       body.value = "";
@@ -3992,15 +4001,19 @@
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
       "&file=" + encodeURIComponent(sideNoteFileAbsPath(projectPath));
     apiRaw(url).then(function(d){
-      if (token !== sideNoteLoadToken || sideNoteDirty) return; // project switched / user typed before this resolved
+      if (token !== sideNoteLoadToken) return; // project switched
       var text = d.content || "";
+      sideNoteMtime = d.mtime == null ? null : d.mtime; // record the disk state even if the user typed meanwhile
+      sideNoteDiskText = text;
+      if (sideNoteDirty) return; // keep unsaved typing
       if (body.value !== text) body.value = text;
-      sideNoteMtime = d.mtime == null ? null : d.mtime;
       setSideNoteStatus("");
     }).catch(function(){
-      if (token !== sideNoteLoadToken || sideNoteDirty) return;
-      body.value = ""; // no note saved yet for this project
+      if (token !== sideNoteLoadToken) return;
       sideNoteMtime = null;
+      sideNoteDiskText = null;
+      if (sideNoteDirty) return;
+      body.value = ""; // no note saved yet for this project
       setSideNoteStatus("");
     });
   }
@@ -4032,7 +4045,17 @@
     sideNoteSaving = true;
     var check = force ? Promise.resolve(sideNoteMtime) : statSideNote(projectPath);
     check.then(function(mtime){
-      if (mtime !== sideNoteMtime){
+      if (mtime === sideNoteMtime) return true;
+      // mtime moved: only a real conflict if the content differs from what we last saw
+      // (Drive sync / antivirus can touch the mtime without changing the text).
+      return apiRaw("/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
+        "&file=" + encodeURIComponent(sideNoteFileAbsPath(projectPath))).then(function(d){
+        if ((d.content || "") !== sideNoteDiskText) return false;
+        sideNoteMtime = d.mtime == null ? null : d.mtime;
+        return true;
+      }).catch(function(){ return false; });
+    }).then(function(ok){
+      if (!ok){
         if (sideNoteProjectPath === projectPath) setSideNoteConflict(true);
         return null;
       }
@@ -4042,6 +4065,7 @@
       }).then(function(d){
         if (sideNoteProjectPath !== projectPath) return;
         sideNoteMtime = d.mtime == null ? null : d.mtime;
+        sideNoteDiskText = content;
         sideNoteDirty = body.value !== content; // more typing landed mid-flight
         setSideNoteConflict(false);
         if (announce){
@@ -6683,6 +6707,7 @@
   function stopPreviewFilePolling(pane){
     pane = pane || getActivePane() || createPreviewPane();
     if (pane.pollTimer){ clearInterval(pane.pollTimer); pane.pollTimer = null; }
+    pane.embeddedImages = null; // re-collected by the next markdown render
     pane.externalChangePending = false;
     hideExternalChangeNotice(pane);
   }
@@ -6692,6 +6717,7 @@
     stopPreviewFilePolling(pane);
     pane.pollTimer = setInterval(function(){
       if (document.hidden) return;
+      pollEmbeddedImages(pane); // figures embedded in a markdown preview change independently of the .md
       // Scoped by prefix (not a suffixed getElementById) since this button is
       // created dynamically per-pane by enterPreviewEditMode(), suffixed the
       // same way -- see that function's editContainerId/saveBtn comment.
@@ -6796,7 +6822,7 @@
       pane.relPath = relPath;
       pane.rawUrl = API + "/chat/project-files/raw?path=" + encodeURIComponent(projectPath) +
         "&file=" + encodeURIComponent(absPath) + "&_=" + Date.now(); // cache-buster: a regenerated PNG/PDF must not be served from the webview cache
-      pane.mtime = null; // no live-refresh polling for image/PDF previews yet
+      pane.mtime = null;
       pane.els.fileName.textContent = relPath;
       pane.els.panel.classList.remove("editing");
       closePreviewSearchBar(pane);
@@ -6805,6 +6831,14 @@
       pane.els.empty.hidden = true;
       pane.els.content.hidden = false;
       _applyPreviewSearchTerm(searchTerm, pane);
+      // Live-refresh: baseline the mtime first (polling treats null as "changed"),
+      // then poll; a change re-enters previewProjectFile, which re-cache-busts rawUrl.
+      apiRaw("/chat/project-files/stat?path=" + encodeURIComponent(projectPath) +
+        "&file=" + encodeURIComponent(absPath)).then(function(d){
+        if (pane.absPath !== absPath || pane.pollTimer) return; // pane moved on
+        pane.mtime = d.mtime;
+        startPreviewFilePolling(projectPath, absPath, pane);
+      }).catch(function(){});
       return;
     }
     var url = "/chat/project-files/read?path=" + encodeURIComponent(projectPath) +
@@ -7074,15 +7108,49 @@
   // project-files raw-file endpoint, resolved against chatPreviewAbsPath's
   // directory, so local images actually load (remote http(s)/data URLs are
   // left untouched).
-  function resolveMarkdownPreviewImages(body, pane){
+  // `track` (live preview only, not export): remember each embedded local image
+  // (pane.embeddedImages: abs path -> last-seen mtime) so pollEmbeddedImages()
+  // can hot-swap its src when the file is regenerated on disk.
+  function embeddedImageUrl(pane, absPath, bust){
+    return API + "/chat/project-files/raw?path=" + encodeURIComponent(pane.projectPath) +
+      "&file=" + encodeURIComponent(absPath) + "&_=" + bust; // cache-buster: a regenerated figure must not come from the webview cache
+  }
+
+  function resolveMarkdownPreviewImages(body, pane, track){
     pane = pane || getActivePane() || createPreviewPane();
     if (!pane.projectPath || !pane.absPath) return;
+    if (track) pane.embeddedImages = {};
     Array.prototype.forEach.call(body.querySelectorAll("img[src]"), function(img){
       var src = img.getAttribute("src");
       if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.indexOf("//") === 0) return;
       var resolvedAbsPath = resolveRelativeProjectPath(pane.absPath, src);
-      img.setAttribute("src", API + "/chat/project-files/raw?path=" + encodeURIComponent(pane.projectPath) +
-        "&file=" + encodeURIComponent(resolvedAbsPath));
+      img.setAttribute("src", embeddedImageUrl(pane, resolvedAbsPath, Date.now()));
+      if (track){
+        img.setAttribute("data-arti-abs", resolvedAbsPath);
+        pane.embeddedImages[resolvedAbsPath] = null; // baseline mtime filled by the first poll
+      }
+    });
+    if (track) pollEmbeddedImages(pane);
+  }
+
+  // Stats every image embedded in the rendered markdown; a changed mtime swaps
+  // that <img>'s src in place -- no re-render, so scroll/selection/open files
+  // all stay put. The first stat per image only records the baseline.
+  function pollEmbeddedImages(pane){
+    var imgs = pane.embeddedImages;
+    if (!imgs || !pane.projectPath) return;
+    Object.keys(imgs).forEach(function(absPath){
+      var url = "/chat/project-files/stat?path=" + encodeURIComponent(pane.projectPath) +
+        "&file=" + encodeURIComponent(absPath);
+      apiRaw(url).then(function(d){
+        if (pane.embeddedImages !== imgs) return; // pane re-rendered / switched file mid-flight
+        var prev = imgs[absPath];
+        imgs[absPath] = d.mtime;
+        if (prev == null || prev === d.mtime) return;
+        Array.prototype.forEach.call(pane.els.bodyWrap.querySelectorAll("img[data-arti-abs]"), function(img){
+          if (img.getAttribute("data-arti-abs") === absPath) img.setAttribute("src", embeddedImageUrl(pane, absPath, d.mtime));
+        });
+      }).catch(function(){ /* deleted/renamed or transient -- next tick retries */ });
     });
   }
 
@@ -7374,7 +7442,7 @@
       body.innerHTML = parseMarkdownWithMath(ann.text);
       if (window.ArtiAnnotate) ArtiAnnotate.markersToDom(body, ann.annotations);
       pane.annotations = ann.annotations;
-      resolveMarkdownPreviewImages(body, pane);
+      resolveMarkdownPreviewImages(body, pane, true);
       renderMathIn(body);
       addCodeCopyButtons(body);
     } else {
@@ -7588,6 +7656,28 @@
     });
   }
 
+  // Re-rendering rebuilds the body, and images/math/fonts finish loading after the first layout,
+  // so a single `scrollTop = top` lands in the wrong place once the content reflows. Pin the
+  // position until the layout settles, and stop the moment the user scrolls themselves.
+  function annotHoldScroll(wrap, top){
+    var done = false, stop = function(){
+      if (done) return;
+      done = true;
+      ["wheel", "touchmove", "keydown", "mousedown"].forEach(function(ev){ wrap.removeEventListener(ev, stop, true); });
+      wrap.style.overflowAnchor = "";
+    };
+    wrap.style.overflowAnchor = "none";
+    var apply = function(){ if (!done && wrap.scrollTop !== top) wrap.scrollTop = top; };
+    apply();
+    ["wheel", "touchmove", "keydown", "mousedown"].forEach(function(ev){ wrap.addEventListener(ev, stop, true); });
+    var t0 = Date.now();
+    (function tick(){
+      if (done) return;
+      apply();
+      if (Date.now() - t0 > 2000) stop(); else requestAnimationFrame(tick);
+    })();
+  }
+
   // Applies fn(text) -> newText and writes it with an mtime guard so a concurrent edit
   // (e.g. Claude resolving comments) is never clobbered. `expectedSrc`: the text the caller's
   // offsets were computed against.
@@ -7609,7 +7699,7 @@
       annotClosePop();
       var wrap = pane.els.bodyWrap, top = wrap.scrollTop;
       renderPreviewView(pane);
-      wrap.scrollTop = top;
+      annotHoldScroll(wrap, top);
     }).catch(function(err){
       if (/changed on disk/.test(err.message)){
         showToast("File changed on disk, so it was reloaded. Please redo that annotation.", true);
@@ -8242,15 +8332,178 @@
   // Rendered text has no markdown syntax (bold markers, link urls), so match
   // the snippet's first word-run that survives in the source; returns -1 if
   // nothing reliable is found.
-  function _findSnippetInSource(src, snippet){
-    var idx = src.indexOf(snippet);
-    if (idx >= 0) return idx;
-    var words = snippet.split(" ").filter(function(w){ return w.length > 3 && /^[\w-]+$/.test(w); });
-    for (var n = Math.min(3, words.length); n >= 1; n--){
-      idx = src.indexOf(words.slice(0, n).join(" "));
-      if (idx >= 0) return idx;
+  // `hintPos` (approx. source offset of the click, from its relative position in the
+  // rendered doc) picks the right occurrence when the text repeats, and the word-run match
+  // tolerates markdown / annotation markup between words ({>>#a1 ...<<}, **, links).
+  function _findSnippetInSource(src, snippet, hintPos){
+    var words = snippet.match(/[A-Za-z0-9]{3,}/g) || [];
+    for (var n = Math.min(6, words.length); n >= 1; n--){
+      if (n === 1 && words[0].length < 6) break; // too ambiguous; fall back to scroll fraction
+      var re = new RegExp(words.slice(0, n).join("[^A-Za-z0-9]{1,60}"), "g"), m, best = -1, count = 0;
+      while ((m = re.exec(src)) && count++ < 500){
+        if (hintPos == null || hintPos < 0) return m.index;
+        if (best < 0 || Math.abs(m.index - hintPos) < Math.abs(best - hintPos)) best = m.index;
+        if (m.index === re.lastIndex) re.lastIndex++;
+      }
+      if (best >= 0) return best;
     }
     return -1;
+  }
+
+  // ---- preview <-> editor position sync ----
+  // An anchor is {pos, y, frac}: `pos` an offset in the source file, `y` how many px below the
+  // top of the viewport it sits, `frac` a scroll-fraction fallback (pos = -1 when unmapped).
+  // It is captured on one side (preview or editor) and applied on the other, so the same spot
+  // stays at the same height on screen.
+
+  // Places the view once, synchronously (before the first paint), then re-applies only when
+  // the content actually changes size (an image or math finishing) -- never on a per-frame
+  // timer, which made the view visibly twitch. Stops on user input or after 1.5 s.
+  function holdPosition(scroller, apply){
+    var done = false, ro = null, events = ["wheel", "touchmove", "keydown", "mousedown"];
+    function stop(){
+      if (done) return;
+      done = true;
+      if (ro) ro.disconnect();
+      events.forEach(function(ev){ scroller.removeEventListener(ev, stop, true); });
+    }
+    events.forEach(function(ev){ scroller.addEventListener(ev, stop, true); });
+    apply();
+    var content = scroller.firstElementChild;
+    if (content && window.ResizeObserver){
+      var first = true;
+      ro = new ResizeObserver(function(){
+        if (first){ first = false; return; } // the initial observation is not a change
+        if (!done) apply();
+      });
+      ro.observe(content);
+    }
+    setTimeout(stop, 1500);
+  }
+
+  // Rendered top-level blocks of a markdown preview with their [start,end) offsets in the
+  // raw file (annotation markup mapped back out), or null if blocks and DOM don't line up.
+  function previewBlockMap(pane){
+    if (!window.marked || !isMarkdownPreview(pane.relPath)) return null;
+    var body = pane.els.bodyWrap.querySelector(".markdown-body");
+    if (!body) return null;
+    var text = pane.rawText, anns = [];
+    if (AN){ var m = AN.toMarkers(text); text = m.text; anns = m.annotations; }
+    var toks;
+    try { toks = marked.lexer(text, { gfm: true, breaks: true }); } catch (e){ return null; }
+    var p = 0, spans = [];
+    toks.forEach(function(t){
+      var raw = t.raw || "";
+      if (t.type !== "space" && t.type !== "def") spans.push([p, p + raw.length]);
+      p += raw.length;
+    });
+    if (spans.length !== body.children.length) return null;
+    var toRaw = function(x){ return AN ? AN.markedToRaw(anns, x) : x; };
+    return spans.map(function(s, i){ return { el: body.children[i], start: toRaw(s[0]), end: toRaw(s[1]) }; });
+  }
+
+  function _caretOffsetIn(el, ev){
+    var r = null;
+    if (document.caretRangeFromPoint) r = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+    else if (document.caretPositionFromPoint){
+      var cp = document.caretPositionFromPoint(ev.clientX, ev.clientY);
+      if (cp){ r = document.createRange(); r.setStart(cp.offsetNode, cp.offset); }
+    }
+    if (!r || !el.contains(r.startContainer)) return 0;
+    var pre = document.createRange();
+    pre.selectNodeContents(el);
+    pre.setEnd(r.startContainer, r.startOffset);
+    return pre.toString().length;
+  }
+
+  // Anchor of the rendered view: the clicked spot (double-click) or the top of the viewport.
+  function previewAnchor(pane, clickEvent){
+    var wrap = pane.els.bodyWrap, wr = wrap.getBoundingClientRect();
+    var range = wrap.scrollHeight - wrap.clientHeight;
+    var anchor = { pos: -1, y: 0, frac: range > 0 ? wrap.scrollTop / range : 0 };
+    var map = previewBlockMap(pane);
+    if (!map) return anchor;
+    var i, e = null;
+    if (clickEvent && clickEvent.target && clickEvent.target.closest){
+      for (i = 0; i < map.length; i++) if (map[i].el.contains(clickEvent.target)){ e = map[i]; break; }
+      if (e){
+        var sub = clickEvent.target.closest("li, p, h1, h2, h3, h4, h5, h6, td, th, pre, blockquote");
+        if (!sub || !e.el.contains(sub)) sub = e.el;
+        var snippet = (sub.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+        var rect = e.el.getBoundingClientRect();
+        var hint = Math.max(0, Math.min(1, (clickEvent.clientY - rect.top) / Math.max(1, rect.height))) * (e.end - e.start);
+        var local = _findSnippetInSource(pane.rawText.slice(e.start, e.end), snippet, hint);
+        var base = e.start + (local >= 0 ? local : 0);
+        anchor.pos = Math.min(e.end, base + _caretOffsetIn(sub, clickEvent));
+        anchor.y = clickEvent.clientY - wr.top;
+        return anchor;
+      }
+    }
+    for (i = 0; i < map.length; i++){
+      var r2 = map[i].el.getBoundingClientRect();
+      if (r2.bottom > wr.top + 1){
+        var f = Math.max(0, Math.min(1, (wr.top - r2.top) / Math.max(1, r2.height)));
+        anchor.pos = Math.round(map[i].start + f * (map[i].end - map[i].start));
+        return anchor;
+      }
+    }
+    return anchor;
+  }
+
+  // Anchor of the editor: the cursor if it is on screen (keeps its height), else the line at
+  // the top of the viewport.
+  function editorAnchor(view){
+    var sc = view.scrollDOM, scr = sc.getBoundingClientRect();
+    var range = sc.scrollHeight - sc.clientHeight;
+    var anchor = { pos: -1, y: 0, frac: range > 0 ? sc.scrollTop / range : 0 };
+    try {
+      var head = view.state.selection.main.head, c = view.coordsAtPos(head);
+      if (c && c.top >= scr.top && c.bottom <= scr.bottom){
+        anchor.pos = head;
+        anchor.y = c.top - scr.top;
+        return anchor;
+      }
+      var top = view.posAtCoords({ x: scr.left + scr.width / 2, y: scr.top + 2 });
+      anchor.pos = top != null ? top : view.lineBlockAtHeight(sc.scrollTop).from;
+    } catch (e){}
+    return anchor;
+  }
+
+  // Returns a function that scrolls the rendered view so anchor.pos sits anchor.y px from the top.
+  function previewScrollFn(pane, anchor){
+    var wrap = pane.els.bodyWrap;
+    var map = anchor.pos >= 0 ? previewBlockMap(pane) : null;
+    var el = null, rs = 0, re = 1;
+    if (map && map.length){
+      var e = map[0];
+      for (var i = 0; i < map.length; i++){ if (map[i].start <= anchor.pos) e = map[i]; else break; }
+      el = e.el; rs = e.start; re = Math.max(e.end, e.start + 1);
+      // Lists/tables/quotes span many lines: narrow to the child that holds the source line.
+      if (/^(UL|OL|TABLE|BLOCKQUOTE)$/.test(el.tagName)){
+        var src = pane.rawText;
+        var ls = src.lastIndexOf("\n", anchor.pos - 1) + 1;
+        var le = src.indexOf("\n", anchor.pos); if (le < 0) le = src.length;
+        var line = AN ? AN.strip(src.slice(ls, le)) : src.slice(ls, le);
+        var words = line.match(/[A-Za-z0-9]{3,}/g);
+        if (words){
+          var key = words.slice(0, 3).join("").toLowerCase(), best = null, bestLen = Infinity;
+          Array.prototype.forEach.call(el.querySelectorAll("li, tr, p"), function(c){
+            var t = (c.textContent || "").replace(/[^A-Za-z0-9]/g, "").toLowerCase();
+            if (t.indexOf(key) >= 0 && t.length < bestLen){ best = c; bestLen = t.length; }
+          });
+          if (best){ el = best; rs = ls; re = Math.max(le, ls + 1); }
+        }
+      }
+    }
+    return function(){
+      if (!el || !wrap.contains(el)){
+        wrap.scrollTop = anchor.frac * (wrap.scrollHeight - wrap.clientHeight);
+        return;
+      }
+      var r = el.getBoundingClientRect();
+      var f = Math.max(0, Math.min(1, (anchor.pos - rs) / (re - rs)));
+      wrap.scrollTop += r.top + f * r.height - wrap.getBoundingClientRect().top - anchor.y;
+    };
   }
 
   function enterPreviewEditMode(projectPath, absPath, pane, clickEvent){
@@ -8262,20 +8515,11 @@
     // Capture where the preview was scrolled (and, for a double-click, which
     // block was clicked and how far down the viewport) before the rendered
     // view is torn down, so the editor can open at the same spot.
-    var wrapRange = wrapEl.scrollHeight - wrapEl.clientHeight;
-    var openScrollFrac = wrapRange > 0 ? wrapEl.scrollTop / wrapRange : 0;
-    var clickSnippet = "", clickOffsetY = 0;
-    if (clickEvent && clickEvent.target && clickEvent.target.closest){
-      var blockEl = clickEvent.target.closest("li, p, h1, h2, h3, h4, h5, h6, td, th, pre, blockquote");
-      if (blockEl){
-        clickSnippet = (blockEl.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
-        clickOffsetY = clickEvent.clientY - wrapEl.getBoundingClientRect().top;
-      }
-    }
+    var enterAnchor = previewAnchor(pane, clickEvent);
     wrapEl.classList.add("flush");
     var editContainerId = "chatPreviewEditContainer" + pane.suffix;
     wrapEl.innerHTML =
-      '<div class="file-preview-edit" id="' + editContainerId + '"></div>';
+      '<div class="file-preview-edit" id="' + editContainerId + '" style="visibility:hidden"></div>';
     var actions = pane.els.actions;
     actions.innerHTML =
       '<span class="chat-msg-edit-badge">Editing</span>' +
@@ -8287,10 +8531,12 @@
     var searchBar = pane.els.searchBar;
 
     function cancel(){
+      var exitAnchor = editorAnchor(pane.editorView);
       pane.editorView.destroy();
       pane.editorView = null;
       panel.classList.remove("editing");
       renderPreviewView(pane);
+      holdPosition(pane.els.bodyWrap, previewScrollFn(pane, exitAnchor));
       restorePreviewViewActions(projectPath, absPath, pane);
       if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
     }
@@ -8303,12 +8549,8 @@
     }
     function save(){
       var next = pane.editorView.state.doc.toString();
-      // The rendered view replaces the editor on save, so carry the scroll
-      // position across as a fraction of the scrollable height (the two
-      // layouts differ in height, so absolute pixels wouldn't line up).
-      var scroller = pane.editorView.scrollDOM;
-      var scrollRange = scroller.scrollHeight - scroller.clientHeight;
-      var scrollFrac = scrollRange > 0 ? scroller.scrollTop / scrollRange : 0;
+      // The rendered view replaces the editor on save: carry the same spot across.
+      var saveAnchor = editorAnchor(pane.editorView);
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving…";
       apiRaw("/chat/project-files/write", {
@@ -8324,13 +8566,7 @@
         panel.classList.remove("editing");
         renderPreviewView(pane);
         restorePreviewViewActions(projectPath, absPath, pane);
-        // Images/math may still be loading; apply now and once more next frame.
-        var applyScroll = function(){
-          var w = pane.els.bodyWrap;
-          w.scrollTop = scrollFrac * (w.scrollHeight - w.clientHeight);
-        };
-        applyScroll();
-        requestAnimationFrame(applyScroll);
+        holdPosition(pane.els.bodyWrap, previewScrollFn(pane, saveAnchor));
         if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
       }).catch(function(err){
         alert("Failed to save file: " + (err && err.message ? err.message : "unknown error"));
@@ -8353,21 +8589,24 @@
           if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
         }
       });
-      // Restore position: if a block was double-clicked and its text is found
-      // in the source, put the cursor there and keep that line at the same
-      // height in the viewport; otherwise fall back to the scroll fraction.
+      // Restore position: put the cursor at the clicked spot (when it maps to the source) and
+      // keep it at the same height on screen. The editor stays hidden until the first
+      // placement so it never flashes at the top.
+      // CodeMirror's own scrollIntoView effect resolves the exact wrapped row and keeps it
+      // through its height-measuring passes, so there is no rough-then-refine jump.
       var view = pane.editorView, sc = view.scrollDOM;
-      var srcPos = clickSnippet ? _findSnippetInSource(pane.rawText, clickSnippet) : -1;
-      var applyEditScroll = function(){
-        if (srcPos >= 0){
-          sc.scrollTop = Math.max(0, view.lineBlockAt(srcPos).top - clickOffsetY);
-        } else {
-          sc.scrollTop = openScrollFrac * (sc.scrollHeight - sc.clientHeight);
-        }
-      };
-      if (srcPos >= 0) view.dispatch({ selection: { anchor: srcPos } });
-      applyEditScroll();
-      requestAnimationFrame(applyEditScroll);
+      if (enterAnchor.pos >= 0){
+        var ep = Math.min(enterAnchor.pos, view.state.doc.length);
+        view.dispatch({
+          selection: { anchor: ep },
+          effects: window.__CM.EditorView.scrollIntoView(ep, { y: "start", yMargin: Math.max(0, enterAnchor.y) })
+        });
+      } else {
+        var fracScroll = function(){ sc.scrollTop = enterAnchor.frac * (sc.scrollHeight - sc.clientHeight); };
+        fracScroll();
+        requestAnimationFrame(fracScroll);
+      }
+      requestAnimationFrame(function(){ container.style.visibility = ""; });
       // If search was already open while viewing the rendered file, re-run it
       // against the editor now that #chatPreviewBody is gone from the DOM.
       if (searchBar && !searchBar.hidden) runPreviewSearch(pane.els.searchInput.value, pane);
@@ -9392,12 +9631,36 @@
       var removeDisabled = (entry.status === "uploading" || entry.status === "done") ? "disabled" : "";
       return '<li class="staged-row' + (entry.status === "error" ? " error" : "") + '" data-id="' + entry.id + '">' +
         thumb +
-        '<span class="staged-name" title="' + escapeHtml(entry.file.name) + '">' + escapeHtml(entry.file.name) + '</span>' +
+        (removeDisabled
+          ? '<span class="staged-name" title="' + escapeHtml(entry.name) + '">' + escapeHtml(entry.name) + '</span>'
+          : '<input type="text" class="staged-name" data-role="rename-staged" data-id="' + entry.id +
+            '" value="' + escapeHtml(entry.name) + '" spellcheck="false" aria-label="File name" title="Rename before upload" />') +
         '<span class="staged-size">' + escapeHtml(humanFileSize(entry.file.size)) + '</span>' +
         '<span class="staged-status">' + escapeHtml(statusLabel) + '</span>' +
         '<button type="button" class="staged-remove" data-role="remove-staged" data-id="' + entry.id + '" ' + removeDisabled + '>&times;</button>' +
         '</li>';
     }).join("");
+  }
+  // Staged names are editable before upload (esp. for pasted images, which get a timestamp name).
+  document.getElementById("addFileStagedList").addEventListener("input", function(e){
+    var inp = e.target.closest && e.target.closest('[data-role="rename-staged"]');
+    if (!inp) return;
+    var entry = addFileStagedFiles.find(function(x){ return x.id === inp.getAttribute("data-id"); });
+    if (entry){ entry.name = inp.value; inp.classList.remove("invalid"); }
+  });
+  function focusStagedName(entry){
+    var inp = entry && document.querySelector('#addFileStagedList [data-role="rename-staged"][data-id="' + entry.id + '"]');
+    if (!inp) return;
+    inp.focus();
+    var dot = inp.value.lastIndexOf(".");
+    inp.setSelectionRange(0, dot > 0 ? dot : inp.value.length); // select the base name, keep the extension
+  }
+  function stagedNameProblem(entry){
+    var n = (entry.name || "").trim();
+    if (!n) return "File name can't be empty.";
+    if (/[\\/]/.test(n)) return "File name can't contain / or \\.";
+    var dup = addFileStagedFiles.some(function(o){ return o !== entry && (o.name || "").trim() === n; });
+    return dup ? "Two staged files are named " + n + "." : null;
   }
   function removeStagedFile(id){
     var idx = addFileStagedFiles.findIndex(function(e){ return e.id === id; });
@@ -9419,7 +9682,7 @@
         return e.file.name === file.name && e.file.size === file.size && e.file.lastModified === file.lastModified;
       });
       if (dup) return;
-      var entry = { file: file, id: "af" + (++addFileIdCounter), status: "pending", errorMsg: null, thumbUrl: null };
+      var entry = { file: file, name: file.name, id: "af" + (++addFileIdCounter), status: "pending", errorMsg: null, thumbUrl: null };
       if (file.type && file.type.indexOf("image/") === 0){
         entry.thumbUrl = URL.createObjectURL(file);
       }
@@ -9540,6 +9803,7 @@
       populateAddFileFolderSelect();
       openModal(addFileOverlay);
     }
+    if (imageFiles.length) focusStagedName(addFileStagedFiles[addFileStagedFiles.length - 1]);
   });
   function readFileAsBase64(file){
     return new Promise(function(resolve, reject){
@@ -9554,8 +9818,8 @@
       reader.readAsDataURL(file);
     });
   }
-  function uploadOneProjectFile(file, folder){
-    var relPath = (folder ? folder + "/" : "") + file.name;
+  function uploadOneProjectFile(file, folder, name){
+    var relPath = (folder ? folder + "/" : "") + (name || file.name).trim();
     return readFileAsBase64(file).then(function(base64){
       return apiRaw("/chat/project-files/create", {
         method: "POST", headers: {"Content-Type": "application/json"},
@@ -9568,6 +9832,15 @@
     errEl.hidden = true;
     var pending = addFileStagedFiles.filter(function(e){ return e.status !== "done"; });
     if (!pending.length){ errEl.textContent = "Choose at least one file to upload."; errEl.hidden = false; return; }
+    for (var pi = 0; pi < pending.length; pi++){
+      var problem = stagedNameProblem(pending[pi]);
+      if (problem){
+        errEl.textContent = problem; errEl.hidden = false;
+        var bad = document.querySelector('#addFileStagedList [data-id="' + pending[pi].id + '"][data-role="rename-staged"]');
+        if (bad){ bad.classList.add("invalid"); bad.focus(); }
+        return;
+      }
+    }
     var folder = document.getElementById("addFileFolderSelect").value;
     var submitBtn = document.getElementById("addFileSubmitBtn");
     submitBtn.disabled = true;
@@ -9578,7 +9851,7 @@
         entry.status = "uploading";
         entry.errorMsg = null;
         renderAddFileStagedList();
-        return uploadOneProjectFile(entry.file, folder).then(function(){
+        return uploadOneProjectFile(entry.file, folder, entry.name).then(function(){
           entry.status = "done";
           renderAddFileStagedList();
         }).catch(function(e){
@@ -9586,7 +9859,7 @@
           entry.status = "error";
           entry.errorMsg = msg;
           renderAddFileStagedList();
-          errors.push(entry.file.name + ": " + msg);
+          errors.push(entry.name + ": " + msg);
         });
       });
     }, Promise.resolve()).then(function(){
@@ -9940,7 +10213,48 @@
 
   window.addEventListener("focus", loadAll);
 
-  loadAll();
+  // ---- state-preserving force refresh: forceRefreshPage() (below the IIFE) calls
+  // window.__artiSaveViewState() right before reloading; on the next load the
+  // snapshot (sessionStorage, one-shot, <2 min old) puts the user back on the same
+  // tab, project and open files (with scroll). Unsaved edits are still discarded. ----
+  var VIEW_STATE_KEY = "artiRefreshViewState";
+
+  window.__artiSaveViewState = function(){
+    try {
+      var activeNav = document.querySelector(".nav-item.active");
+      var snap = {
+        t: Date.now(),
+        view: activeNav ? activeNav.getAttribute("data-view") : "projects",
+        project: filesCurrentProjectPath,
+        files: panes.filter(function(p){ return p.absPath && p.relPath; }).map(function(p){
+          return { abs: p.absPath, rel: p.relPath, scroll: p.els.bodyWrap ? p.els.bodyWrap.scrollTop : 0 };
+        })
+      };
+      sessionStorage.setItem(VIEW_STATE_KEY, JSON.stringify(snap));
+    } catch(e){}
+  };
+
+  function restoreViewState(){
+    var snap = null;
+    try {
+      snap = JSON.parse(sessionStorage.getItem(VIEW_STATE_KEY));
+      sessionStorage.removeItem(VIEW_STATE_KEY);
+    } catch(e){}
+    if (!snap || Date.now() - snap.t > 120000) return;
+    if (snap.view && snap.view !== "projects") switchMainView(snap.view);
+    if (!snap.project || !snap.files || snap.view !== "files") return;
+    openProjectInFiles(snap.project, filesProjectNameForPath(snap.project)).then(function(){
+      snap.files.forEach(function(f, i){
+        var pane = i === 0 ? panes[0] : createPreviewPane();
+        previewProjectFile(snap.project, f.abs, f.rel, null, pane);
+        [600, 1800].forEach(function(ms){ // preview loads async; re-apply scroll once rendered
+          setTimeout(function(){ if (pane.els.bodyWrap && pane.absPath === f.abs) pane.els.bodyWrap.scrollTop = f.scroll; }, ms);
+        });
+      });
+    }).catch(function(){});
+  }
+
+  loadAll().then(restoreViewState, restoreViewState);
 })();
 
   // Force refresh of the whole page (top-right #appRefreshBtn, F5 / Ctrl+F5).
@@ -9948,6 +10262,7 @@
   // copy; asks first if a preview pane is in edit mode (unsaved text is lost).
   function forceRefreshPage(){
     if (document.querySelector(".editing") && !window.confirm("A file is being edited. Reload anyway and discard unsaved changes?")) return;
+    if (window.__artiSaveViewState) window.__artiSaveViewState(); // keep tab / project / open files across the reload
     location.replace(location.pathname + "?r=" + Date.now() + location.hash);
   }
   document.getElementById("appRefreshBtn").addEventListener("click", forceRefreshPage);

@@ -120,16 +120,27 @@
   // ---- rendering: swap annotations for private-use markers before marked.parse,
   // then turn the markers into <mark> elements after the HTML is in the DOM, so a
   // span crossing paragraph/inline-format boundaries never produces broken nesting.
+  function repOf(a) {
+    return a.kind === "comment"
+      ? MK + "C" + a.id + MK + a.text + MK + "/" + MK
+      : MK + "S" + a.id + MK + a.old + MK + "|" + MK + a.new + MK + "/" + MK;
+  }
   function toMarkers(text) {
     var list = parse(text);
-    for (var i = list.length - 1; i >= 0; i--) {
-      var a = list[i];
-      var rep = a.kind === "comment"
-        ? MK + "C" + a.id + MK + a.text + MK + "/" + MK
-        : MK + "S" + a.id + MK + a.old + MK + "|" + MK + a.new + MK + "/" + MK;
-      text = splice(text, a, rep);
-    }
+    for (var i = list.length - 1; i >= 0; i--) text = splice(text, list[i], repOf(list[i]));
     return { text: text, annotations: list };
+  }
+  // Offset in toMarkers(text).text -> offset in the original text (an offset inside a
+  // replaced annotation maps to that annotation's start).
+  function markedToRaw(annotations, p) {
+    var delta = 0;
+    for (var i = 0; i < annotations.length; i++) {
+      var a = annotations[i], rl = repOf(a).length, ns = a.start + delta;
+      if (p >= ns + rl) { delta += (a.end - a.start) - rl; continue; }
+      if (p > ns) return a.start;
+      break;
+    }
+    return p + delta;
   }
 
   function markersToDom(rootEl, annotations) {
@@ -212,7 +223,7 @@
   return {
     parse: parse, strip: strip, accept: accept, revert: revert, nextId: nextId,
     addComment: addComment, addSuggestion: addSuggestion, setNote: setNote,
-    setSuggestionNew: setSuggestionNew, toMarkers: toMarkers, markersToDom: markersToDom,
+    setSuggestionNew: setSuggestionNew, toMarkers: toMarkers, markedToRaw: markedToRaw, markersToDom: markersToDom,
     locate: locate, protectedRanges: protectedRanges
   };
 });

@@ -192,15 +192,14 @@ metadata:
 (nothing yet)
 '@
 
-# inbox/ is the researcher's raw-idea inbox: pure drop-and-forget capture, git-ignored (the
-# maintainer's own ideas never ship). No index file - presence in the folder is the signal. Only
-# the cross-project idea-index.md aggregator is seeded, missing-only.
+# inbox/ is no longer a raw-idea capture folder (retired); it only holds the cross-project
+# idea-index.md aggregator read by `idea-index`, git-ignored, seeded missing-only.
 $ideaIndexStub = @'
 # Idea List Index
 
 **File location:** `~/.arti/inbox/idea-index.md` - a `project-index.md`-style aggregator for a
 capture worth cross-project tracking, added via `idea-index upsert` when Claude or the researcher
-judges it genuinely worth tracking across projects - not a row for every `inbox/` file.
+judges it genuinely worth tracking across projects.
 
 | Idea | Project | Status | One-line hook | Date added |
 |---|---|---|---|---|

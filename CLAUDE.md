@@ -1,5 +1,7 @@
 # ARTi Framework
 
+@CAPABILITIES.md
+
 This is the ARTi Framework's own home — the meta-project, not a paper project. `memory/` in this
 project is the single source of truth for everything Claude needs to remember about building and
 maintaining ARTi itself. Do not read from or write to the default
@@ -33,8 +35,10 @@ directly.
   `tools/_shared/README.md`
 - `installer/` — the NSIS installer source (`arti-installer.nsi`, `build_installer.bat`); its
   `payload/` and `dist/` build output are git-ignored, never tracked
-- `voice-profiles/`, `journal-library/`, `inbox/` — researcher-content folders, not memory-system
-  files in the T0/T1 sense below
+- `voice-profiles/`, `journal-library/` — researcher-content folders, not memory-system
+  files in the T0/T1 sense below. `inbox/` is retired as a raw-idea capture folder (no session-start
+  glob, not scaffolded); it survives only as the home of `inbox/idea-index.md`, which `idea-index`
+  in `tools/arti-db` still reads and writes
 - `workflow-sessions/` — retired 2026-09-20 (personalization now goes straight into
   `memory/working-preferences.md`, captured the same turn it's given). The existing logs and
   `memory/memories/arti-workflow-profile.md` stay as a frozen historical record; nothing new is
@@ -72,19 +76,6 @@ directly.
   `## Change log` — except `todo-list.md`/`status.md`, which carry no change log of their own (see
   above).
 
-## `inbox/` — raw-idea inbox for the framework itself
-
-The one folder in this project meant for the researcher to create and edit files in directly;
-everything else here is Claude-managed. Pure drop-and-forget capture — no index, no rename, no
-archiving. Presence in the folder is the "still open" signal: glob `inbox/*.md` at session start
-and surface whatever is there. Reviewing a file ends one of three ways, decided in conversation, no
-ceremony: worth keeping — fold it into a `memories/` topic file or `idea-bank add` entry and delete
-the raw file; not worth keeping — delete it; still undecided — leave it in place. Verbatim
-researcher prose that *is* the content (not a note *about* something) is never summarized or
-deleted once used — record where it's been used with one `<!-- used-in: ... -->` comment at the
-file's own top. A capture worth cross-project tracking can be added to `inbox/idea-index.md` via
-`idea-index upsert` — an available action, not a step every file goes through.
-
 ## Session-end wrap-up ritual
 
 Any phrasing meaning "we're done for now" — not only the exact words "update memory" — fires this
@@ -103,5 +94,5 @@ projects, not the framework itself.
 
 ## Session-start standing asks
 
-Surface any open question a memory file recorded, and any file sitting untriaged in `inbox/`, near
-the start of the session rather than waiting to be asked.
+Surface any open question a memory file recorded near the start of the session rather than waiting
+to be asked.

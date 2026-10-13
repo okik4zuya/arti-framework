@@ -124,7 +124,7 @@ def _scaffold_paper_folders(project_path, name):
     _write_if_missing), so this is safe to run both on a freshly-created
     empty folder and to retrofit onto an already-populated project."""
     for folder in ("idea", "writing", "literature/exports", "literature/fulltext",
-                   "data", "figures", "submission", "inbox", "memory"):
+                   "data", "figures", "submission", "memory"):
         (project_path / folder).mkdir(parents=True, exist_ok=True)
 
     _write_if_missing(
@@ -194,7 +194,8 @@ def _claude_md(name):
             "truth -- never read or write the default `~/.claude/projects/.../memory/` for "
             "it.\n\n"
             "Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, "
-            "`memory/status.md`, `~/.arti/memory/working-preferences.md`, `inbox/index.md`.\n\n"
+            "`memory/status.md`, `~/.arti/memory/working-preferences.md`.\n\n"
+            "@~/.arti/CAPABILITIES.md\n\n"
             "Never invoke a bare `python`/`python3`/`py` -- call the vendored interpreter by "
             "full path: `\"~/.arti/python/python.exe\" <script>.py ...` (Windows) or "
             "`~/.arti/python/bin/python3 <script>.py ...` (Mac/Linux).\n\n"

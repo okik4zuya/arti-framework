@@ -7,9 +7,9 @@ This project's `memory/` is the single source of truth — never read
 or write the default `~/.claude/projects/.../memory/` for it.
 
 Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, `memory/status.md`,
-`~/.arti/memory/working-preferences.md`. If an `inbox/` folder exists, glob `inbox/*.md` at
-session start and surface whatever is sitting there — presence in the folder is the "still open"
-signal, no index file to keep in sync.
+`~/.arti/memory/working-preferences.md`.
+
+@~/.arti/CAPABILITIES.md
 
 **Never invoke a bare `python`/`python3`/`py`** — nothing on this machine puts it on `PATH`. Always
 call the vendored interpreter by full path: `"~/.arti/python/python.exe" <script>.py ...`

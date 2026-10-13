@@ -38,8 +38,8 @@ captured, rather than editing these lines.
   exact words "update memory".
 
 ## Session-start standing asks
-- **Surface any open question a memory file recorded, and any untriaged `inbox/index.md` rows,
-  near the start of the session** — rather than waiting to be asked.
+- **Surface any open question a memory file recorded near the start of the session** — rather
+  than waiting to be asked.
 
 ## Change log
 - (seeded at install) — Framework-default seed created; see `ARTi-setup`'s

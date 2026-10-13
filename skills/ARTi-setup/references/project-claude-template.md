@@ -5,7 +5,9 @@ ARTi research-paper project. This project's `memory/` is the single source of tr
 or write the default `~/.claude/projects/.../memory/` for it.
 
 Read every session: `memory/MEMORY.md`, `memory/todo-list.md`, `memory/status.md`,
-`~/.arti/memory/working-preferences.md`, `inbox/index.md`.
+`~/.arti/memory/working-preferences.md`.
+
+@~/.arti/CAPABILITIES.md
 
 **Never invoke a bare `python`/`python3`/`py`** — nothing on this machine puts it on `PATH`. Always
 call the vendored interpreter by full path: `"~/.arti/python/python.exe" <script>.py ...`
@@ -13,8 +15,7 @@ call the vendored interpreter by full path: `"~/.arti/python/python.exe" <script
 `~/.arti/python.cmd` / `~/.arti/python3` wrapper also forwards to the same binary if the subpath
 is forgotten.
 
-Skills and tools available: `~/.arti/CAPABILITIES.md`; choosing a literature search route:
-`~/.arti/skills/ARTi-ref/references/search-routing.md`.
+Choosing a literature search route: `~/.arti/skills/ARTi-ref/references/search-routing.md`.
 
 ## Memory rules
 

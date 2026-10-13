@@ -5,8 +5,7 @@ project-local (not the default ~/.claude memory).
 command below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-db/cli.py" <subcommand>
 ...` (Mac/Linux: `~/.arti/python/bin/python3`). Each call prints one JSON object
 (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see `~/.arti/tools/arti-db/README.md` for
-the full subcommand surface. This is the *cross-project* aggregator only — a project's own local
-`inbox/` has no index or database of its own to keep in sync; it's plain files, glob-scanned.
+the full subcommand surface. This is the *cross-project* aggregator only — a project has no local inbox.
 
 **`arti-lit` invocation** — every `library add`/`update`/`remove`/`refs generate` command in the
 `literature/` bullet below runs as: `"~/.arti/python/python.exe" "~/.arti/tools/arti-lit/cli.py"
@@ -66,26 +65,9 @@ to already exist in `library.md` — it never creates new library rows. See
      `cover-letter_[journal-abbreviation].md`, `rebuttal_[journal-abbreviation]_round[N].md`
      (both keep their placeholder for the same reason as the Journal Profile), `growth-log.md`,
      journal-formatted export, supplementary files
-   - `inbox/` — (named "wdyt" — "what do you think?" — before 2026-09-09) raw-idea inbox: pure
-     drop-and-forget capture, no structural expectation on content, no index, no rename, no
-     archiving — for anything the researcher thinks might improve the project but that doesn't
-     obviously belong to any existing document yet. `inbox/` is the one folder in a scaffolded
-     project meant for the researcher to create and edit files in directly — everything else is
-     Claude-managed.
-     **Discovery:** presence in the folder *is* the "still open" signal — session start globs
-     `inbox/*.md` and surfaces whatever is there. No separate index file to keep in sync.
-     **Reviewing a file** ends one of three ways, decided in conversation, no ceremony: (a) worth
-     keeping — fold it into the right place (a `memories/` topic file, an `idea-bank add` entry if
-     it's a research idea, or `~/.arti/inbox/` if it's about the ARTi framework/skills themselves
-     rather than this paper) and delete the raw file; (b) not worth keeping — delete it; (c) still
-     undecided — leave it in place.
-     **Verbatim researcher prose that *is* the content** (ebook narrative, landing-page copy,
-     workshop material — as opposed to a note *about* something to decide) is never summarized,
-     rewritten, or condensed, and isn't deleted once used. Record where it's been used with one
-     `<!-- used-in: ... -->` comment at the top of the file itself.
-     A capture worth cross-project tracking can be added to `~/.arti/inbox/idea-index.md` via
-     `idea-index upsert` — an available action for something genuinely worth tracking across
-     projects, not a step every file goes through.
+   - No `inbox/` folder: the per-project raw-idea inbox is retired (not scaffolded, not globbed at
+     session start). A cross-project idea worth tracking goes to `~/.arti/inbox/idea-index.md` via
+     `idea-index upsert`, an available action, not a step every note goes through.
 
    Note: ARTi-writing's Voice Profile is deliberately **not** in this project's `writing/` folder
    — it's cross-project and lives in `~/.arti/voice-profiles/`, alongside the Researcher Profile and
@@ -224,7 +206,6 @@ to already exist in `library.md` — it never creates new library rows. See
 
 8. **Surface standing asks at session start.** If any memory file records an open question Claude
    was supposed to ask the researcher (e.g. "ask whether an Iteration Log entry is wanted"), ask it
-   near the start of the session rather than merely re-recording that it's still open. Same
-   pattern for `inbox/`: glob it and surface any file sitting there.
+   near the start of the session rather than merely re-recording that it's still open.
 
 Confirm the folder and file layout once done.
