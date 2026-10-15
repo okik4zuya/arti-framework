@@ -38,3 +38,7 @@
 *.pyc
 __pycache__/
 /dashboard/server.log
+
+# the activated license file: per-machine, written by tools/arti-license, never committed or bundled
+/license.json
+/license.json.tmp

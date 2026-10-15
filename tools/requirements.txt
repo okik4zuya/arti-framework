@@ -6,6 +6,16 @@ python-docx
 # matplotlib. No shared render.py yet -- each script imports this directly.
 matplotlib
 
+# ARTi-figure library Tier 1 (plot recipes, diagram layout, table docx). Floors are the
+# versions verified as cp311 win64 wheels on 2026-10-14; mac/linux wheels are not verified.
+# Install with `python -s -m pip` so a user-site copy (AppData\Roaming\Python) is not
+# mistaken for a vendored one.
+pandas>=3.0
+scipy>=1.17
+networkx>=3.6
+adjustText>=1.4
+igraph>=1.0
+
 # arti-pdf-ingest: PDF text extraction + OCR fallback (pairs with the
 # poppler/tesseract binaries vendored into ~/.arti/bin by the NSIS installer).
 pdfminer.six==20250506
@@ -26,3 +36,7 @@ mcp
 # search_googlescholar_papers (sources/googlescholar.py): direct HTML fetch + parse.
 requests
 beautifulsoup4
+
+# license client (tools/_shared/license.py, tools/arti-license): Ed25519 signature check.
+# Pinned to the version in the vendored interpreter.
+cryptography==50.0.1

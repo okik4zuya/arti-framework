@@ -14,12 +14,12 @@ skill, tool or MCP server is added, renamed or removed.**
 | [ARTi-scratchbook](skills/ARTi-scratchbook/SKILL.md) | Creating and populating the section-organized Scratchbook, tagging rules | ARTi-ref, search MCP |
 | [ARTi-ref](skills/ARTi-ref/SKILL.md) | `arti-lit.db` CRUD, fulltext ingestion, paper extraction, search-route choice | `arti-lit`, `arti-pdf-ingest`, search MCP |
 | [ARTi-SLR](skills/ARTi-SLR/SKILL.md) | PRISMA systematic review from RQ to synthesis | ARTi-ref, `arti-lit`, search MCP, `arti-plot`, `arti-render` |
-| [ARTi-figure](skills/ARTi-figure/SKILL.md) | Diagrams (`.drawio`), tables, data plots | `arti-render`, `arti-table`, `arti-plot` |
+| [ARTi-figure](skills/ARTi-figure/SKILL.md) | Diagrams (`.drawio`), tables, data plots, composite figures (graphical abstract, multi-panel) | `arti-render`, `arti-table`, `arti-plot`, `arti-compose` |
 | [ARTi-jfinder](skills/ARTi-jfinder/SKILL.md) | Ad-hoc Scimago journal lookup and ranking | `arti-jfinder` |
 | [ARTi-crosscite](skills/ARTi-crosscite/SKILL.md) | Cross-citation overlap between two paper sets | `citation-chase` |
 | [ARTi-annotate](skills/ARTi-annotate/SKILL.md) | Resolve the researcher's inline md comments and suggested edits (dashboard annotations) | `arti-annotate` |
 
-## Tools (14 folders in `~/.arti/tools/`)
+## Tools (16 folders in `~/.arti/tools/`)
 
 | Tool | What | Called by |
 |---|---|---|
@@ -30,11 +30,13 @@ skill, tool or MCP server is added, renamed or removed.**
 | [arti-render](tools/arti-render/render.py) | JSON spec to editable `.drawio` diagram | ARTi-figure |
 | [arti-table](tools/arti-table/README.md) | Table lane for ARTi-figure (stub) | ARTi-figure |
 | [arti-plot](tools/arti-plot/README.md) | Per-project matplotlib plot pattern (no shared renderer) | ARTi-figure |
+| [arti-compose](tools/arti-compose/README.md) | HTML/SVG figure source to vector PDF + exact-size PNG with layout, font, text-size and image-resolution checks | ARTi-figure |
 | [arti-docx](tools/arti-docx/README.md) | Markdown to styled `.docx` manuscript | ARTi-writing |
 | [arti-annotate](tools/arti-annotate/README.md) | Inline CriticMarkup comments/suggestions in any md file: parse, revise, accept, revert, strip | ARTi-annotate, dashboard |
 | [arti-jfinder](tools/arti-jfinder/README.md) | Scimago SJR snapshot database | ARTi-jfinder, ARTi-idea |
 | [citation-chase](tools/citation-chase/README.md) | Does set A cite or get cited by set B (OpenAlex, S2 fallback) | ARTi-crosscite |
 | [scopus-ris-batch-export](tools/scopus-ris-batch-export/HANDOFF.md) | Handoff brief for batch RIS export from Scopus (no code yet) | ARTi-SLR, researcher |
+| [arti-license](tools/arti-license/README.md) | Client for paid licensing: activate, status, trial, offline verify (Ed25519). Worker and `arti-admin` live outside `~/.arti` | ARTi-setup, dashboard (planned) |
 | [arti-memcheck](tools/arti-memcheck/README.md) | T0 memory composition checker, `SessionStart` hook | hook, ARTi-setup |
 | [_shared](tools/_shared/README.md) | Narrow shared helpers (paths, DB migration) | other tools |
 

@@ -20,9 +20,15 @@ import argparse
 import html
 import os
 import re
-import shutil
 import subprocess
 import sys
+
+
+# find_browser lives in tools/_shared/browser.py (shared with arti-compose).
+ARTI_HOME = os.environ.get("ARTI_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if ARTI_HOME not in sys.path:
+    sys.path.insert(0, ARTI_HOME)
+from tools._shared.browser import find_browser  # noqa: E402
 
 
 def convert_inline(text):
@@ -166,27 +172,6 @@ def wrap_html(title, body_html):
 </body>
 </html>
 """
-
-
-def find_browser():
-    if sys.platform == "win32":
-        candidates = [
-            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Microsoft", "Edge", "Application", "msedge.exe"),
-            os.path.join(os.environ.get("ProgramFiles", ""), "Microsoft", "Edge", "Application", "msedge.exe"),
-            os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Google", "Chrome", "Application", "chrome.exe"),
-            os.path.join(os.environ.get("ProgramFiles", ""), "Google", "Chrome", "Application", "chrome.exe"),
-        ]
-    elif sys.platform == "darwin":
-        candidates = [
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        ]
-    else:
-        candidates = [shutil.which("microsoft-edge"), shutil.which("google-chrome"), shutil.which("chromium")]
-    for c in candidates:
-        if c and os.path.exists(c):
-            return c
-    return None
 
 
 def html_to_pdf(html_path, pdf_path):

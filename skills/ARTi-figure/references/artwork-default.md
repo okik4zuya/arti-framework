@@ -17,5 +17,9 @@ researcher asks for them.
 **Common practice, not verified per publisher:** everything else. Re-check against the journal's
 author guide only if the researcher asks.
 
+Vector PDF comes from the composite lane (`arti-compose`, which also checks fonts, text size and image
+resolution against this table) and, once the plot helper exists, from the plot lane. The diagram lane
+still outputs `.drawio` only.
+
 Always check font size at print width: a 20 px label on an 850 px canvas scaled to 90 mm is about
 5.2 pt, below the 7 pt minimum.

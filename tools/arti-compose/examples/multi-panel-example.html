@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fig 2 prototype</title>
+<!-- size/mode are read by compose.py: 2-column width 190 mm. Edit, then:
+     python.exe tools/arti-compose/compose.py --src figures/src/<this file> --out-dir figures -->
+<meta name="arti:width" content="190mm">
+<meta name="arti:height" content="110mm">
+<meta name="arti:dpi" content="600">
+<meta name="arti:min-pt" content="7">
+<style>
+/* ARTi-figure compose base - inlined into a figure source by `compose.py --new`.
+   Palette and fonts mirror references/figure-style-default.md; edit values here per figure, not the names. */
+:root {
+  --font: Arial, Helvetica, sans-serif;
+  --ink: #000000;
+  --paper: #ffffff;
+  --dark-fill: #4D4D4D;   /* style "dark": emphasis boxes */
+  --dark-text: #ffffff;
+  --plain-fill: #ffffff;  /* style "plain": ordinary boxes */
+  --accent: #2b6cb0;      /* add named colours here once a second figure reuses them */
+  --muted: #9a9a9a;
+  --stroke: 0.5pt;        /* line weight floor from references/artwork-default.md */
+  --fs-label: 9pt;        /* panel tags (a) (b) - bold */
+  --fs-body: 8pt;         /* body text; keep >= 7 pt at print width */
+  --fs-small: 7pt;        /* captions inside panels; this is the floor */
+}
+* { box-sizing: border-box; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); }
+body { width: var(--page-w); height: var(--page-h); overflow: visible; font-size: var(--fs-body); line-height: 1.2; }
+
+/* multi-panel */
+.sheet { width: var(--page-w); height: var(--page-h); display: grid; gap: 3mm; padding: 3mm; }
+.panel { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.panel > img, .panel > svg { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tag { position: absolute; left: 0; top: 0; z-index: 2; font-weight: 700; font-size: var(--fs-label);
+       background: var(--paper); padding: 0 1mm 0 0; line-height: 1; }
+.scalebar { position: absolute; right: 2mm; bottom: 2mm; z-index: 2; color: #fff; font-size: var(--fs-small);
+            text-align: center; text-shadow: 0 0 2px #000; }
+.scalebar i { display: block; height: 0.8mm; background: #fff; margin-bottom: 0.5mm; box-shadow: 0 0 2px #000; }
+
+/* boxes and arrows */
+.box { border: var(--stroke) solid var(--ink); background: var(--plain-fill); padding: 1.5mm 2mm; text-align: center; }
+.box.dark { background: var(--dark-fill); color: var(--dark-text); }
+
+/* layout for this figure: 2 columns, panel (a) spans the top row */
+.sheet { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.span2 { grid-column: 1 / span 2; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <!-- Photos, micrographs and blots: label, add a scale bar, or crop (and say so in the caption). Never retouch. -->
+  <figure class="panel span2" style="margin:0"><span class="tag">(a)</span><img src="panels/panel_a.svg" alt="panel a"></figure>
+  <figure class="panel" style="margin:0"><span class="tag">(b)</span><img src="panels/panel_b.png" alt="panel b"></figure>
+  <figure class="panel" style="margin:0"><span class="tag">(c)</span><img src="panels/panel_c.png" alt="panel c">
+    <div class="scalebar"><i style="width:10mm"></i>200 nm</div></figure>
+</div>
+</body>
+</html>

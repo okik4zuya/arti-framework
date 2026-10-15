@@ -12,12 +12,16 @@ description: >
   and show the trend". Diagrams produce an editable `.drawio` file, not a final image — draw.io
   itself is where wrapping, sizing, and export to PNG/PDF get fixed by hand. Tables produce
   editable Markdown table syntax, ready to paste into the manuscript source. Plots produce a final
-  PNG directly plus the aggregated data file it was built from.
+  PNG directly plus the aggregated data file it was built from. Composite figures (graphical
+  abstract, multi-panel figure mixing plots, images and drawings, fixed-pixel image, infographic)
+  are written as an HTML/SVG source and rendered to a vector PDF plus an exact-size PNG with
+  built-in layout, font and text-size checks. Extra triggers: "graphical abstract", "multi-panel
+  figure", "combine these panels", "TOC graphic", "infographic".
 ---
 
 # ARTi-figure Skill
 
-v1 scope: **three lanes — diagram, table, and plot.**
+v1 scope: **four lanes — diagram, table, plot, and composite (HTML).**
 
 **Diagram lane.** A figure is authored as a JSON spec (nodes, edges, styles) and rendered to an
 editable `.drawio` file by `arti-render`. There is no auto-layout, no auto-fix loop, and no direct
@@ -52,6 +56,33 @@ same read-back verification loop (below) before calling it done. If a second pro
 plot with a genuinely reusable shape, that's the signal to extract a real shared `render.py` into
 `arti-plot` — not before.
 
+**Composite lane (HTML).** For a figure that needs icons, free shapes, a fixed pixel size, or a
+mix of figure types in one frame (graphical abstract, highlights/TOC graphic, an (a)(b)(c) figure
+built from plots + micrographs + a drawn scheme), scaffold an HTML source with
+`arti-compose --new <multi-panel|graphical-abstract> --src figures/src/Fig_N.html`, fill it in
+(inline SVG, `<img>` panels, CSS grid; no CDN, no web fonts), and render it with `arti-compose`.
+The `.html` is the reproducibility record, like a JSON spec. Output: a vector PDF with fonts
+embedded plus a PNG at the stated size (print mode: mm size and dpi, default 600; pixel mode: exact
+px). The tool checks layout overflow, clipped SVG text, broken images, page count and size,
+embedded fonts, real text size at print width (7 pt default) and raster-image resolution; read
+its WARN/FAIL lines and then look at the PNG yourself. Tie-break against the diagram lane: for a
+box-and-arrow figure the researcher may revise by hand, choose the diagram lane; choose this lane
+only when the diagram lane cannot do it (icons, curves, radial layout, fixed pixel size, mixed
+panels). Full lane-selection rules are not written yet (planned `references/lane-selection.md`).
+
+**Graphical abstract: no explanatory text (researcher rule, 2026-10-14).** The picture carries the
+message; text does not explain it. Allowed: a short title, one- or two-word labels on shapes and
+icons, axis or lane names, numbers and units, a single takeaway or call-to-action phrase. Not
+allowed: sentences or captions that describe what the picture shows ("X mostly plays a supporting
+role", "lanes are schematic", "this panel compares..."), bullet lists, and legends that restate the
+drawing. If a shape needs a sentence to be understood, redraw the shape. Caveats the reader needs
+(schematic scale, hedged mechanism) go in the figure caption or the manuscript, not in the image.
+Text that remains still obeys the size floor (24 px at 1328 x 531).
+
+**Image integrity (all lanes).** Photos, micrographs, gels and blots may only be labelled,
+scale-barred, or cropped, and any crop is stated in the caption. Never retouch, recolour selectively,
+or splice. A scale bar goes on the panel as an element, not baked into the pixels.
+
 ## Tooling location
 
 Everything this skill needs lives under `~/.arti` (`C:\Users\<user>\.arti\` on Windows, `~/.arti`
@@ -61,6 +92,8 @@ this skill only touches the tooling side).
 
 - **Diagram renderer:** `~/.arti/tools/arti-render/render.py`
 - **Table renderer:** `~/.arti/tools/arti-table/render.py`
+- **Composite renderer:** `~/.arti/tools/arti-compose/compose.py` (templates in
+  `~/.arti/skills/ARTi-figure/templates/`, README in the tool folder)
 - **Interpreter:** `~/.arti/python/python.exe` (Windows) or `~/.arti/python/bin/python3`
   (Mac/Linux) — the vendored python-build-standalone interpreter, **not** whatever `python` or
   `python3` resolves to on the researcher's `PATH`. Always invoke the renderer through the
@@ -148,6 +181,13 @@ Table lane:
 "~/.arti/python/python.exe" "~/.arti/tools/arti-table/render.py" --spec "figures/Table_1.json" --out-dir "figures"
 ```
 
+Composite lane:
+
+```
+"~/.arti/python/python.exe" "~/.arti/tools/arti-compose/compose.py" --new multi-panel --src "figures/src/Fig_2.html"
+"~/.arti/python/python.exe" "~/.arti/tools/arti-compose/compose.py" --src "figures/src/Fig_2.html" --out-dir "figures"
+```
+
 (swap in the Mac/Linux interpreter path when running there). The diagram renderer writes
 `figures/Fig_1.drawio`; if the draw.io desktop app is installed, it also attempts a PNG export at
 4x scale via its CLI (`figures/Fig_1.png`), skipping and saying so if draw.io isn't found. The
@@ -166,6 +206,8 @@ time:**
    `references/artwork-default.md` unless this project's `writing/journal-profile_*.md` (Block
    A/B) records journal-specific values or the researcher asks for them; a missing Journal Profile
    is not an open item.
+For the composite lane the tool runs the legibility and overflow checks itself (print the report,
+fix every FAIL, explain every WARN); step 1 still applies: open the PNG it wrote and look at it.
 Only after both checks pass (or their gaps are explicitly flagged) is a render considered done —
 "I rendered it" and "I verified it" are different claims; don't conflate them in the response to
 the researcher.

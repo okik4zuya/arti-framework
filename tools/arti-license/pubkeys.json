@@ -1,0 +1,9 @@
+{
+  "_note": "Public keys only. dev-* kids are DEV keys: replace with production kids before shipping.",
+  "license": {
+    "license-1": "IfMkNrun/wWGWxtDXNS0lwcBNoqGCVmMjAToP6ysz3Y="
+  },
+  "release": {
+    "release-1": "6iseUPrt3FOpCuLB5P7tMFIKTU6hmdIOxmnMZv1A4nM="
+  }
+}
