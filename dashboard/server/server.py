@@ -323,6 +323,23 @@ class Handler(BaseHTTPRequestHandler):
             ok, view = update_check.ack(self._read_body().get("version"))
             return self._send_json(200 if ok else 400, dict(view, ok=ok, **({} if ok else {"error": "No pending update with that version."})))
 
+        if pathname == "/api/update/progress" and method == "GET":
+            return self._send_json(200, update_check.progress())
+
+        if pathname in ("/api/update/apply", "/api/update/rollback", "/api/update/dismiss") and method == "POST":
+            body = self._read_body()   # always read the body, even when unused (see the license routes)
+            if pathname.endswith("/dismiss"):
+                update_check.dismiss()
+                return self._send_json(200, update_check.progress())
+            try:
+                if pathname.endswith("/apply"):
+                    update_check.start_apply(body.get("version"))
+                else:
+                    update_check.start_rollback(body.get("version"))
+            except update_check.arti_update.UpdateFailure as e:
+                return self._send_json(409 if e.code == "busy" else 400, {"ok": False, "code": e.code, "error": str(e)})
+            return self._send_json(200, dict(update_check.progress(), ok=True))
+
         if pathname == "/api/system/status" and method == "GET":
             return self._send_json(200, system_info.system_status())
 

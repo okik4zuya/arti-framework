@@ -1429,6 +1429,23 @@
   .update-box strong{ font-size:13.5px; }
   .update-box ul{ margin:4px 0 0; padding-left:18px; font-size:13px; }
   .release-notes{ white-space:pre-wrap; font-size:13px; line-height:1.55; max-height:280px; overflow:auto; padding:10px 12px; background:var(--surface-2); }
+  /* In-app update (phase 3b): progress bar, result banners, rollback row, restart overlay. */
+  .upd-progress{ display:flex; flex-direction:column; gap:6px; }
+  .upd-progress[hidden]{ display:none; }
+  .upd-bar{ height:8px; overflow:hidden; background:var(--surface-2); border:1px solid var(--border); }
+  .upd-bar-fill{ height:100%; width:0; background:var(--accent); transition:width .2s ease; }
+  .upd-bar.indeterminate .upd-bar-fill{ width:35%; animation:upd-slide 1.2s ease-in-out infinite; }
+  @keyframes upd-slide{ 0%{ margin-left:-35%; } 100%{ margin-left:100%; } }
+  .upd-banner{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--green); background:var(--green-soft); color:var(--green); font-size:13px; line-height:1.5; }
+  .upd-banner[hidden]{ display:none; }
+  .upd-banner.bad{ border-color:var(--red); background:var(--red-soft); color:var(--red); }
+  .upd-banner-text{ flex:1; min-width:0; word-break:break-word; }
+  .upd-rollback{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .upd-rollback[hidden]{ display:none; }
+  .upd-overlay{ position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(16,24,40,0.55); }
+  .upd-overlay[hidden]{ display:none; }
+  .upd-overlay-card{ width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px; padding:24px 28px; text-align:center; background:var(--surface); border:1px solid var(--border); box-shadow:0 12px 32px rgba(16,24,40,0.16); }
+  .upd-overlay-title{ font-size:15px; font-weight:600; }
   /* Locked: only Settings > License is usable. */
   body.license-locked .nav-item:not([data-view="settings"]){ opacity:.4; pointer-events:none; }
   body.license-locked .settings-nav-item:not([data-cat="license"]){ opacity:.4; pointer-events:none; }
@@ -2063,8 +2080,14 @@
             <dt>Install folder</dt><dd id="aboutHome">&mdash;</dd>
           </dl>
           <h3 class="settings-subhead">Updates</h3>
+          <div class="upd-banner" id="updResult" hidden><div class="upd-banner-text" id="updResultText"></div><button class="btn" id="updResultClose" type="button">Dismiss</button></div>
           <div class="lic-status-row"><span class="lic-badge" id="updBadge">&mdash;</span><span class="hint" id="updHint"></span></div>
           <div><button class="btn" id="updCheckBtn" type="button">Check for updates</button></div>
+          <div class="upd-progress" id="updProgress" hidden>
+            <div class="hint" id="updProgressLabel"></div>
+            <div class="upd-bar" id="updBar"><div class="upd-bar-fill" id="updBarFill"></div></div>
+          </div>
+          <div class="upd-banner bad" id="updFail" hidden><div class="upd-banner-text" id="updFailText"></div><button class="btn" id="updFailClose" type="button">Dismiss</button></div>
           <div class="update-box" id="updBox" hidden>
             <div class="update-box-head" id="updHead"></div>
             <div class="hint" id="updInstaller" hidden>This release changes the runtime, so it needs the full installer.</div>
@@ -2074,16 +2097,31 @@
               <div class="hint">These change how Claude behaves in your projects. Read them before you update.</div>
             </div>
             <div class="release-notes" id="updNotes"></div>
-            <div class="lic-actions"><button class="btn primary" id="updAckBtn" type="button">I have read this</button></div>
+            <div class="lic-actions">
+              <button class="btn primary" id="updAckBtn" type="button">I have read this</button>
+              <button class="btn primary" id="updApplyBtn" type="button" hidden>Update now</button>
+            </div>
             <div class="hint" id="updAfterAck" hidden></div>
           </div>
-          <div class="about-warning"><strong>Update by running the new installer over your install.</strong> Do not uninstall first: the uninstaller deletes the whole ARTi folder, including your profile, idea bank and project index.</div>
+          <div class="upd-rollback" id="updRollback" hidden>
+            <button class="btn" id="updRollbackBtn" type="button">Roll back</button>
+            <span class="hint" id="updRollbackHint"></span>
+          </div>
+          <div class="about-warning"><strong>Update now replaces ARTi's skills, tools and dashboard.</strong> Your profile, ideas, projects, memory and license are never touched, and the previous version is kept so you can roll back. If a release cannot be applied here (for example when it changes the runtime), run the new installer over your install. Do not uninstall first: the uninstaller deletes the whole ARTi folder, including your profile, idea bank and project index.</div>
         </section>
 
       </div>
     </div>
   </div>
 </main>
+
+<div class="upd-overlay" id="updOverlay" hidden>
+  <div class="upd-overlay-card">
+    <div class="upd-overlay-title" id="updOverlayTitle">Updating ARTi</div>
+    <div class="upd-bar indeterminate"><div class="upd-bar-fill"></div></div>
+    <div class="hint" id="updOverlayText">The window closes and opens again by itself in a moment. Please do not start ARTi again.</div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="projectOverlay" hidden>
   <div class="modal">
@@ -10425,11 +10463,92 @@
     showSettingsCat("license");
   });
 
-  // ---- Updates (phase 3a: check, read the notes, acknowledge; the researcher still runs the installer) ----
+  // ---- Updates (check, read the notes, acknowledge, then Update now / Roll back, phase 3b) ----
   var updateStatus = null;
+  var updLastResult = null;   // the outcome of the last apply/rollback; the server shows it once, so keep it until dismissed
+  var updTimer = null;
+  var UPD_ACTIVE = ["downloading", "verifying", "restarting"];
+
+  function updFmtMb(n){ return n < 1048576 ? Math.max(1, Math.round(n / 1024)) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+
+  function renderUpdProgress(p){
+    var active = UPD_ACTIVE.indexOf(p.phase) >= 0;
+    var wrap = document.getElementById("updProgress"), bar = document.getElementById("updBar");
+    wrap.hidden = !active;
+    document.getElementById("updOverlay").hidden = p.phase !== "restarting";
+    document.getElementById("updOverlayTitle").textContent = p.action === "rollback" ? "Going back to the earlier version" : "Updating ARTi";
+    var fail = document.getElementById("updFail");
+    fail.hidden = p.phase !== "failed";
+    if (p.phase === "failed") document.getElementById("updFailText").textContent = p.message || "The update did not finish.";
+    var label = "", pct = null;
+    if (p.phase === "downloading"){
+      pct = p.total ? Math.min(100, Math.floor(p.done * 100 / p.total)) : null;
+      label = "Downloading version " + p.version + (p.total ? " · " + updFmtMb(p.done) + " of " + updFmtMb(p.total) : "…");
+    } else if (p.phase === "verifying"){
+      label = p.action === "rollback" ? "Getting the earlier version ready…" : "Checking the download and unpacking it…";
+    } else if (p.phase === "restarting"){
+      label = "Restarting ARTi…";
+    }
+    document.getElementById("updProgressLabel").textContent = label;
+    bar.classList.toggle("indeterminate", active && pct === null);
+    document.getElementById("updBarFill").style.width = pct === null ? "" : pct + "%";
+    document.getElementById("updApplyBtn").disabled = active;
+    document.getElementById("updRollbackBtn").disabled = active;
+    document.getElementById("updCheckBtn").disabled = active;
+    return active;
+  }
+
+  function updWaitForServer(){
+    // The server is gone: the update is restarting ARTi. A native window is replaced by a new one; a browser tab
+    // waits here until the dashboard answers again and then reloads onto the new version.
+    document.getElementById("updOverlay").hidden = false;
+    var started = Date.now();
+    (function ping(){
+      fetch(API + "/ping").then(function(r){
+        if (r.ok) { location.reload(); return; }
+        throw new Error("not yet");
+      }).catch(function(){
+        if (Date.now() - started > 120000){
+          document.getElementById("updOverlayTitle").textContent = "ARTi did not come back by itself";
+          document.getElementById("updOverlayText").textContent = "Open ARTi from the desktop icon. If it does not start, run the installer over your install.";
+          return;
+        }
+        setTimeout(ping, 1000);
+      });
+    })();
+  }
+
+  function pollUpdProgress(){
+    clearTimeout(updTimer);
+    apiRaw("/update/progress").then(function(p){
+      var active = renderUpdProgress(p);
+      if (active) updTimer = setTimeout(pollUpdProgress, 600);
+    }, function(){ updWaitForServer(); });
+  }
+
+  function renderUpdResult(){
+    var box = document.getElementById("updResult");
+    box.hidden = !updLastResult;
+    if (!updLastResult) return;
+    var r = updLastResult, rb = r.action === "rollback";
+    box.classList.toggle("bad", !r.ok);
+    document.getElementById("updResultText").textContent = r.ok
+      ? (rb ? "Rolled back from version " + r.from + " to version " + r.to + "." : "Updated from version " + r.from + " to version " + r.to + ".")
+      : (rb ? "The rollback did not work. " : "The update to version " + r.to + " was cancelled. ") + (r.message || "");
+  }
 
   function applyUpdateStatus(u){
     updateStatus = u;
+    if (u.result) updLastResult = u.result;
+    renderUpdResult();
+    if (u.progress) { if (renderUpdProgress(u.progress)) pollUpdProgress(); }
+    var rb = document.getElementById("updRollback");
+    var saved = u.backups || [];
+    rb.hidden = !saved.length;
+    if (saved.length){
+      document.getElementById("updRollbackBtn").textContent = "Roll back to v" + saved[0];
+      document.getElementById("updRollbackHint").textContent = "Puts the earlier version's skills, tools and dashboard back. Your data is not changed.";
+    }
     var a = u.available;
     var card = document.getElementById("updateCard");
     card.hidden = !a;
@@ -10459,10 +10578,13 @@
     document.getElementById("updSkills").innerHTML = skills.map(function(t){ return "<li>" + escapeHtml(t) + "</li>"; }).join("");
     document.getElementById("updNotes").textContent = a.notes || "";
     document.getElementById("updAckBtn").hidden = !!u.acked;
+    document.getElementById("updApplyBtn").hidden = !(u.acked && u.can_apply);
     var after = document.getElementById("updAfterAck");
     after.hidden = !u.acked;
-    if (u.acked) after.textContent = "Thanks. To update now, run the newer installer from your download link" +
-      (a.download_page ? " (" + a.download_page + ")" : "") + ". One-click update inside the dashboard comes in a later version.";
+    if (u.acked) after.textContent = u.can_apply
+      ? "ARTi downloads version " + a.version + (a.bundle && a.bundle.size ? " (" + updFmtMb(a.bundle.size) + ")" : "") +
+        ", checks it, and restarts by itself. The earlier version is kept so you can roll back."
+      : "Thanks. This release has to be installed with the installer" + (a.download_page ? " from your download link (" + a.download_page + ")" : "") + ".";
   }
   function loadUpdateStatus(){
     return apiRaw("/update/status").then(applyUpdateStatus).catch(function(){});
@@ -10478,6 +10600,29 @@
     if (!updateStatus || !updateStatus.available) return;
     apiRaw("/update/ack", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ version: updateStatus.available.version }) })
       .then(applyUpdateStatus, function(e){ document.getElementById("updHint").textContent = e.message; });
+  });
+  function updPostAction(path, body, btn){
+    btn.disabled = true;
+    return apiRaw(path, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) })
+      .then(function(p){ renderUpdProgress(p); pollUpdProgress(); },
+            function(e){ btn.disabled = false; document.getElementById("updFailText").textContent = e.message; document.getElementById("updFail").hidden = false; });
+  }
+  document.getElementById("updApplyBtn").addEventListener("click", function(){
+    if (!updateStatus || !updateStatus.available) return;
+    document.getElementById("updFail").hidden = true;
+    updPostAction("/update/apply", { version: updateStatus.available.version }, this);
+  });
+  document.getElementById("updRollbackBtn").addEventListener("click", function(){
+    var saved = (updateStatus && updateStatus.backups) || [];
+    if (!saved.length) return;
+    if (!window.confirm("Go back to version " + saved[0] + "? ARTi restarts. Your data is not changed.")) return;
+    document.getElementById("updFail").hidden = true;
+    updPostAction("/update/rollback", { version: saved[0] }, this);
+  });
+  document.getElementById("updResultClose").addEventListener("click", function(){ updLastResult = null; renderUpdResult(); });
+  document.getElementById("updFailClose").addEventListener("click", function(){
+    document.getElementById("updFail").hidden = true;
+    apiRaw("/update/dismiss", { method:"POST", headers:{"Content-Type":"application/json"}, body:"{}" }).catch(function(){});
   });
   document.getElementById("updateCard").addEventListener("click", function(){
     switchMainView("settings");
