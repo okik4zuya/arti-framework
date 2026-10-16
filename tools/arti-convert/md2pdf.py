@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-arti-pdf - Markdown -> print-styled HTML -> A4 PDF
+arti-convert pdf - Markdown -> print-styled HTML -> A4 PDF
 
 Pure stdlib Markdown->HTML step (headings, paragraphs, pipe tables with
 alignment rows, bold/italic/inline-code) followed by a headless Edge/Chrome
 print-to-pdf pass. No pandoc, no wkhtmltopdf, no third-party packages.
-See ~/.arti/tools/arti-pdf/README.md for the recipe this formalizes.
+See ~/.arti/tools/arti-convert/README.md for the recipe this formalizes.
 
 This is intentionally not a full CommonMark implementation - just enough
 structure (headings/paragraphs/tables/checklists) for frozen reference
@@ -14,7 +14,7 @@ converter if a document needs more (nested lists, images, footnotes) rather
 than reaching for pandoc - the point is staying zero-install.
 
 Usage:
-    python render.py --md ../../../Paper/writing/completion-plan.md --out-dir ../../../Paper/writing
+    python cli.py pdf --md ../../../Paper/writing/completion-plan.md --out-dir ../../../Paper/writing
 """
 import argparse
 import html
@@ -219,7 +219,7 @@ def render(md_path, out_dir):
     html_path = os.path.join(out_dir, f"{name}.html")
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(full_html)
-    print(f"arti-pdf: {name}")
+    print(f"arti-convert pdf: {name}")
     print(f"  [ok] {html_path}")
 
     browser = find_browser()
@@ -233,11 +233,11 @@ def render(md_path, out_dir):
     return pdf_path
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Render a Markdown reference doc to a print-styled A4 PDF")
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="arti-convert pdf", description="Render a Markdown reference doc to a print-styled A4 PDF")
     parser.add_argument("--md", required=True, help="path to the source Markdown file")
     parser.add_argument("--out-dir", default=".", help="output directory for the .html and .pdf")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     render(args.md, args.out_dir)
 
 

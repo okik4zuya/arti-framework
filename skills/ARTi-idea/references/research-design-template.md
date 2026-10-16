@@ -9,7 +9,7 @@ This file documents only the print-specific requirements, mirroring the role
 ## Output
 
 `idea\research-design.md` (source of truth) rendered to `idea\research-design.pdf` via the shared
-Markdown→A4-PDF pipeline documented in `~/.arti/tools/arti-pdf/README.md`. Reformat the Core Document's
+Markdown→A4-PDF pipeline documented in `~/.arti/tools/arti-convert/README.md`. Reformat the Core Document's
 field structure into compact print-friendly Markdown sections/tables — same style as
 `completion-plan.md` — before rendering: Research Objective, Hypotheses, Experimental Design
 (Materials/Samples, Synthesis/Preparation Protocol, Characterization Plan table, Analysis Plan,
@@ -34,7 +34,7 @@ document to keep in sync on every session.
 ## Render command
 
 ```
-python ~/.arti/tools/arti-pdf/render.py --md idea\research-design.md --out-dir idea
+python ~/.arti/tools/arti-convert/cli.py pdf --md idea\research-design.md --out-dir idea
 ```
 
 ## Change log

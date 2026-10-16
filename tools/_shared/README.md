@@ -1,6 +1,6 @@
 # `tools/_shared/`
 
-A deliberate, narrow exception — every other tool under `tools/` (`arti-lit`, `arti-pdf`,
+A deliberate, narrow exception — every other tool under `tools/` (`arti-lit`, `arti-convert`,
 `arti-db`, ...) is fully standalone with no shared code. This folder exists only for cases where
 duplicating the code a second time would be tolerable but a third time is not: poppler/tesseract
 are OS binaries vendored once into `~/.arti/bin/` rather than something each tool would sensibly

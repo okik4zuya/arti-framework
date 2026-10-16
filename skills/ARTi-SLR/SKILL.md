@@ -268,7 +268,7 @@ marks a previously published review from the Prior Review Check; `outside_flow` 
 is only cited as background. Both are outside the PRISMA flow, so exact-match stage counts never
 include them.
 
-**`arti-pdf-ingest` invocation** — unmodified, see `ARTi-ref`'s Fulltext ingestion section, used
+**`arti-convert ingest` invocation** — unmodified, see `ARTi-ref`'s Fulltext ingestion section, used
 for the Fulltext Paper step in Stage 2.
 
 **`arti-figure` invocation** — unmodified, see its own SKILL.md's diagram lane, used to render the

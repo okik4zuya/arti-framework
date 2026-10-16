@@ -3,7 +3,7 @@ name: ARTi-figure
 description: >
   Generate manuscript figures and tables via the vendored ~/.arti Python interpreter: diagrams and
   tables from a JSON spec, plots from a per-project matplotlib script (interim pattern, no shared
-  renderer yet — see arti-plot/README.md). Use this skill when a researcher wants a study-design
+  renderer yet — see references/plot-lane.md). Use this skill when a researcher wants a study-design
   diagram, flowchart, or other box-and-arrow figure, a manuscript table, a data-driven chart
   (bar/line/trend/bibliometric plot), or asks to regenerate/edit one from its spec. Triggers
   include: "make a figure for this", "draw a diagram of the study design", "regenerate Fig_N",
@@ -41,7 +41,7 @@ row) before treating it as done.
 **Plot lane.** For a data-driven chart (bar/line/trend/bibliometric figure, anything whose content
 comes from aggregating project data rather than hand-placed geometry or a simple rows-and-columns
 table), there is no shared JSON-spec renderer the way diagrams and tables have — see
-`~/.arti/tools/arti-plot/README.md` for why (each plot's data pull and aggregation logic is too
+`~/.arti/skills/ARTi-figure/references/plot-lane.md` for why (each plot's data pull and aggregation logic is too
 project-specific to fit one generic spec) and the interim pattern instead: write a standalone,
 per-figure Python script at `figures/scripts/build_<Fig_N>_<slug>.py` in the paper project that
 pulls its own data (query the project's `arti-lit.db`, or read a `data/*.csv`/`.json` already in
@@ -53,8 +53,8 @@ script, not a one-off render. Keep the script as a committed file once the figur
 it is this lane's reproducibility record, the way a JSON spec is for diagram/table. Register the
 resulting figure in `figures/figure-register.md` exactly as for the other two lanes, and run the
 same read-back verification loop (below) before calling it done. If a second project ever needs a
-plot with a genuinely reusable shape, that's the signal to extract a real shared `render.py` into
-`arti-plot` — not before.
+plot with a genuinely reusable shape, that's the signal to extract a real shared `render.py` as a new
+`tools/arti-plot` (new) — not before.
 
 **Composite lane (HTML).** For a figure that needs icons, free shapes, a fixed pixel size, or a
 mix of figure types in one frame (graphical abstract, highlights/TOC graphic, an (a)(b)(c) figure

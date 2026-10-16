@@ -3,7 +3,7 @@
 Markdown -> styled `.docx` for journal manuscripts. Markdown source stays the
 editable source of truth; the `.docx` is a snapshot rebuilt fresh from it on
 every run - never a merge into an existing `.docx`'s content, the same
-philosophy `arti-pdf/README.md` states for `arti-pdf`'s HTML/PDF output.
+philosophy `arti-convert/README.md` states for `arti-convert pdf`'s HTML/PDF output.
 
 Usage:
 

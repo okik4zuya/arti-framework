@@ -10,7 +10,7 @@ system (CRUD, fulltext ingestion, retrieval-trigger rule, Paper Extraction). `AR
 running against*: `literature\arti-lit.db`. There is no single "the" arti-lit database; every
 invocation needs `--project PATH` (default: current working directory) to know which project's
 bibliography it's touching. Layer 1 (`literature\search-log.md`) is untouched by this tool — its
-own future home is `tools/scopus-ris-batch-export`, not here.
+is not managed by this tool either.
 
 Every `add`/`update`/`remove` auto-regenerates `literature\library.md`, so the plain-text view
 stays current, git-diffable, and human-readable without a separate export step.
@@ -42,7 +42,7 @@ library add --key KEY --citation TEXT [--doi TEXT] [--local-file TEXT]
     # --search-source/--screening-stage/--exclusion-reason are ARTi-SLR's PRISMA fields -- see
     # Schema; most non-SLR projects never set them.
 library update --key KEY [--citation TEXT] [--doi TEXT] [--local-file TEXT] [--status TEXT] [--used-in TEXT] [--summary TEXT] [--abstract TEXT] [--search-source TEXT] [--screening-stage TEXT] [--exclusion-reason TEXT] [--project PATH]
-    # for bulk export-only/abstract -> fulltext conversion, see tools/arti-pdf-ingest -- it
+    # for bulk export-only/abstract -> fulltext conversion, see tools/arti-convert -- it
     # converts a batch of PDFs to Markdown and calls this same update itself, row by row
 library get --key KEY [--project PATH]
 library list [--status TEXT] [--journal TEXT] [--article-type TEXT] [--screening-stage TEXT] [--project PATH]
@@ -138,7 +138,7 @@ per stage value) becomes the PRISMA Flow Diagram's counts.
 
 ## Not in this tool
 
-- Layer 1 (`search-log.md`) / `scopus-ris-batch-export` — separate, already-scoped future work.
+- Layer 1 (`search-log.md`) — not managed here.
 - Citation-style reformatting engine.
 - Fuzzy title/year dedup — `library import-ris` dedupes on DOI only; rows without a DOI always
   import as new rows.

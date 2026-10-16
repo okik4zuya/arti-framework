@@ -42,3 +42,15 @@ __pycache__/
 # the activated license file: per-machine, written by tools/arti-license, never committed or bundled
 /license.json
 /license.json.tmp
+
+# API keys for arti-ref-search-mcp (OPENALEX_API_KEY, ...): per machine, never committed or shipped.
+# Read by tools/arti-ref-search-mcp/config.py; the tracked .mcp.json keeps empty env values.
+/mcp-keys.json
+
+# maintainer scratch notes and the dashboard side note: not part of the product
+/notes/
+/.side-note.md
+
+# update client: cached check result and (later) staged downloads / backups; per machine
+/.update/
+/.backup/

@@ -166,7 +166,7 @@ system, and the population workflow.
 Three layers, one shared key: `author-year[a|b]` (e.g. `kaw-2016`, `pintrich-1991`) links the
 library row, the fulltext filename, the Scratchbook's per-claim mapping, and the in-text citation.
 Layers 2 and 3's CRUD/generation mechanics — `arti-lit` invocation, the DOI-dedup rule, fulltext
-ingestion via `arti-pdf-ingest`, and the retrieval-trigger rule — are owned by **`ARTi-ref`**; this
+ingestion via `arti-convert ingest`, and the retrieval-trigger rule — are owned by **`ARTi-ref`**; this
 section covers only what stays writing-specific: how a search round gets logged, and how `[LIT:
 key]` tags inside the Scratchbook drive Layer 3 regeneration.
 
@@ -467,7 +467,7 @@ Methods are drafted and everything downstream is execution rather than re-planni
   serve different purposes (frozen scope vs. live status) but must agree at the moment the
   Completion Plan is compiled.
 - Write to `writing\completion-plan.md`, then render to `writing\completion-plan.pdf` via the
-  shared Markdown→A4-PDF pipeline in `~/.arti/tools/arti-pdf/README.md` (no self-contained-HTML step —
+  shared Markdown→A4-PDF pipeline in `~/.arti/tools/arti-convert/README.md` (no self-contained-HTML step —
   that pipeline already handles the print CSS).
 - **Hand-maintained after creation, not regenerated.** It states the frozen full scope to
   submission-ready; `memory\todo-list.md` + `memory\status.md` remain the living session-to-session

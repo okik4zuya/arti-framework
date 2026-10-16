@@ -1,9 +1,9 @@
-"""CLI front-end for arti-pdf-ingest. Converts a batch of PDFs to Markdown fulltext for one
+"""arti-convert ingest. Converts a batch of PDFs to Markdown fulltext for one
 project's `literature\\fulltext\\` folder and registers each conversion in that project's
 arti-lit library. Every run prints one JSON object per manifest row plus a final summary object,
 same convention as arti-lit. Usage:
 
-  "~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest \\
+  "~/.arti/python/python.exe" "~/.arti/tools/arti-convert/cli.py" ingest \\
       --project PATH --manifest PATH [--source-dir PATH] [--keep-source-pdf]
 
 Extraction (pdfminer text layer, OCR fallback via pdf2image + pytesseract) mirrors
@@ -26,8 +26,6 @@ if ARTI_HOME not in sys.path:
 
 from tools._shared.paths import poppler_bin_dir, tesseract_exe  # noqa: E402
 
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stderr.reconfigure(encoding="utf-8")
 
 ARTI_LIT_CLI = os.path.join(ARTI_HOME, "tools", "arti-lit", "cli.py")
 
@@ -131,24 +129,17 @@ def ingest(project, manifest, source_dir, keep_source_pdf):
     _emit(summary=summary)
 
 
-def build_parser():
-    p = argparse.ArgumentParser(prog="arti-pdf-ingest")
-    sub = p.add_subparsers(dest="command", required=True)
-
-    ing = sub.add_parser("ingest")
-    ing.add_argument("--project", required=True)
-    ing.add_argument("--manifest", required=True)
-    ing.add_argument("--source-dir")
-    ing.add_argument("--keep-source-pdf", action="store_true")
-
-    return p
-
-
-def main():
-    args = build_parser().parse_args()
-    if args.command == "ingest":
-        source_dir = args.source_dir or os.path.dirname(os.path.abspath(args.manifest))
-        ingest(args.project, args.manifest, source_dir, args.keep_source_pdf)
+def main(argv=None):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+    p = argparse.ArgumentParser(prog="arti-convert ingest")
+    p.add_argument("--project", required=True)
+    p.add_argument("--manifest", required=True)
+    p.add_argument("--source-dir")
+    p.add_argument("--keep-source-pdf", action="store_true")
+    args = p.parse_args(argv)
+    source_dir = args.source_dir or os.path.dirname(os.path.abspath(args.manifest))
+    ingest(args.project, args.manifest, source_dir, args.keep_source_pdf)
 
 
 if __name__ == "__main__":

@@ -15,12 +15,12 @@ JSON object (`{"ok": true, ...}` or `{"ok": false, "error": ...}`); see
 per-project, not a cross-project singleton. The **`ARTi-ref`** skill is this CLI's sole owner —
 `ARTi-writing` and `ARTi-idea` call into it rather than documenting the mechanics themselves.
 
-**`arti-pdf-ingest` invocation** — batch-converts PDFs to `literature\fulltext\` Markdown and
+**`arti-convert ingest` invocation** — batch-converts PDFs to `literature\fulltext\` Markdown and
 registers each conversion in `arti-lit` (status `fulltext`) in one pass, instead of ingesting one
-PDF at a time: `"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest --project
+PDF at a time: `"~/.arti/python/python.exe" "~/.arti/tools/arti-convert/cli.py" ingest --project
 PATH --manifest PATH` (Mac/Linux: `~/.arti/python/bin/python3`). Requires each manifest row's `key`
 to already exist in `library.md` — it never creates new library rows. See
-`~/.arti/tools/arti-pdf-ingest/README.md` for the manifest format.
+`~/.arti/tools/arti-convert/INGEST.md` for the manifest format.
 
 0. Create the standard paper-project folder layout in the project root, alongside `memory/` and
    `CLAUDE.md`:
@@ -39,7 +39,7 @@ to already exist in `library.md` — it never creates new library rows. See
      - `literature\exports\` — raw downloads, **never renamed by the researcher**; Claude parses
        them and assigns the key
      - `literature\fulltext\` — PDFs and their `.md` conversions, named by key; PDFs land here
-       either by hand or via a batch `arti-pdf-ingest` run once a manifest exists (see invocation
+       either by hand or via a batch `arti-convert ingest` run once a manifest exists (see invocation
        above)
      - `literature\search-log.md` — one row per search round: query (bare, copy-ready) · date ·
        hits · export file · target claim/paragraph · status

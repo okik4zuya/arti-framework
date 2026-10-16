@@ -1,4 +1,4 @@
-# arti-pdf
+# arti-convert pdf (Markdown → A4 PDF)
 
 Markdown → A4 PDF pipeline for frozen reference documents (e.g. Research Design, Submission
 Completion Plan) — zero-install, no pandoc/wkhtmltopdf dependency, uses whichever of Edge/Chrome is
@@ -43,14 +43,14 @@ from it. Re-render only when the source genuinely changes — this is not a live
 
 ## Usage
 
-`render.py` mirrors `arti-render`/`arti-table`'s existing convention: zero-install, pure-stdlib
+`cli.py pdf` (module `md2pdf.py`) mirrors `arti-render`/`arti-table`'s existing convention: zero-install, pure-stdlib
 Markdown→HTML step (handles headings, paragraphs, pipe tables with alignment rows, bold/italic/
 inline-code — this is intentionally not a full CommonMark implementation, just enough for the plain
 structure these documents use), then shells out to whichever of Edge/Chrome it finds for the actual
 PDF print step.
 
 ```
-python render.py --md <path/to/source.md> --out-dir <dir>
+python cli.py pdf --md <path/to/source.md> --out-dir <dir>
 ```
 
 Produces `<name>.pdf` next to `<name>.html` (the inspectable intermediate) in `--out-dir`. If a

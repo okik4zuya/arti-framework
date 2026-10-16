@@ -4,7 +4,6 @@
     cli.py status [--refresh]      show the local license (--refresh re-validates online first)
     cli.py deactivate [--key KEY --machine HASH]   free this machine's seat (or another one, with the key)
     cli.py activations KEY         list the seats of a key
-    cli.py trial EMAIL             ask for a trial key by email
     cli.py install-file PATH       install a signed license file (site / offline)
     cli.py verify [--file PATH] [--now ISO]   offline check; exit 0 valid/grace, 1 expired, 2 invalid
 
@@ -30,7 +29,6 @@ MESSAGES = {
     "not_entitled": "This machine is not entitled under that license.",
     "rate_limited": "Too many requests or deactivation limit reached. Try later or contact support.",
     "bad_checksum": "That key has a typo. Check it and try again.",
-    "trial_used": "A trial was already used for this email or machine.",
 }
 
 
@@ -89,6 +87,42 @@ def describe(info):
     return s
 
 
+def activate_key(raw_key):
+    """Bind this machine to a key and write license.json. Returns the evaluated info.
+    Raises ApiFailure (codes as in MESSAGES) - shared by the CLI and the dashboard server."""
+    body = lic.check_key(raw_key)
+    if body is None:
+        raise ApiFailure("bad_checksum", MESSAGES["bad_checksum"])
+    r = post("/activate", {"key": lic.format_key(body), "machine_hash": lic.machine_hash(), "label": lic.machine_label()})
+    info = lic.evaluate(r["license"])
+    if info["state"] == "invalid":
+        raise ApiFailure("server_error", "The server returned a license this client rejects (%s)." % info["reason"])
+    lic.write_license(r["license"])
+    info["seats_used"] = r.get("seats_used")
+    return info
+
+
+def refresh_license():
+    """Re-validate the local license online and store the renewed copy. Returns the evaluated info.
+    Raises ApiFailure (e.g. unreachable, key_revoked); FileNotFoundError if nothing is installed."""
+    cur = lic.read_license()
+    r = post("/validate", {"license": cur, "machine_hash": lic.machine_hash()})
+    info = lic.evaluate(r["license"])
+    if info["state"] != "invalid":
+        lic.write_license(r["license"])
+    return info
+
+
+def deactivate_local():
+    """Free this machine's seat online, then delete the local license file."""
+    cur = lic.read_license()
+    post("/deactivate", {"machine_hash": lic.machine_hash(), "license": cur})
+    try:
+        os.remove(lic.license_path())
+    except FileNotFoundError:
+        pass
+
+
 def cmd_activate(a):
     key = need_key(a.key)
     if key is None:
@@ -110,7 +144,7 @@ def cmd_status(a):
     try:
         cur = lic.read_license()
     except FileNotFoundError:
-        print("No license installed. Run 'arti-license activate KEY' or 'arti-license trial EMAIL'.")
+        print("No license installed. Run 'arti-license activate KEY'.")
         return 1
     if a.refresh:
         try:
@@ -166,15 +200,6 @@ def cmd_activations(a):
     return 0
 
 
-def cmd_trial(a):
-    try:
-        r = post("/trial", {"email": a.email})
-    except ApiFailure as e:
-        return fail(e)
-    print(r["message"] + ". Then run: arti-license activate KEY")
-    return 0
-
-
 def cmd_install_file(a):
     with open(a.path, encoding="utf-8") as f:
         new = json.load(f)
@@ -208,7 +233,6 @@ def main(argv=None):
     p = sub.add_parser("status"); p.add_argument("--refresh", action="store_true")
     p = sub.add_parser("deactivate"); p.add_argument("--key"); p.add_argument("--machine", help="64-hex machine hash of another seat (needs --key)")
     p = sub.add_parser("activations"); p.add_argument("key")
-    p = sub.add_parser("trial"); p.add_argument("email")
     p = sub.add_parser("install-file"); p.add_argument("path")
     p = sub.add_parser("verify"); p.add_argument("--file"); p.add_argument("--now", help="ISO UTC time, e.g. 2027-01-01T00:00:00Z")
     a = ap.parse_args(argv)

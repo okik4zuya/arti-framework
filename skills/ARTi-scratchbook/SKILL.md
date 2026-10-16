@@ -299,7 +299,7 @@ project using this project's memory convention).
   Scratchbook but doesn't populate it. Once every section this skill touches has real content, hand
   off back to `ARTi-writing`.
 - **Literature library CRUD, DOI dedup, or fulltext ingestion mechanics** — `ARTi-ref` owns
-  `arti-lit` CRUD and `arti-pdf-ingest`; this skill calls into it (`library get`/`add`, `refs
+  `arti-lit` CRUD and `arti-convert ingest`; this skill calls into it (`library get`/`add`, `refs
   generate`) exactly as described above, never reimplementing the mechanics.
 - **Building the Manuscript Blueprint** — `ARTi-writing` Stage 2, a precondition read at the start
   of Scratchbook population, not rebuilt here.

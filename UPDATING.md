@@ -1,17 +1,18 @@
 # Updating ARTi Framework
 
-There is no auto-update or in-app update check. Updating is a manual, three-step process:
+The dashboard checks once a day and shows a card in the sidebar when a newer version is available (Settings > About has the release notes, including the skills and instructions that changed). It never updates by itself. Updating is a manual, three-step process:
 
-1. Go to the [Releases page](https://github.com/okik4zuya/arti-framework/releases) and download
-   the latest `ArtiFrameworkSetup-x.y.z.exe`.
-2. Run it, same as a fresh install (Unblock the file first if Windows flags it as downloaded from
-   the internet).
+1. Download the latest installer (`ArtiFrameworkSetup-x.y.z.exe`, or the archive on macOS/Linux) from
+   your private download link. Updates are available while your license is active; an expired license
+   keeps everything you already have working but does not unlock newer versions.
+2. Run it, same as a fresh install (SmartScreen may warn about an unknown publisher: **More info** ->
+   **Run anyway**). Your license is already activated on this machine, so it is not asked for again.
 3. It installs over your existing `~/.arti` in place. You'll see a message like
    `Updating ARTi Framework v0.1.0 -> v0.2.0` during install, confirming what changed.
 
 Your own content is never touched by an update: `memory/`, `voice-profiles/`, `workflow-sessions/`,
-and `inbox/` are only created if missing, never overwritten or deleted. Everything else
-(`tools/`, `skills/`, `dashboard/`, `logo/`, `installer/`, the docs) is replaced with the new
+and `inbox/`, `license.json` and `mcp-keys.json` are only created if missing, never overwritten or deleted. Everything else
+(`tools/`, `skills/`, `dashboard/`, `logo/`, the docs) is replaced with the new
 version's copy, including removing anything the new version deleted upstream.
 
 If a new version changes a SQLite database's schema (`~/.arti/memory/arti.db` or a project's
@@ -21,7 +22,7 @@ opened — no manual step needed, and your existing rows are preserved.
 ## MCP servers (`.mcp.json`) need a manual step after adding/changing one
 
 `.mcp.json` (which registers MCP servers like `arti-ref-search-mcp`) is part of
-what gets replaced on update, same as `tools/`, `skills/`, etc. — so a new version's server
+what gets replaced on update (it holds no API keys; those live in `mcp-keys.json`, which updates never touch), same as `tools/`, `skills/`, etc. — so a new version's server
 additions or config changes land automatically in `~/.arti` itself.
 
 That only covers `~/.arti`. Reaching every other paper project without copying `.mcp.json` into

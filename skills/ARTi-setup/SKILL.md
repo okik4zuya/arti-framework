@@ -17,6 +17,12 @@ Owns two workflows: one-time cross-project setup for a researcher, and per-new-p
 scaffolding. Both used to live as Stage 0/1 inside `ARTi-idea`; they're pulled out here so a
 researcher can be onboarded or a project scaffolded without starting an idea-development session.
 
+**License check (run first, both workflows):**
+`"~/.arti/python/python.exe" "~/.arti/tools/arti-license/cli.py" verify` (offline, instant). Exit 0 or 1
+(valid, grace, expired) means carry on; an expired license only stops updates. Exit 2 (missing,
+invalid, other computer) means stop and tell the researcher to activate: dashboard Settings > License,
+or `cli.py activate KEY`. Nothing else in ARTi checks the license; only this skill and the dashboard do.
+
 ---
 
 ## Workflow A — One-Time Cross-Project Setup

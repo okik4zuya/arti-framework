@@ -10,33 +10,31 @@ skill, tool or MCP server is added, renamed or removed.**
 |---|---|---|
 | [ARTi-setup](skills/ARTi-setup/SKILL.md) | One-time onboarding; scaffolds each paper project's memory and `CLAUDE.md` | `arti-db`, `arti-memcheck` |
 | [ARTi-idea](skills/ARTi-idea/SKILL.md) | Gap map, idea canvas, novelty scoring, research design, journal target | ARTi-ref, ARTi-jfinder, ARTi-crosscite, `arti-db`, search MCP |
-| [ARTi-writing](skills/ARTi-writing/SKILL.md) | Journal profile, blueprint, drafting, review, cover letter, rebuttal | ARTi-ref, ARTi-scratchbook, ARTi-figure, `arti-docx`, `arti-pdf` |
+| [ARTi-writing](skills/ARTi-writing/SKILL.md) | Journal profile, blueprint, drafting, review, cover letter, rebuttal | ARTi-ref, ARTi-scratchbook, ARTi-figure, `arti-docx`, `arti-convert` |
 | [ARTi-scratchbook](skills/ARTi-scratchbook/SKILL.md) | Creating and populating the section-organized Scratchbook, tagging rules | ARTi-ref, search MCP |
-| [ARTi-ref](skills/ARTi-ref/SKILL.md) | `arti-lit.db` CRUD, fulltext ingestion, paper extraction, search-route choice | `arti-lit`, `arti-pdf-ingest`, search MCP |
-| [ARTi-SLR](skills/ARTi-SLR/SKILL.md) | PRISMA systematic review from RQ to synthesis | ARTi-ref, `arti-lit`, search MCP, `arti-plot`, `arti-render` |
-| [ARTi-figure](skills/ARTi-figure/SKILL.md) | Diagrams (`.drawio`), tables, data plots, composite figures (graphical abstract, multi-panel) | `arti-render`, `arti-table`, `arti-plot`, `arti-compose` |
+| [ARTi-ref](skills/ARTi-ref/SKILL.md) | `arti-lit.db` CRUD, fulltext ingestion, paper extraction, search-route choice | `arti-lit`, `arti-convert`, search MCP |
+| [ARTi-SLR](skills/ARTi-SLR/SKILL.md) | PRISMA systematic review from RQ to synthesis | ARTi-ref, `arti-lit`, search MCP, `arti-render` |
+| [ARTi-figure](skills/ARTi-figure/SKILL.md) | Diagrams (`.drawio`), tables, data plots, composite figures (graphical abstract, multi-panel) | `arti-render`, `arti-table`, `arti-compose` |
 | [ARTi-jfinder](skills/ARTi-jfinder/SKILL.md) | Ad-hoc Scimago journal lookup and ranking | `arti-jfinder` |
 | [ARTi-crosscite](skills/ARTi-crosscite/SKILL.md) | Cross-citation overlap between two paper sets | `citation-chase` |
 | [ARTi-annotate](skills/ARTi-annotate/SKILL.md) | Resolve the researcher's inline md comments and suggested edits (dashboard annotations) | `arti-annotate` |
 
-## Tools (16 folders in `~/.arti/tools/`)
+## Tools (15 folders in `~/.arti/tools/`)
 
 | Tool | What | Called by |
 |---|---|---|
 | [arti-lit](tools/arti-lit/README.md) | Per-project bibliography database and `library.md`/`references.md` exports | ARTi-ref, ARTi-SLR |
-| [arti-pdf-ingest](tools/arti-pdf-ingest/README.md) | Batch PDF to fulltext Markdown, registers into `arti-lit` | ARTi-ref |
+| [arti-convert](tools/arti-convert/README.md) | Document conversion: `pdf` (Markdown to A4 PDF via Edge or Chrome) and `ingest` ([PDFs to fulltext Markdown](tools/arti-convert/INGEST.md), registered into `arti-lit`) | ARTi-writing, ARTi-idea, ARTi-ref, ARTi-SLR, dashboard |
 | [arti-db](tools/arti-db/README.md) | Cross-project project index, idea bank, idea index | ARTi-setup, ARTi-idea, dashboard |
-| [arti-pdf](tools/arti-pdf/README.md) | Markdown to A4 PDF via Edge or Chrome | ARTi-writing |
 | [arti-render](tools/arti-render/render.py) | JSON spec to editable `.drawio` diagram | ARTi-figure |
-| [arti-table](tools/arti-table/README.md) | Table lane for ARTi-figure (stub) | ARTi-figure |
-| [arti-plot](tools/arti-plot/README.md) | Per-project matplotlib plot pattern (no shared renderer) | ARTi-figure |
+| [arti-table](tools/arti-table/README.md) | JSON spec to editable Markdown table (ARTi-figure table lane) | ARTi-figure |
 | [arti-compose](tools/arti-compose/README.md) | HTML/SVG figure source to vector PDF + exact-size PNG with layout, font, text-size and image-resolution checks | ARTi-figure |
 | [arti-docx](tools/arti-docx/README.md) | Markdown to styled `.docx` manuscript | ARTi-writing |
 | [arti-annotate](tools/arti-annotate/README.md) | Inline CriticMarkup comments/suggestions in any md file: parse, revise, accept, revert, strip | ARTi-annotate, dashboard |
 | [arti-jfinder](tools/arti-jfinder/README.md) | Scimago SJR snapshot database | ARTi-jfinder, ARTi-idea |
 | [citation-chase](tools/citation-chase/README.md) | Does set A cite or get cited by set B (OpenAlex, S2 fallback) | ARTi-crosscite |
-| [scopus-ris-batch-export](tools/scopus-ris-batch-export/HANDOFF.md) | Handoff brief for batch RIS export from Scopus (no code yet) | ARTi-SLR, researcher |
-| [arti-license](tools/arti-license/README.md) | Client for paid licensing: activate, status, trial, offline verify (Ed25519). Worker and `arti-admin` live outside `~/.arti` | ARTi-setup, dashboard (planned) |
+| [arti-license](tools/arti-license/README.md) | Client for paid licensing: activate, status, offline verify (Ed25519). Worker and `arti-admin` live outside `~/.arti` | ARTi-setup, dashboard (license gate, Settings > License), installers |
+| [arti-update](tools/arti-update/README.md) | Update check: signed release manifest from the licensing server, notes, read-receipt (apply is phase 3b) | dashboard (sidebar card, Settings > About) |
 | [arti-memcheck](tools/arti-memcheck/README.md) | T0 memory composition checker, `SessionStart` hook | hook, ARTi-setup |
 | [_shared](tools/_shared/README.md) | Narrow shared helpers (paths, DB migration) | other tools |
 
@@ -44,7 +42,7 @@ skill, tool or MCP server is added, renamed or removed.**
 
 | Server | What | Notes |
 |---|---|---|
-| `arti-ref-search-mcp` | In-house live literature discovery: OpenAlex, Semantic Scholar, Google Scholar; citation tracing, candidate resolution, full-text download | [README](tools/arti-ref-search-mcp/README.md). Keys live in the stanza's `env` in `.mcp.json`, never printed. Check live routes with `check_search_sources`. Never writes `arti-lit.db` |
+| `arti-ref-search-mcp` | In-house live literature discovery: OpenAlex, Semantic Scholar, Google Scholar; citation tracing, candidate resolution, full-text download | [README](tools/arti-ref-search-mcp/README.md). Keys live in the git-ignored `mcp-keys.json` (not `.mcp.json`, which is tracked and shipped), never printed. Check live routes with `check_search_sources`. Never writes `arti-lit.db` |
 | `openalex` (claude.ai connector) | Official OpenAlex: `find_keywords`, `keyword_search`, `search_works` (OQL), `analyze_works`, `resolve_references` | OAuth sign-in; about 1 USD of usage per day free |
 | `scite` (claude.ai connector) | Smart citations (supporting or contrasting) | Needs URL authorization; not used yet |
 

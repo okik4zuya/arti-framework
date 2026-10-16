@@ -1,4 +1,4 @@
-# arti-pdf-ingest
+# arti-convert ingest
 
 Converts a batch of PDFs to Markdown fulltext for one project's `literature\fulltext\` folder and
 registers each conversion in that project's `arti-lit` library (`literature\arti-lit.db` /
@@ -10,7 +10,7 @@ converting a PDF by hand.
 Same convention as every other `~/.arti/tools/*` tool -- the vendored interpreter's absolute path:
 
 ```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest \
+"~/.arti/python/python.exe" "~/.arti/tools/arti-convert/cli.py" ingest \
     --project PATH --manifest PATH [--source-dir PATH] [--keep-source-pdf]
 ```
 

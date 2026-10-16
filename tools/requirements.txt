@@ -2,7 +2,7 @@
 # arti-render needs only stdlib.
 python-docx
 
-# arti-plot: per-project plot scripts (see arti-plot/README.md) render with
+# Plot lane: per-project plot scripts (see skills/ARTi-figure/references/plot-lane.md) render with
 # matplotlib. No shared render.py yet -- each script imports this directly.
 matplotlib
 
@@ -16,7 +16,7 @@ networkx>=3.6
 adjustText>=1.4
 igraph>=1.0
 
-# arti-pdf-ingest: PDF text extraction + OCR fallback (pairs with the
+# arti-convert ingest: PDF text extraction + OCR fallback (pairs with the
 # poppler/tesseract binaries vendored into ~/.arti/bin by the NSIS installer).
 pdfminer.six==20250506
 pdf2image==1.17.0

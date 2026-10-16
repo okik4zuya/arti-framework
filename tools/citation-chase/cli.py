@@ -8,7 +8,7 @@ can't resolve. Never Scopus (entitlement unconfirmed) or Google Scholar (no API,
 see HANDOFF.md Path D).
 
 Prints one JSON object per Set-A DOI to stdout as it resolves, plus a final summary object --
-same convention as arti-pdf-ingest. Resumable: --out is also the run's state file; a DOI already
+same convention as arti-convert ingest. Resumable: --out is also the run's state file; a DOI already
 recorded with status "ok" is not re-queried on a re-run.
 
 Usage:

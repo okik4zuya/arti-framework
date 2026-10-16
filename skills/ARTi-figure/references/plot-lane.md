@@ -1,4 +1,4 @@
-# arti-plot (interim pattern, no shared renderer yet)
+# Plot lane (interim pattern, no shared renderer yet)
 
 Plot lane for ARTi-figure. First real use: Paper SLR Nanobubble in Reaction,
 `figures/scripts/build_fig3_corpus-trend.py` (2026-09-16) — a data-driven

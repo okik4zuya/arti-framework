@@ -83,9 +83,9 @@ confidence — not as the sole source, since coverage/data quality differs paper
 
 ### Path C — Scopus Search/Citation API (only if entitlement confirmed)
 
-Same institutional-entitlement question already open for the sibling tool
-`~/.arti/tools/scopus-ris-batch-export/HANDOFF.md` (§3 there) — if that tool's entitlement check
-was ever done, **reuse the answer instead of re-deriving it**; check that tool's directory for any
+Same institutional-entitlement question that stays open for Scopus RIS export (not built)
+— if that entitlement check
+was ever done, **reuse the answer instead of re-deriving it**; check for any
 resolution notes before assuming Scopus API access is or isn't available. If entitlement exists,
 Scopus's own cited-by count is authoritative for the researcher's own literature reviews and worth
 adding as a third source. Do not build this path first — it duplicates infrastructure Paths A/B
@@ -130,7 +130,7 @@ already answers "do these two clusters cite each other," since a B-paper citing 
 same edge as the A-paper being cited by a B-paper. Do not double-query B→A as well; it's redundant
 work against the same free-tier rate limits.
 
-**Robustness requirements** — same shape as `scopus-ris-batch-export`'s manifest:
+**Robustness requirements** — same shape as a manifest-driven batch tool:
 - Resume: reload existing output on startup, skip DOIs already `ok`.
 - Skip-if-answered: a DOI whose row is `ok` is not re-queried.
 - Per-DOI failure is recorded (`status: error`, message), never fatal to the batch.
@@ -141,7 +141,7 @@ work against the same free-tier rate limits.
 
 ## 5. Output schema — one JSON object per row + a final summary
 
-Follow the existing `~/.arti/tools/*` convention exactly (see `arti-pdf-ingest/README.md` for the
+Follow the existing `~/.arti/tools/*` convention exactly (see `arti-convert/INGEST.md` for the
 precedent): print one JSON object per Set-A DOI to stdout as it resolves, plus a final summary
 object. Never a single all-or-nothing exit code.
 

@@ -35,8 +35,8 @@ _HINTS = (
      "config.get_env) or retry later."),
     ("_API_KEY is not set", "Add the key to the environment file read by config.get_env."),
     ("unknown work_type", "The message lists the valid work_type values."),
-    ("SEMANTIC_SCHOLAR_API_KEY configured", "Add the free S2 key to the arti-ref-search-mcp env in "
-     "<arti home>/.mcp.json; recommend_semanticscholar_papers works without one."),
+    ("SEMANTIC_SCHOLAR_API_KEY configured", "Add the free S2 key to "
+     "<arti home>/mcp-keys.json; recommend_semanticscholar_papers works without one."),
     ("Google Scholar", "Scholar is a scraping route and may be blocked; wait out the cooldown, set "
      "GOOGLE_SCHOLAR_PROXY_URL, or use OpenAlex/Semantic Scholar tools. Run check_search_sources."),
 )
@@ -285,7 +285,7 @@ def download_openalex_fulltext(
     source: str = "auto",
 ) -> Dict:
     """Download PDFs to <project_path>/literature/fulltext/<key>.pdf. Does not touch arti-lit.db;
-    register and convert afterwards with arti-pdf-ingest (manifest.csv: '<key>.pdf,<key>').
+    register and convert afterwards with arti-convert ingest (manifest.csv: '<key>.pdf,<key>').
 
     Args:
         items: List of {"id_or_doi": W-id or DOI, "key": "author-year[a|b]"} (key: [a-z0-9-]+).

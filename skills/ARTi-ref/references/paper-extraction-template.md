@@ -1,7 +1,7 @@
 # Paper Extraction Template
 
 Blank output shape for a single-paper extraction, produced directly by Claude when the paper's
-text or PDF is available in the conversation (attached file, `arti-pdf-ingest` fulltext Markdown,
+text or PDF is available in the conversation (attached file, `arti-convert ingest` fulltext Markdown,
 or pasted text). Same field set as `notebooklm-extraction-prompt.md` — that file wraps this exact
 structure in an instruction block meant to be copy-pasted into NotebookLM instead, for when the
 researcher wants to run the extraction there rather than have Claude do it in-session. **Keep the

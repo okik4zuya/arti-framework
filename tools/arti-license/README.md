@@ -13,12 +13,11 @@ live in a separate repo (`arti-services`, not shipped). Design: `memory/memories
 | `status [--refresh]` | Show the local license; `--refresh` re-validates online first |
 | `deactivate [--key KEY --machine HASH]` | Free this machine's seat, or another one with the key |
 | `activations KEY` | List a key's seats |
-| `trial EMAIL` | Ask for a trial key; it arrives by email, then `activate` it |
 | `install-file PATH` | Install a signed license file (site / offline) |
 | `verify [--file PATH] [--now ISO]` | Offline check. Exit 0 valid or grace, 1 expired, 2 invalid |
 
 Errors print `[code]` with a plain message: `seat_limit`, `key_revoked`, `expired`, `not_found`,
-`not_entitled`, `rate_limited`, `bad_checksum`, `trial_used`, `unreachable`.
+`not_entitled`, `rate_limited`, `bad_checksum`, `unreachable`.
 
 ## Files
 

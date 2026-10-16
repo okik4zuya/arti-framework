@@ -63,8 +63,8 @@ DOI that stays unresolved across a full run.
 
 ## Not built (see HANDOFF.md for why)
 
-- Scopus (Path C) — institutional entitlement unconfirmed; check
-  `~/.arti/tools/scopus-ris-batch-export/HANDOFF.md` before ever adding this.
+- Scopus (Path C) — institutional entitlement unconfirmed; do not add without
+  confirming it first.
 - Google Scholar (Path D) — no official API; not implemented, ever.
 - Citation-network visualization, full bibliometrics (h-index, co-citation clustering).
 - Automatic manuscript-text generation from the overlap result.

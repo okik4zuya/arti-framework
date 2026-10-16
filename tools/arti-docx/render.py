@@ -6,7 +6,7 @@ Rebuilds the entire document body fresh from a Markdown source on each run,
 using a *style template* purely for styles/section-properties/footer (A4,
 margins, continuous line numbering, page-number footer, named paragraph/table
 styles). Markdown is the source of truth; the .docx is a snapshot rendered
-from it, the same way arti-pdf treats its HTML/PDF output - never a merge
+from it, the same way arti-convert pdf treats its HTML/PDF output - never a merge
 into an existing .docx's content.
 
 Requires python-docx (see ~/.arti/tools/requirements.txt).

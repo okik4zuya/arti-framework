@@ -1,7 +1,7 @@
 # ARTi Framework
 
 A Claude Code workflow for taking a research paper from "I don't have an idea yet" to
-"it's submitted" — nine skills, a set of export tools, and a local dashboard.
+"it's submitted" — ten skills, a set of export tools, and a local dashboard.
 
 - **ARTi-setup** — one-time onboarding; scaffolds each new paper project
 - **ARTi-idea** — gap map → idea canvas → novelty scoring → research design → journal target
@@ -23,40 +23,42 @@ added to your PATH and no system Python is touched or required.
 
 ## Install
 
+ARTi Framework is a paid product. After purchase you get a **license key** (`ARTI-XXXX-XXXX-XXXX-XXXX`)
+and a private download link for the installer. A key works on one machine at a time; installing needs an
+internet connection once, to activate it.
+
 **Prerequisite:** [Claude Code](https://claude.com/claude-code) must already be installed.
 
 ### Windows
 
-1. Download the ZIP: green **Code** button → **Download ZIP**.
-2. Right-click the downloaded ZIP → **Properties** → tick **Unblock** → **OK**, then
-   **Extract All…**. (Skipping Unblock is the single most common cause of a failed install —
-   Windows blocks scripts that came from the internet.)
-3. Open the extracted folder and double-click **`install.bat`**.
-4. Wait for `=== ARTi install complete ===`, then press a key to close the window.
+1. Download `ArtiFrameworkSetup-x.y.z.exe` from your private link. Windows SmartScreen may warn that the
+   publisher is unknown (the installer is not code-signed): **More info** -> **Run anyway**.
+2. Run it and enter your license key when asked. It activates this machine online, then installs.
+3. Wait for the finish page, then tick **Launch ARTi dashboard** or use the **ARTi Framework** Desktop icon.
 
 ### macOS / Linux
 
 ```bash
-cd ~/Downloads/arti-main     # wherever you extracted the ZIP
+tar -xzf arti-framework-x.y.z.tar.gz -C ~/Downloads/arti-framework && cd ~/Downloads/arti-framework
 bash install.sh
 ```
 
-On macOS the first launch of the new Desktop app may need **right-click → Open** once, because
+On macOS the first launch of the new Desktop app may need **right-click -> Open** once, because
 it isn't code-signed.
 
 ### What the installer does
 
-- Copies `skills/`, `tools/`, `dashboard/`, `logo/` and `CLAUDE.md` into `~/.arti`
-- Downloads a private Python 3.11 into `~/.arti/python` (~25 MB — the slow step) and installs
+- Copies `skills/`, `tools/`, `dashboard/`, `logo/` and the docs into `~/.arti`
+- Downloads a private Python 3.11 into `~/.arti/python` (~25 MB - the slow step) and installs
   `tools/requirements.txt` into it
 - Links each skill into `~/.claude/skills/` so Claude Code picks it up
 - Seeds empty `memory/` and `inbox/idea-index.md` files **only if they don't already exist**
 - Creates an **ARTi Framework** icon on your Desktop that opens the dashboard
 
-It never overwrites your own content. Re-running it is also how you **update** — see
-[UPDATING.md](UPDATING.md) for the full procedure and an important caution about the
-uninstaller. In short: it re-syncs the repo files, skips the Python download if `VERSION` is
-unchanged, and leaves `memory/`, `inbox/`, `voice-profiles/` and `workflow-sessions/` untouched.
+It never overwrites your own content. Updating means running a newer installer over the existing
+install - see [UPDATING.md](UPDATING.md) for the procedure and an important caution about the
+uninstaller. If your license expires, your data and every tool keep working; you only stop receiving updates.
+The dashboard needs an active license to open, while the skills and tools in Claude Code do not.
 
 ### Optional extras
 
@@ -65,7 +67,7 @@ The installer needs none of these, and every tool degrades cleanly without them:
 | For | Install | Without it |
 |---|---|---|
 | PNG export of figures | [draw.io desktop](https://www.drawio.com/) | You still get the editable `.drawio` file — open and export it by hand. |
-| PDF export (`arti-pdf`) | Microsoft Edge or Google Chrome | Already present on any stock Windows 10/11. Needed only for frozen A4 PDFs. |
+| PDF export (`arti-convert pdf`) | Microsoft Edge or Google Chrome | Already present on any stock Windows 10/11. Needed only for frozen A4 PDFs. |
 | VS Code launch from the dashboard | [VS Code](https://code.visualstudio.com/) on your PATH | The dashboard still creates the project folder; open it yourself. |
 
 ---
@@ -98,17 +100,17 @@ and in Claude Code, `/skills` should list `ARTi-setup`, `ARTi-idea`, `ARTi-writi
 
 | Symptom | Fix |
 |---|---|
-| PowerShell window flashes and closes | Run `install.bat`, not `install.ps1` — the `.bat` sets the execution policy and pauses on exit. |
-| `install.ps1 is not digitally signed` | You skipped step 2. Right-click the **ZIP** → Properties → Unblock, then re-extract. |
-| Python download fails | A proxy or firewall is blocking `github.com`. Fix the connection and re-run the installer; nothing else has to be undone. |
+| Activation fails with `seat_limit` | The key is already active on another machine. Free it there (`arti-license deactivate`) or contact support. |
+| Activation fails with `unreachable` | No internet, or a firewall blocks `lisensi.arti.ai.id`. Fix the connection and run the installer again. |
+| Python download fails | A proxy or firewall is blocking `github.com` (the Python build is downloaded from there). Fix the connection and re-run the installer; nothing else has to be undone. |
 | `pip install failed` warning | Harmless unless you need `.docx` export. Re-run the installer when you're back online. |
-| Skills don't appear in Claude Code | Restart Claude Code, then check `~/.claude/skills/` contains the nine `ARTi-*` entries. |
+| Skills don't appear in Claude Code | Restart Claude Code, then check `~/.claude/skills/` contains the ten `ARTi-*` entries. |
 | Desktop icon does nothing | Check `~/.arti/dashboard/server.log` — the launcher writes any traceback there. |
 | `tar.exe not found` (Windows) | Needs Windows 10 build 1803 or later. |
 
 ## Uninstall
 
-Delete `~/.arti`, the nine `ARTi-*` entries in `~/.claude/skills/`, and the Desktop icon.
+Delete `~/.arti`, the ten `ARTi-*` entries in `~/.claude/skills/`, and the Desktop icon.
 Your paper project folders are separate and are not touched.
 
 ## Platform support
@@ -125,8 +127,8 @@ Your paper project folders are separate and are not touched.
 
 ```
 ~/.arti/
-  skills/     the nine ARTi-* skills (linked into ~/.claude/skills/)
-  tools/      arti-lit, arti-render, arti-docx, arti-pdf, arti-memcheck, arti-ref-search-mcp, ...
+  skills/     the ten ARTi-* skills (linked into ~/.claude/skills/)
+  tools/      arti-lit, arti-render, arti-docx, arti-convert, arti-memcheck, arti-ref-search-mcp, ...
   CAPABILITIES.md  one-line map of every skill, tool and MCP server
   dashboard/  local launcher (127.0.0.1:4174)
   python/     vendored Python 3.11 - downloaded by the installer, never tracked

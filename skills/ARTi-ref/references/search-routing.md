@@ -19,7 +19,7 @@ S2 bulk 6/22. Indications, not rates. Detail: the project memory `mcp-search-com
 | Expand from a trusted paper | `trace_openalex_citations` (1-5 seeds, ranked by `link_count`); `related_openalex_works` as a weaker option |
 | Check a list found elsewhere (DOIs, titles, Scholar, Elicit) | openalex `resolve_references` for free-text citations, then `resolve_external_candidates` for `in_library` and PDF availability |
 | Landscape counts, trend, top sources | openalex `analyze_works` or `group_works`; arti-ref `count_openalex_works` with `group_by` |
-| Full-text PDF of a chosen paper | `download_openalex_fulltext`, then `arti-lit library add` and `arti-pdf-ingest` |
+| Full-text PDF of a chosen paper | `download_openalex_fulltext`, then `arti-lit library add` and `arti-convert ingest` |
 | Scan very recent related work | `recommend_semanticscholar_papers`, several seeds, `pool=recent`; a scanner only, mostly uncited 2026 papers |
 
 ## Do not use routinely

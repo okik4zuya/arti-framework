@@ -30,8 +30,8 @@ Both env vars are optional; the server works with neither set (anonymous OpenAle
 
 - `GOOGLE_SCHOLAR_PROXY_URL` — optional HTTP(S) proxy for `search_googlescholar_papers` only.
 
-All four are resolved by `config.get_env()`: process env first, then the `arti-ref-search-mcp` stanza's
-`env` in `<arti home>/.mcp.json` (put the Semantic Scholar key there, next to the OpenAlex one).
+All four are resolved by `config.get_env()`: process env first, then `<arti home>/mcp-keys.json` (git-ignored, per machine, never shipped; flat
+`{"OPENALEX_API_KEY": "..."}`), then the stanza's `env` in `<arti home>/.mcp.json` (tracked, kept empty).
 
 ## Tools
 
@@ -63,7 +63,7 @@ Paper dicts keep `paper_id`, `title`, `authors`, `abstract`, `doi`, `published_d
 | `include_abstract`, `abstract_max_chars` | shrink the payload; `select=` is applied server-side |
 
 **API key reach (2026-10-03).** `config.get_env()` reads `OPENALEX_API_KEY` / `ARTI_REF_CONTACT_EMAIL` from the
-process env first, then from the `arti-ref-search-mcp` stanza of `<arti home>/.mcp.json`. The user-scope entry in
+process env first, then from `<arti home>/mcp-keys.json`, then from the `arti-ref-search-mcp` stanza of `<arti home>/.mcp.json`. The user-scope entry in
 `~/.claude.json` has `"env": {}`, so before this fix only sessions opened inside `~/.arti` had the key and
 `download_openalex_fulltext` (which needs it) failed everywhere else. One copy of the secret, reachable from every
 project; no restart-time env wiring needed beyond restarting the server.
@@ -129,7 +129,7 @@ with the publisher — `extra.license` in search results is the OA license where
 
 The tool never writes `arti-lit.db`. To register and convert afterwards: add the row with
 `arti-lit library add`, write `literature/fulltext/manifest.csv` (`pdf_filename,key`), then
-`arti-pdf-ingest ingest --project P --manifest M --source-dir P/literature/fulltext
+`arti-convert ingest --project P --manifest M --source-dir P/literature/fulltext
 --keep-source-pdf` (verified: ingest skips the copy when source and destination are the same file).
 
 ### Semantic Scholar tools (added 2026-10-03, `sources/semanticscholar.py`)
@@ -214,7 +214,7 @@ server.py              # MCP instance + one thin @mcp.tool() wrapper per source
 paper.py               # shared Paper dataclass (source-agnostic)
 merge.py               # DOI/title normalization, dedupe, title similarity
 resolve.py             # resolve_candidates(): external DOI/title lists -> OpenAlex records
-config.py              # get_env(): process env, then the stanza's env in <arti home>/.mcp.json
+config.py              # get_env(): process env, then mcp-keys.json, then the stanza's env in <arti home>/.mcp.json
 http_client.py         # shared retry/backoff GET-JSON helper (any source can call this)
 sources/
   base.py               # PaperSource ABC: abstract search(query, **kwargs) -> result built from Paper objects
@@ -245,6 +245,6 @@ registry dict in `server.py`, fanned out via `asyncio.gather`), not a rewrite.
 
 ## Not in this tool
 
-- **PDF-to-Markdown conversion and library registration** — that's `arti-pdf-ingest` (this server only downloads PDFs).
+- **PDF-to-Markdown conversion and library registration** — that's `arti-convert ingest` (this server only downloads PDFs).
 - **A multi-source dispatcher tool** — not yet; see the extension recipe above.
 - **Writing to `arti-lit.db`** — discovery only; a chosen candidate goes through `ARTi-ref`.

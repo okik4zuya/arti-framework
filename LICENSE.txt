@@ -1,0 +1,21 @@
+﻿PERJANJIAN LISENSI PENGGUNA AKHIR (EULA) - ARTi Framework
+
+DRAF: teks ini belum ditinjau secara hukum. Tinjau sebelum perilisan.
+
+1. Lisensi. Anda memperoleh lisensi pribadi, tidak eksklusif, dan tidak dapat dipindahtangankan untuk memasang dan menggunakan ARTi Framework (skill, tool, dan dashboard) selama masa berlaku lisensi Anda. Satu lisensi berlaku untuk satu pengguna dan satu komputer pada satu waktu.
+
+2. Aktivasi. Saat pemasangan, ARTi mengirim kunci lisensi, kode mesin yang sudah di-hash (kode asli tidak pernah dikirim), serta nama sistem operasi dan nama komputer Anda ke server lisensi ARTi, hanya untuk mengaktifkan lisensi. Pemasangan memerlukan koneksi internet satu kali.
+
+3. Masa berlaku. Lisensi berlaku sesuai masa yang tertera pada lisensi Anda. Setelah lisensi berakhir, dashboard tidak dapat dibuka dan pembaruan tidak tersedia. Skill dan tool di Claude Code, serta seluruh data dan naskah Anda, tidak dihapus dan tetap milik Anda.
+
+4. Pembatasan. Anda tidak boleh membagikan kunci lisensi, menjual kembali, menyebarluaskan, atau mengunggah ARTi Framework atau bagiannya, serta tidak boleh menghilangkan atau menghindari pemeriksaan lisensi.
+
+5. Hak Anda atas karya Anda. Naskah, data, dan berkas proyek Anda tetap milik Anda dan disimpan di komputer Anda. ARTi tidak mengirimkannya ke server ARTi.
+
+6. Layanan pihak ketiga. ARTi bekerja bersama Claude Code (Anthropic) dan layanan pencarian literatur (OpenAlex, Semantic Scholar, Google Scholar). Penggunaan layanan tersebut tunduk pada ketentuan masing-masing; ARTi tidak mengendalikannya.
+
+7. Tanpa jaminan. ARTi Framework disediakan apa adanya. Sejauh diizinkan hukum, tanggung jawab ARTi dibatasi pada jumlah yang Anda bayar untuk lisensi ini. ARTi tidak bertanggung jawab atas keputusan jurnal, kebijakan penggunaan AI sebuah jurnal, atau perubahan layanan pihak ketiga.
+
+8. Hukum yang berlaku. Perjanjian ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan lebih dulu secara musyawarah.
+
+Dengan memilih "I Agree", Anda menyetujui perjanjian ini.

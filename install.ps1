@@ -30,14 +30,14 @@ try {
 # PowerShell block them. Clearing it is a no-op when the flag isn't there.
 if ($PSCommandPath) { Unblock-File -LiteralPath $PSCommandPath -ErrorAction SilentlyContinue }
 
-# TODO: fill in once the GitHub repo exists, e.g. 'https://github.com/<you>/arti.git'.
-# Until then this script operates purely on local files (safe no-op for the
-# clone/pull step) - useful for bootstrapping ~/.arti from a local checkout.
+# Empty on purpose: the framework repo is private and the product ships as an installer / archive
+# (see UPDATING.md), so there is nothing to clone. This script syncs from the folder it runs in.
+# The clone/pull branches below stay for a maintainer who sets a private URL by hand.
 $RepoUrl = ''
 
 $ArtiHome  = Join-Path $HOME '.arti'
 $ScriptDir = $PSScriptRoot
-$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'installer', 'CLAUDE.md', 'README.md', 'UPDATING.md', 'prompt-templates.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore', '.mcp.json')
+$TrackedItems = @('tools', 'skills', 'dashboard', 'logo', 'CLAUDE.md', 'CAPABILITIES.md', 'LICENSE.txt', 'README.md', 'UPDATING.md', 'prompt-templates.md', 'install.ps1', 'install.sh', 'install.bat', 'VERSION', '.gitignore', '.mcp.json')
 
 function Write-StubFile {
   # Set-Content -Encoding UTF8 emits a BOM in Windows PowerShell 5.1, which then
@@ -469,6 +469,29 @@ try {
   }
 } catch {
   Write-Warning "Could not create Desktop shortcut: $($_.Exception.Message)"
+}
+
+# --- 5b. license activation -------------------------------------------------------
+# The NSIS installer activates the license itself (ARTI_LICENSE_HANDLED=1). A script install asks
+# here: a key from ARTI_LICENSE_KEY or a prompt. A blank answer skips it, and the dashboard then
+# stays locked until Settings > License is filled in; skills and tools in Claude Code never need it.
+
+$licenseFile = Join-Path $ArtiHome 'license.json'
+if (-not (Test-Path $licenseFile) -and -not $env:ARTI_LICENSE_HANDLED) {
+  $licenseKey = $env:ARTI_LICENSE_KEY
+  if (-not $licenseKey) {
+    $licenseKey = Read-Host 'Enter your ARTi license key (ARTI-XXXX-XXXX-XXXX-XXXX), or press Enter to skip'
+  }
+  if ($licenseKey) {
+    & (Join-Path $pythonDir 'python.exe') (Join-Path $ArtiHome 'toolsrti-license\cli.py') activate $licenseKey.Trim()
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warning "License activation failed (see message above). ARTi is installed, but the dashboard stays locked."
+      Write-Warning "Fix the key or your connection, then open the dashboard > Settings > License, or re-run this script."
+      exit 1
+    }
+  } else {
+    Write-Warning "No license key entered. The dashboard stays locked until you activate in Settings > License."
+  }
 }
 
 # --- 6. summary -----------------------------------------------------------------

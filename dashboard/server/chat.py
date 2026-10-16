@@ -34,7 +34,7 @@ DEFAULT_PDF_SUMMARY_PROMPT = (
 
 
 def _extract_pdf_text(pdf_path):
-    """Mirrors tools/arti-pdf-ingest/cli.py::extract_text_to_markdown -- pdfminer
+    """Mirrors tools/arti-convert/ingest.py::extract_text_to_markdown -- pdfminer
     text layer, OCR fallback via pdf2image + pytesseract against the vendored
     ~/.arti/bin/{poppler,tesseract} binaries."""
     from pdfminer.high_level import extract_text
@@ -64,8 +64,8 @@ def _load_arti_db():
 
 
 def _load_arti_pdf():
-    path = ARTI_HOME / "tools" / "arti-pdf" / "render.py"
-    spec = importlib.util.spec_from_file_location("arti_pdf", path)
+    path = ARTI_HOME / "tools" / "arti-convert" / "md2pdf.py"
+    spec = importlib.util.spec_from_file_location("arti_md2pdf", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -502,8 +502,8 @@ def write_project_file(project_path, abs_path, content, expected_mtime=None):
 def export_project_file_pdf(project_path, abs_path, html):
     """Prints an already-rendered HTML document (built client-side from the
     same marked.js/KaTeX pipeline the preview panel uses) to PDF via the
-    arti-pdf tool's headless-browser print step, writing the result directly
-    next to the source file (same convention as the arti-pdf CLI) rather than
+    arti-convert pdf headless-browser print step, writing the result directly
+    next to the source file (same convention as the arti-convert pdf CLI) rather than
     streaming it back for a browser download -- the dashboard runs inside a
     pywebview/WebView2 shell where downloads are non-trivial (disabled by
     default, and even enabled, save to wherever the OS picks rather than the

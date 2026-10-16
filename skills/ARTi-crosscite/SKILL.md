@@ -27,7 +27,7 @@ singleton** — no `--project` flag, like `arti-jfinder`/`arti-db`. Source prior
 (resolves each Set-B DOI to a work ID once, then checks Set-A `referenced_works` membership for
 the backward direction, and `filter=cites:<id>` for the forward direction); Semantic Scholar as a
 one-shot fallback when OpenAlex 404s on a Set-A DOI. **Never** Scopus or Google Scholar — Scopus
-entitlement is unconfirmed (see `~/.arti/tools/scopus-ris-batch-export/HANDOFF.md`) and Google
+entitlement is unconfirmed and Google
 Scholar has no official API (deliberately not built, see the tool's own HANDOFF.md). Runs are
 resumable and auditable: every row is persisted to `--out` as it resolves, so a re-run only
 retries `not_found`/`error` rows, never re-queries an `ok` one.

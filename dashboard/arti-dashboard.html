@@ -1365,7 +1365,81 @@
     width:100%; min-height:100px; font-family:inherit; font-size:13.5px; padding:10px 12px;
     border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); resize:vertical;
   }
-  .settings-panel-body{ padding:20px; display:flex; flex-direction:column; gap:24px; max-width:760px; }
+  .settings-layout{ display:flex; align-items:stretch; min-height:0; flex:1; }
+  .settings-nav{
+    flex:none; width:168px; padding:12px 8px; border-right:1px solid var(--border); background:var(--surface);
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .settings-nav-item{
+    font-family:"Inter",system-ui,sans-serif; font-size:13.5px; font-weight:500; text-align:left;
+    padding:8px 12px; border:none; background:none; color:var(--text-muted); cursor:pointer; border-radius:var(--radius);
+  }
+  .settings-nav-item:hover{ background:var(--accent-soft); color:var(--accent); }
+  .settings-nav-item.active{ background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  .settings-nav-item:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .settings-content{ flex:1; min-width:0; padding:20px 24px 32px; overflow-y:auto; }
+  .settings-page{ display:flex; flex-direction:column; gap:16px; max-width:720px; }
+  .settings-page[hidden]{ display:none; }
+  .settings-page h2{ margin:0; font-size:17px; font-weight:600; }
+  .fine-ai-details{ display:flex; flex-direction:column; gap:24px; }
+  body.fine-ai-disabled .fine-ai-details{ opacity:.5; }
+  .lic-status-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .lic-badge{
+    font-family:"Inter",system-ui,sans-serif; font-size:12.5px; font-weight:600; padding:3px 10px;
+    border-radius:var(--radius); background:var(--slate-soft); color:var(--slate);
+  }
+  .lic-badge.ok{ background:var(--green-soft); color:var(--green); }
+  .lic-badge.warn{ background:var(--amber-soft); color:var(--amber); }
+  .lic-badge.bad{ background:var(--red-soft); color:var(--red); }
+  .lic-facts{ display:grid; grid-template-columns:140px 1fr; gap:8px 16px; margin:0; font-size:13.5px; }
+  .lic-facts dt{ color:var(--text-muted); }
+  .lic-facts dd{ margin:0; word-break:break-word; }
+  .lic-facts[hidden]{ display:none; }
+  .lic-block{ display:flex; flex-direction:column; gap:8px; }
+  .lic-block[hidden]{ display:none; }
+  .lic-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .lic-key-row, .api-field-row{ display:flex; gap:8px; }
+  .lic-key-row input, .api-field-row input{
+    flex:1; min-width:0; font-family:"SFMono-Regular",Consolas,monospace; font-size:13.5px; padding:8px 10px;
+    border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);
+  }
+  .api-field{ display:flex; flex-direction:column; gap:6px; }
+  .api-field label{ font-size:13.5px; font-weight:600; }
+  .system-list{ display:flex; flex-direction:column; }
+  .system-row{ display:flex; align-items:baseline; gap:10px; padding:8px 0; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .system-row:first-child{ border-top:none; }
+  .system-row .s-name{ font-weight:600; font-size:13.5px; min-width:220px; }
+  .system-row .s-detail{ font-size:12.5px; color:var(--text-muted); flex:1; min-width:160px; }
+  .about-warning{ padding:10px 12px; border:1px solid var(--amber); background:var(--amber-soft); color:var(--amber); font-size:13px; line-height:1.5; }
+  /* Sidebar licence card: hidden while the licence is healthy; amber near the end, red when locked. */
+  .license-card{
+    font-family:"Inter",system-ui,sans-serif; font-size:12px; line-height:1.4; text-align:left; cursor:pointer;
+    margin:0 0 8px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--slate-soft); color:var(--slate);
+  }
+  .license-card[hidden]{ display:none; }
+  .license-card.warn{ background:var(--amber-soft); color:var(--amber); border-color:var(--amber); }
+  .license-card.bad{ background:var(--red-soft); color:var(--red); border-color:var(--red); }
+  .settings-subhead{ margin:8px 0 0; font-size:14px; font-weight:600; }
+  .lic-badge.info{ background:var(--accent-soft); color:var(--accent); }
+  .license-card.update-card{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+  .update-box{ display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid var(--accent); background:var(--surface); }
+  .update-box[hidden], .update-box [hidden]{ display:none; }
+  .update-box-head{ font-weight:600; font-size:14px; }
+  .update-box strong{ font-size:13.5px; }
+  .update-box ul{ margin:4px 0 0; padding-left:18px; font-size:13px; }
+  .release-notes{ white-space:pre-wrap; font-size:13px; line-height:1.55; max-height:280px; overflow:auto; padding:10px 12px; background:var(--surface-2); }
+  /* Locked: only Settings > License is usable. */
+  body.license-locked .nav-item:not([data-view="settings"]){ opacity:.4; pointer-events:none; }
+  body.license-locked .settings-nav-item:not([data-cat="license"]){ opacity:.4; pointer-events:none; }
+  @media (max-width: 720px){
+    .settings-layout{ flex-direction:column; }
+    .settings-nav{ width:auto; flex-direction:row; flex-wrap:wrap; border-right:none; border-bottom:1px solid var(--border); padding:8px; }
+    .settings-nav-item{ border:1px solid var(--border); padding:4px 10px; font-size:12.5px; }
+    .settings-nav-item.active{ border-color:var(--accent); }
+    .lic-facts{ grid-template-columns:110px 1fr; }
+    .settings-content{ padding:16px; }
+  }
 
   /* ---- Message management / bulk-inject / export modals ---- */
   .mm-table{ width:100%; border-collapse:collapse; font-size:13px; }
@@ -1440,6 +1514,8 @@
       <button type="button" class="nav-item" data-view="settings" title="Settings (Ctrl+,)">Settings</button>
     </nav>
     <div class="side-spacer"></div>
+    <button type="button" class="license-card update-card" id="updateCard" hidden></button>
+    <button type="button" class="license-card" id="licenseCard" hidden></button>
     <div class="side-version" id="frameworkVersion" style="opacity:0.5; font-size:11px; padding:4px 0;"></div>
     <button class="btn danger" id="quitBtn">Quit Dashboard</button>
   </div>
@@ -1880,29 +1956,126 @@
     <div class="panel-topbar">
       <div class="panel-topbar-title">Settings</div>
     </div>
-    <div class="settings-panel-body">
-      <div class="settings-section">
-        <h3>Fine AI</h3>
-        <div class="hint">Fine AI is the per-project chat panel in Workspace. Turning it off hides the Fine AI column and the "Summarize PDF(s)" file action for anyone who doesn't use it.</div>
-        <label class="archived-toggle"><input type="checkbox" id="fineAiEnabledToggle" /> Enable Fine AI</label>
-      </div>
-      <div class="settings-section" id="chatModelsSection">
-        <h3>Chat models</h3>
-        <div class="hint">OpenAI-compatible models (name, API key, optional base URL override for Gemini/Grok/etc). The default model is used for chat and PDF summarization.</div>
-        <div id="modelsList"></div>
-        <div class="model-add-row">
-          <input class="m-in-name" id="newModelName" placeholder="Model name (e.g. gpt-4o)" />
-          <input class="m-in-url" id="newModelUrl" placeholder="Base URL (optional)" />
-          <input class="m-in-key" id="newModelKey" placeholder="API key" type="password" />
-          <button class="btn primary" id="addModelBtn" type="button">Add model</button>
-        </div>
-        <div class="err" id="modelsErr" hidden></div>
-      </div>
-      <div class="settings-section" id="pdfSummaryPromptSection">
-        <h3>PDF summarizer prompt</h3>
-        <div class="hint">Used by ArtiPDF's "Summarize with AI" context-menu action, sent as the system prompt against the default model above.</div>
-        <textarea id="pdfSummaryPrompt"></textarea>
-        <div><button class="btn primary" id="savePdfPromptBtn" type="button">Save prompt</button></div>
+    <div class="settings-layout">
+      <nav class="settings-nav" id="settingsNav" aria-label="Settings categories">
+        <button type="button" class="settings-nav-item active" data-cat="license">License</button>
+        <button type="button" class="settings-nav-item" data-cat="fineai">Fine AI</button>
+        <button type="button" class="settings-nav-item" data-cat="apis">Literature APIs</button>
+        <button type="button" class="settings-nav-item" data-cat="system">System</button>
+        <button type="button" class="settings-nav-item" data-cat="about">About</button>
+      </nav>
+      <div class="settings-content">
+
+        <section class="settings-page" data-cat="license">
+          <h2>License</h2>
+          <div class="lic-status-row"><span class="lic-badge" id="licBadge">Checking&hellip;</span><span class="hint" id="licStateHint"></span></div>
+          <dl class="lic-facts" id="licFacts">
+            <dt>Licensed to</dt><dd id="licName">&mdash;</dd>
+            <dt>License ID</dt><dd id="licKeyId">&mdash;</dd>
+            <dt>Valid until</dt><dd id="licExpires">&mdash;</dd>
+            <dt>Updates until</dt><dd id="licUpdates">&mdash;</dd>
+            <dt>This computer</dt><dd id="licMachine">&mdash;</dd>
+          </dl>
+          <div class="lic-block" id="licManage" hidden>
+            <div class="lic-actions">
+              <button class="btn" id="licRefreshBtn" type="button">Refresh status</button>
+              <button class="btn danger" id="licDeactivateBtn" type="button">Deactivate this computer</button>
+            </div>
+            <div class="hint">Deactivating frees the license for another computer. Your projects and data stay where they are.</div>
+          </div>
+          <div class="lic-block" id="licActivate" hidden>
+            <div class="hint">Enter the license key you received after purchase. This computer needs an internet connection once, to activate.</div>
+            <div class="lic-key-row">
+              <input id="licKeyInput" placeholder="ARTI-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+              <button class="btn primary" id="licActivateBtn" type="button">Activate</button>
+            </div>
+          </div>
+          <div class="err" id="licErr" hidden></div>
+          <div class="hint" id="licOk" hidden></div>
+          <div class="hint">Skills and tools in Claude Code keep working without a license; only this dashboard needs one. Need help? Contact support through the site where you bought ARTi.</div>
+        </section>
+
+        <section class="settings-page" data-cat="fineai" hidden>
+          <h2>Fine AI</h2>
+          <div class="settings-section">
+            <div class="hint">Fine AI is the per-project chat panel in Workspace. Turning it off hides the Fine AI column and the "Summarize PDF(s)" file action for anyone who doesn't use it.</div>
+            <label class="archived-toggle"><input type="checkbox" id="fineAiEnabledToggle" /> Enable Fine AI</label>
+          </div>
+          <div class="fine-ai-details">
+            <div class="settings-section" id="chatModelsSection">
+              <h3>Chat models</h3>
+              <div class="hint">OpenAI-compatible models (name, API key, optional base URL override for Gemini/Grok/etc). The default model is used for chat and PDF summarization.</div>
+              <div id="modelsList"></div>
+              <div class="model-add-row">
+                <input class="m-in-name" id="newModelName" placeholder="Model name (e.g. gpt-4o)" />
+                <input class="m-in-url" id="newModelUrl" placeholder="Base URL (optional)" />
+                <input class="m-in-key" id="newModelKey" placeholder="API key" type="password" />
+                <button class="btn primary" id="addModelBtn" type="button">Add model</button>
+              </div>
+              <div class="err" id="modelsErr" hidden></div>
+            </div>
+            <div class="settings-section" id="pdfSummaryPromptSection">
+              <h3>PDF summarizer prompt</h3>
+              <div class="hint">Used by ArtiPDF's "Summarize with AI" context-menu action, sent as the system prompt against the default model above.</div>
+              <textarea id="pdfSummaryPrompt"></textarea>
+              <div><button class="btn primary" id="savePdfPromptBtn" type="button">Save prompt</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-page" data-cat="apis" hidden>
+          <h2>Literature APIs</h2>
+          <div class="hint">Keys for the literature search that Claude uses (OpenAlex, Semantic Scholar). They are stored only on this computer in <code>mcp-keys.json</code> and are never shown in full. Leave a field empty to keep the current value.</div>
+          <div class="api-field">
+            <label for="keyOpenalex">OpenAlex API key</label>
+            <div class="api-field-row"><input id="keyOpenalex" type="password" autocomplete="off" /><button class="btn" type="button" data-clear="OPENALEX_API_KEY">Remove</button></div>
+            <div class="hint">Free at openalex.org. Needed to download full texts.</div>
+          </div>
+          <div class="api-field">
+            <label for="keyS2">Semantic Scholar API key</label>
+            <div class="api-field-row"><input id="keyS2" type="password" autocomplete="off" /><button class="btn" type="button" data-clear="SEMANTIC_SCHOLAR_API_KEY">Remove</button></div>
+            <div class="hint">Free on request at semanticscholar.org/product/api. Raises the rate limit; search works without it.</div>
+          </div>
+          <div class="api-field">
+            <label for="keyEmail">Contact email</label>
+            <div class="api-field-row"><input id="keyEmail" type="email" autocomplete="off" /></div>
+            <div class="hint">Sent to OpenAlex in requests (their "polite pool"). Optional.</div>
+          </div>
+          <div><button class="btn primary" id="saveKeysBtn" type="button">Save</button> <span class="hint" id="keysMsg"></span></div>
+        </section>
+
+        <section class="settings-page" data-cat="system" hidden>
+          <h2>System</h2>
+          <div class="hint">What this computer has available for ARTi. Read-only.</div>
+          <div id="systemList" class="system-list"></div>
+          <div><button class="btn" id="systemRecheckBtn" type="button">Re-check</button></div>
+        </section>
+
+        <section class="settings-page" data-cat="about" hidden>
+          <h2>About</h2>
+          <dl class="lic-facts">
+            <dt>ARTi Framework</dt><dd id="aboutVersion">&mdash;</dd>
+            <dt>Python</dt><dd id="aboutPython">&mdash;</dd>
+            <dt>Install folder</dt><dd id="aboutHome">&mdash;</dd>
+          </dl>
+          <h3 class="settings-subhead">Updates</h3>
+          <div class="lic-status-row"><span class="lic-badge" id="updBadge">&mdash;</span><span class="hint" id="updHint"></span></div>
+          <div><button class="btn" id="updCheckBtn" type="button">Check for updates</button></div>
+          <div class="update-box" id="updBox" hidden>
+            <div class="update-box-head" id="updHead"></div>
+            <div class="hint" id="updInstaller" hidden>This release changes the runtime, so it needs the full installer.</div>
+            <div id="updSkillsWrap" hidden>
+              <strong>Skills and instructions that changed</strong>
+              <ul id="updSkills"></ul>
+              <div class="hint">These change how Claude behaves in your projects. Read them before you update.</div>
+            </div>
+            <div class="release-notes" id="updNotes"></div>
+            <div class="lic-actions"><button class="btn primary" id="updAckBtn" type="button">I have read this</button></div>
+            <div class="hint" id="updAfterAck" hidden></div>
+          </div>
+          <div class="about-warning"><strong>Update by running the new installer over your install.</strong> Do not uninstall first: the uninstaller deletes the whole ARTi folder, including your profile, idea bank and project index.</div>
+        </section>
+
       </div>
     </div>
   </div>
@@ -2747,6 +2920,7 @@
   });
 
   function switchMainView(view){
+    if (licenseLocked && view !== "settings") view = "settings";
     Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function(b){
       b.classList.toggle("active", b.getAttribute("data-view") === view);
     });
@@ -7225,7 +7399,7 @@
   // -- a fresh render from source, not a read of the live #chatPreviewBody,
   // so an active in-panel search's <mark> highlights can never leak into the
   // exported PDF. The exported document is printed by a *separate* headless
-  // browser process (tools/arti-pdf's html_to_pdf), navigated straight to a
+  // browser process (tools/arti-convert's md2pdf.html_to_pdf), navigated straight to a
   // temp .html file -- it has no guaranteed, well-timed network path back to
   // this dashboard server, so nothing in the exported HTML may depend on a
   // live fetch at print time: local images are inlined as data: URIs and the
@@ -10111,12 +10285,282 @@
   });
 
   // =====================================================================
+  // License gate + Settings categories
+  // =====================================================================
+
+  var licenseLocked = false;
+  var licenseStatus = null;
+  var LIC_BADGES = {
+    valid: ["Active", "ok"], grace: ["Grace period", "warn"], expired: ["Expired", "bad"],
+    missing: ["Not activated", "bad"], invalid: ["Not valid", "bad"]
+  };
+  var LIC_REASONS = {
+    no_license: "No license is installed on this computer yet.",
+    wrong_machine: "This license belongs to another computer. Activate this computer with your key.",
+    bad_signature: "The license file was changed or damaged. Activate again with your key.",
+    unknown_kid: "The license file was not issued by ARTi. Activate again with your key.",
+    unreadable: "The license file could not be read. Activate again with your key.",
+    malformed: "The license file is incomplete. Activate again with your key."
+  };
+
+  function licFmtDate(iso){
+    if (!iso) return "—";
+    var d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" });
+  }
+
+  function applyLicenseStatus(st){
+    licenseStatus = st;
+    licenseLocked = !!st.locked;
+    document.body.classList.toggle("license-locked", licenseLocked);
+    var b = LIC_BADGES[st.state] || ["Unknown", ""];
+    var badge = document.getElementById("licBadge");
+    badge.textContent = b[0];
+    badge.className = "lic-badge " + b[1];
+    var hint = "";
+    if (st.state === "valid" && st.days_left != null) hint = st.days_left + " days left";
+    else if (st.state === "grace") hint = "Renew soon. Everything keeps working; updates are paused after " + licFmtDate(st.grace_ends) + ".";
+    else if (st.state === "expired") hint = "Your tools and data keep working. Renew to receive updates.";
+    else hint = LIC_REASONS[st.reason] || "";
+    document.getElementById("licStateHint").textContent = hint;
+    var has = st.state === "valid" || st.state === "grace" || st.state === "expired";
+    document.getElementById("licName").textContent = has ? (st.name || "—") : "—";
+    document.getElementById("licKeyId").textContent = has ? (st.key_id || "—") : "—";
+    document.getElementById("licExpires").textContent = has ? licFmtDate(st.expires) : "—";
+    document.getElementById("licUpdates").textContent = has ? licFmtDate(st.updates_until) : "—";
+    document.getElementById("licMachine").textContent = st.machine || "—";
+    document.getElementById("licManage").hidden = !has;
+    // Expired licences may enter a renewed key; locked ones must.
+    document.getElementById("licActivate").hidden = !(st.state === "missing" || st.state === "invalid" || st.state === "expired");
+
+    var card = document.getElementById("licenseCard");
+    var cardText = "", cardCls = "";
+    if (licenseLocked){ cardText = "License needed. Open Settings to activate."; cardCls = "bad"; }
+    else if (st.state === "expired"){ cardText = "License expired. Updates are off."; cardCls = "bad"; }
+    else if (st.state === "grace"){ cardText = "License expired. Renew soon."; cardCls = "warn"; }
+    else if (st.state === "valid" && st.days_left != null && st.days_left <= 30){
+      cardText = "License ends in " + st.days_left + " day" + (st.days_left === 1 ? "" : "s") + "."; cardCls = "warn";
+    }
+    card.hidden = !cardText;
+    card.textContent = cardText;
+    card.className = "license-card " + cardCls;
+  }
+
+  function refreshLicenseStatus(){
+    return apiRaw("/license/status").then(function(st){ applyLicenseStatus(st); return st; });
+  }
+
+  function licMessage(kind, text){
+    var err = document.getElementById("licErr"), ok = document.getElementById("licOk");
+    err.hidden = kind !== "err"; ok.hidden = kind !== "ok";
+    if (kind === "err") err.textContent = text;
+    if (kind === "ok") ok.textContent = text;
+  }
+
+  function licPost(path, body, busyBtn){
+    licMessage("none");
+    if (busyBtn) busyBtn.disabled = true;
+    return fetch(API + path, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body || {}) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (busyBtn) busyBtn.disabled = false;
+        if (!res.ok) { licMessage("err", res.error || "Request failed."); return res; }
+        applyLicenseStatus(res.status);
+        return res;
+      }, function(){
+        if (busyBtn) busyBtn.disabled = false;
+        licMessage("err", "The dashboard server did not answer.");
+        return { ok:false };
+      });
+  }
+
+  document.getElementById("licActivateBtn").addEventListener("click", function(){
+    var key = document.getElementById("licKeyInput").value.trim();
+    if (!key) { licMessage("err", "Enter your license key first."); return; }
+    var wasLocked = licenseLocked;
+    licPost("/license/activate", { key: key }, this).then(function(res){
+      if (!res.ok) return;
+      document.getElementById("licKeyInput").value = "";
+      licMessage("ok", "License activated for this computer.");
+      if (wasLocked) { loadAll().then(function(){}, function(){}); }
+    });
+  });
+  document.getElementById("licKeyInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("licActivateBtn").click();
+  });
+  document.getElementById("licRefreshBtn").addEventListener("click", function(){
+    licPost("/license/refresh", {}, this).then(function(res){ if (res.ok) licMessage("ok", "Status refreshed."); });
+  });
+  document.getElementById("licDeactivateBtn").addEventListener("click", function(){
+    if (!window.confirm("Deactivate this computer? The dashboard will lock until you activate again. Your data is not touched.")) return;
+    licPost("/license/deactivate", {}, this).then(function(res){
+      if (res.ok) { licMessage("ok", "This computer was deactivated."); showSettingsCat("license"); }
+    });
+  });
+  document.getElementById("licenseCard").addEventListener("click", function(){
+    switchMainView("settings");
+    showSettingsCat("license");
+  });
+
+  // ---- Updates (phase 3a: check, read the notes, acknowledge; the researcher still runs the installer) ----
+  var updateStatus = null;
+
+  function applyUpdateStatus(u){
+    updateStatus = u;
+    var a = u.available;
+    var card = document.getElementById("updateCard");
+    card.hidden = !a;
+    if (a) card.textContent = "Version " + a.version + " is available.";
+    var badge = document.getElementById("updBadge"), hint = document.getElementById("updHint");
+    if (u.error){
+      badge.textContent = "Check failed"; badge.className = "lic-badge warn";
+      hint.textContent = u.error.message || "";
+    } else if (a){
+      badge.textContent = "Update available"; badge.className = "lic-badge info";
+      hint.textContent = "Installed v" + u.current + ", new v" + a.version;
+    } else if (!u.checked_at){
+      badge.textContent = "Not checked yet"; badge.className = "lic-badge";
+      hint.textContent = "Installed v" + u.current + ". Use the button to look for a newer version.";
+    } else {
+      badge.textContent = "Up to date"; badge.className = "lic-badge ok";
+      hint.textContent = "Installed v" + u.current + (u.locked_newer ? ". Version " + u.locked_newer.version + " exists but comes after the updates your license covers." : "") +
+        (u.checked_at ? " Last checked " + licFmtDate(u.checked_at) + "." : "");
+    }
+    var box = document.getElementById("updBox");
+    box.hidden = !a;
+    if (!a) return;
+    document.getElementById("updHead").textContent = "Version " + a.version + " · " + licFmtDate(a.released);
+    document.getElementById("updInstaller").hidden = !a.requires_installer;
+    var skills = a.skills_changed || [];
+    document.getElementById("updSkillsWrap").hidden = !skills.length;
+    document.getElementById("updSkills").innerHTML = skills.map(function(t){ return "<li>" + escapeHtml(t) + "</li>"; }).join("");
+    document.getElementById("updNotes").textContent = a.notes || "";
+    document.getElementById("updAckBtn").hidden = !!u.acked;
+    var after = document.getElementById("updAfterAck");
+    after.hidden = !u.acked;
+    if (u.acked) after.textContent = "Thanks. To update now, run the newer installer from your download link" +
+      (a.download_page ? " (" + a.download_page + ")" : "") + ". One-click update inside the dashboard comes in a later version.";
+  }
+  function loadUpdateStatus(){
+    return apiRaw("/update/status").then(applyUpdateStatus).catch(function(){});
+  }
+  document.getElementById("updCheckBtn").addEventListener("click", function(){
+    var btn = this, prev = btn.textContent;
+    btn.disabled = true; btn.textContent = "Checking…";
+    apiRaw("/update/check", { method:"POST", headers:{"Content-Type":"application/json"}, body:"{}" })
+      .then(applyUpdateStatus, function(e){ document.getElementById("updHint").textContent = e.message; })
+      .then(function(){ btn.disabled = false; btn.textContent = prev; });
+  });
+  document.getElementById("updAckBtn").addEventListener("click", function(){
+    if (!updateStatus || !updateStatus.available) return;
+    apiRaw("/update/ack", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ version: updateStatus.available.version }) })
+      .then(applyUpdateStatus, function(e){ document.getElementById("updHint").textContent = e.message; });
+  });
+  document.getElementById("updateCard").addEventListener("click", function(){
+    switchMainView("settings");
+    showSettingsCat("about");
+  });
+
+  // ---- Settings categories ----
+  var SETTINGS_CAT_KEY = "artiSettingsCategory";
+  var currentSettingsCat = "license";
+  try { currentSettingsCat = localStorage.getItem(SETTINGS_CAT_KEY) || "license"; } catch(e){}
+
+  function showSettingsCat(cat){
+    if (licenseLocked) cat = "license";
+    currentSettingsCat = cat;
+    try { localStorage.setItem(SETTINGS_CAT_KEY, cat); } catch(e){}
+    Array.prototype.forEach.call(document.querySelectorAll(".settings-nav-item"), function(b){
+      b.classList.toggle("active", b.getAttribute("data-cat") === cat);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".settings-page"), function(p){
+      p.hidden = p.getAttribute("data-cat") !== cat;
+    });
+    if (cat === "license") refreshLicenseStatus().catch(function(){});
+    if (cat === "fineai") loadFineAiSettings();
+    if (cat === "apis") loadApiKeys();
+    if (cat === "system") loadSystemStatus();
+    if (cat === "about") loadAbout();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".settings-nav-item"), function(b){
+    b.addEventListener("click", function(){ showSettingsCat(b.getAttribute("data-cat")); });
+  });
+
+  // ---- Literature APIs ----
+  var KEY_INPUTS = { OPENALEX_API_KEY: "keyOpenalex", SEMANTIC_SCHOLAR_API_KEY: "keyS2", ARTI_REF_CONTACT_EMAIL: "keyEmail" };
+
+  function renderApiKeys(view){
+    Object.keys(KEY_INPUTS).forEach(function(name){
+      var input = document.getElementById(KEY_INPUTS[name]);
+      var f = view[name] || {};
+      if (name === "ARTI_REF_CONTACT_EMAIL"){ input.value = f.value || ""; return; }
+      input.value = "";
+      input.placeholder = f.set ? "Set" + (f.hint ? " (ends in " + f.hint + ")" : "") + ". Type to replace." : "Not set";
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-clear]"), function(btn){
+      var f = view[btn.getAttribute("data-clear")] || {};
+      btn.disabled = !f.set;
+    });
+  }
+  function loadApiKeys(){
+    apiRaw("/settings/keys").then(renderApiKeys).catch(function(e){ document.getElementById("keysMsg").textContent = e.message; });
+  }
+  function saveApiKeys(updates, msg){
+    return apiRaw("/settings/keys", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(updates) })
+      .then(function(view){
+        renderApiKeys(view);
+        var el = document.getElementById("keysMsg"); el.textContent = msg;
+        setTimeout(function(){ el.textContent = ""; }, 2500);
+      }).catch(function(e){ document.getElementById("keysMsg").textContent = e.message; });
+  }
+  document.getElementById("saveKeysBtn").addEventListener("click", function(){
+    var updates = {};
+    var oa = document.getElementById("keyOpenalex").value.trim();
+    var s2 = document.getElementById("keyS2").value.trim();
+    if (oa) updates.OPENALEX_API_KEY = oa;
+    if (s2) updates.SEMANTIC_SCHOLAR_API_KEY = s2;
+    updates.ARTI_REF_CONTACT_EMAIL = document.getElementById("keyEmail").value.trim();
+    saveApiKeys(updates, "Saved.");
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-clear]"), function(btn){
+    btn.addEventListener("click", function(){
+      var u = {}; u[btn.getAttribute("data-clear")] = "";
+      saveApiKeys(u, "Removed.");
+    });
+  });
+
+  // ---- System + About ----
+  function loadSystemStatus(){
+    var list = document.getElementById("systemList");
+    list.innerHTML = '<div class="hint">Checking&hellip;</div>';
+    apiRaw("/system/status").then(function(d){
+      list.innerHTML = d.items.map(function(i){
+        return '<div class="system-row"><span class="s-name">' + escapeHtml(i.name) + '</span>' +
+          '<span class="lic-badge ' + (i.ok ? "ok" : "warn") + '">' + (i.ok ? "OK" : "Missing") + '</span>' +
+          '<span class="s-detail">' + escapeHtml(i.ok ? i.detail : (i.fix || i.detail)) + '</span></div>';
+      }).join("");
+    }).catch(function(e){ list.innerHTML = '<div class="err">' + escapeHtml(e.message) + '</div>'; });
+  }
+  document.getElementById("systemRecheckBtn").addEventListener("click", loadSystemStatus);
+
+  function loadAbout(){
+    apiRaw("/about").then(function(a){
+      document.getElementById("aboutVersion").textContent = a.version ? "v" + a.version : "—";
+      document.getElementById("aboutPython").textContent = a.python || "—";
+      document.getElementById("aboutHome").textContent = a.home || "—";
+    }).catch(function(){});
+    loadUpdateStatus();
+  }
+
+  // =====================================================================
   // Settings panel — models + PDF summarizer prompt
   // =====================================================================
 
   var defaultChatModelId = null;
 
-  function loadSettingsPanel(){
+  function loadSettingsPanel(){ showSettingsCat(currentSettingsCat); }
+
+  function loadFineAiSettings(){
     Promise.all([
       apiRaw("/chat/models").then(function(d){ chatModels = d.models || []; }),
       apiRaw("/chat/settings")
@@ -10211,7 +10655,9 @@
     applyFineAiEnabled(s.fine_ai_enabled !== "0");
   }).catch(function(){});
 
-  window.addEventListener("focus", loadAll);
+  window.addEventListener("focus", function(){
+    refreshLicenseStatus().then(function(st){ if (!st.locked) { loadAll(); loadUpdateStatus(); } }, function(){});
+  });
 
   // ---- state-preserving force refresh: forceRefreshPage() (below the IIFE) calls
   // window.__artiSaveViewState() right before reloading; on the next load the
@@ -10254,7 +10700,11 @@
     }).catch(function(){});
   }
 
-  loadAll().then(restoreViewState, restoreViewState);
+  refreshLicenseStatus().then(function(st){
+    if (st.locked){ switchMainView("settings"); showSettingsCat("license"); return; }
+    loadUpdateStatus();
+    return loadAll().then(restoreViewState, restoreViewState);
+  }, function(){ loadAll().then(restoreViewState, restoreViewState); });
 })();
 
   // Force refresh of the whole page (top-right #appRefreshBtn, F5 / Ctrl+F5).

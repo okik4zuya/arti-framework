@@ -29,8 +29,11 @@ import chat
 import db
 import db_ideas
 import journals
+import license_gate
 import lit
 import platform_ops
+import system_info
+import update_check
 
 HOST = "127.0.0.1"
 PORT = 4174
@@ -280,6 +283,47 @@ class Handler(BaseHTTPRequestHandler):
 
         if pathname == "/api/ping" and method == "GET":
             return self._send_json(200, {"ok": True})
+
+        # License gate: while there is no valid license, only the License settings page works.
+        if license_gate.blocks(pathname):
+            return self._send_json(403, {"error": "Activate your ARTi license in Settings > License.",
+                                         "code": "license_required"})
+
+        if pathname == "/api/license/status" and method == "GET":
+            return self._send_json(200, license_gate.status())
+
+        if pathname in ("/api/license/activate", "/api/license/refresh", "/api/license/deactivate") and method == "POST":
+            body = self._read_body()  # always drain the body: an unread one corrupts the next keep-alive request
+            if pathname.endswith("activate") and not pathname.endswith("deactivate"):
+                result = license_gate.activate(str(body.get("key") or ""))
+            elif pathname.endswith("refresh"):
+                result = license_gate.refresh()
+            else:
+                result = license_gate.deactivate()
+            return self._send_json(200 if result["ok"] else 400, result)
+
+        if pathname == "/api/settings/keys" and method == "GET":
+            return self._send_json(200, license_gate.keys_view())
+
+        if pathname == "/api/settings/keys" and method == "POST":
+            return self._send_json(200, license_gate.keys_save(self._read_body()))
+
+        if pathname == "/api/update/status" and method == "GET":
+            return self._send_json(200, update_check.status())
+
+        if pathname == "/api/update/check" and method == "POST":
+            self._read_body()  # drain (see the license routes)
+            return self._send_json(200, update_check.check(force=True))
+
+        if pathname == "/api/update/ack" and method == "POST":
+            ok, view = update_check.ack(self._read_body().get("version"))
+            return self._send_json(200 if ok else 400, dict(view, ok=ok, **({} if ok else {"error": "No pending update with that version."})))
+
+        if pathname == "/api/system/status" and method == "GET":
+            return self._send_json(200, system_info.system_status())
+
+        if pathname == "/api/about" and method == "GET":
+            return self._send_json(200, system_info.about())
 
         if pathname == "/api/data" and method == "GET":
             return self._send_json(200, build_data())
@@ -1227,6 +1271,8 @@ def create_server():
     # Raises OSError if PORT is already bound -- callers (app.py) use that to
     # detect an already-running instance.
     db.init_db()
+    license_gate.refresh_in_background()
+    update_check.check_in_background()
     return ThreadingHTTPServer((HOST, PORT), Handler)
 
 

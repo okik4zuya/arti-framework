@@ -2,7 +2,7 @@
 
 Output: `writing\completion-plan.md` (source of truth, hand-maintained) rendered to
 `writing\completion-plan.pdf` via the shared Markdown→A4-PDF pipeline documented in
-`~/.arti/tools/arti-pdf/README.md`. Do not hand-roll a self-contained HTML file for this — the pipeline
+`~/.arti/tools/arti-convert/README.md`. Do not hand-roll a self-contained HTML file for this — the pipeline
 already handles the print CSS (A4 page size, `break-inside: avoid` per phase, `print-color-adjust:
 exact`, sized checkbox glyphs); this template only needs to specify the Markdown structure.
 
@@ -19,7 +19,7 @@ deliberate division of labour:
 
 **Density target:** fits compactly — no hard page-count limit, let content decide. Use real
 `☐`/`☑` glyphs directly in the Markdown cells (not `- [ ]` task-list syntax or HTML checkbox
-inputs — see `~/.arti/tools/arti-pdf/README.md` for why).
+inputs — see `~/.arti/tools/arti-convert/README.md` for why).
 
 ## Precondition — Blueprint completeness gate
 
@@ -83,7 +83,7 @@ session-to-session state.*
 
 Render with:
 ```
-python ~/.arti/tools/arti-pdf/render.py --md writing\completion-plan.md --out-dir writing
+python ~/.arti/tools/arti-convert/cli.py pdf --md writing\completion-plan.md --out-dir writing
 ```
 
 **Item 6.2, Manuscript file:** render `writing\manuscript_draft[N]_[date].md` to `.docx` with

@@ -17,7 +17,7 @@ description: >
 
 # ARTi-ref Skill
 
-Thin, mechanics-only wrapper around the `arti-lit` CLI/database (and the `arti-pdf-ingest` batch
+Thin, mechanics-only wrapper around the `arti-lit` CLI/database (and the `arti-convert ingest` batch
 tool) for a project's literature. Modeled on `ARTi-jfinder`'s shape: one clear job, an explicit
 "Not this skill" section, and no document of its own beyond the generated exports the CLI already
 produces (`literature\library.md`, `writing\references.md`).
@@ -32,7 +32,7 @@ papers). This skill owns three things that used to be independently documented i
 was updated:
 
 1. **`arti-lit` invocation and CRUD** — `library add/get/update/remove/search`, `refs generate`.
-2. **Fulltext ingestion** — `arti-pdf-ingest`'s batch PDF→Markdown conversion and the
+2. **Fulltext ingestion** — `arti-convert ingest`'s batch PDF→Markdown conversion and the
    `local_file`/`read_status` semantics.
 3. **The retrieval-trigger rule and Paper Extraction** — naming a reference is a retrieval trigger,
    not a recall trigger; extracting a paper's structured content is a mechanical action any caller
@@ -134,17 +134,17 @@ Candidates are discovery only and never enter the library automatically.
 ## Fulltext ingestion
 
 When a batch of PDFs already has `library.md` rows (`local file: —`, status `export-only` or
-`abstract`) and needs bulk conversion to fulltext Markdown, use `arti-pdf-ingest` instead of
+`abstract`) and needs bulk conversion to fulltext Markdown, use `arti-convert ingest` instead of
 ingesting one-by-one:
 
 ```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-pdf-ingest/cli.py" ingest --project PATH --manifest PATH
+"~/.arti/python/python.exe" "~/.arti/tools/arti-convert/cli.py" ingest --project PATH --manifest PATH
 ```
 
 It requires the `key` to already exist in `library.md` — screening/`library add` still happens
 first, this tool never creates new library rows — and it registers the result itself via `arti-lit
 library update --status fulltext`, so no separate registration step follows. See
-`~/.arti/tools/arti-pdf-ingest/README.md` for the manifest format.
+`~/.arti/tools/arti-convert/INGEST.md` for the manifest format.
 
 `read_status` vocabulary: `export-only` / `abstract` / `fulltext` / `read`. Being a superset that
 includes screened-out sources is what stops a query from being re-run.
@@ -171,7 +171,7 @@ independent of any other skill's stage gating.
 
 **Behavior:**
 - If the paper's text or PDF is available in the conversation (attached, pasted, or already
-  ingested via `arti-pdf-ingest`), perform the extraction directly, following
+  ingested via `arti-convert ingest`), perform the extraction directly, following
   `references/paper-extraction-template.md`'s field structure exactly — terse bullets, no prose
   padding, anything inferred rather than read off the page tagged `[SUGGESTED — USER MUST
   VERIFY]`.

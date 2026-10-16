@@ -56,7 +56,7 @@ when the first search runs and append to it after every import and every screeni
     this doesn't break PRISMA counts (which only need database-level source) but does lose any
     later "which angle contributed the included papers" breakdown.
 - **Fulltext Paper step** (when a candidate needs full-text read for eligibility or extraction):
-  use `arti-pdf-ingest` unmodified — see `ARTi-ref`'s Fulltext ingestion section. This registers
+  use `arti-convert ingest` unmodified — see `ARTi-ref`'s Fulltext ingestion section. This registers
   `local_file`/`read_status` itself; it does not touch `screening_stage`.
 
 ## Deduplication — before screening starts

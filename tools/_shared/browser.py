@@ -1,6 +1,6 @@
 """Locate and drive the system Edge/Chrome in headless mode (no Node, no Playwright).
 
-Shared by arti-pdf (Markdown -> PDF) and arti-compose (HTML figure -> vector PDF/PNG). Output
+Shared by arti-convert pdf (Markdown -> PDF) and arti-compose (HTML figure -> vector PDF/PNG). Output
 paths are always made absolute: a relative --print-to-pdf/--screenshot path makes the browser
 exit 0 without writing anything (verified on Edge, 2026-10-14), so callers must check that the
 file exists, never the exit code.

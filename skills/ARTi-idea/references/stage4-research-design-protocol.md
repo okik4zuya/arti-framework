@@ -29,6 +29,6 @@ proposes, researcher confirms or adjusts based on actual lab knowledge.
 ## Closing step — print it
 
 Once feasibility flags are resolved and the design is confirmed, render `research-design.md` →
-`research-design.pdf` (A4, via the shared pipeline documented in `~/.arti/tools/arti-pdf/README.md`)
+`research-design.pdf` (A4, via the shared pipeline documented in `~/.arti/tools/arti-convert/README.md`)
 as the frozen reference the researcher keeps at hand during execution. See
 `references/research-design-template.md` for the print-specific requirements.

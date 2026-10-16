@@ -16,14 +16,14 @@
 
 set -euo pipefail
 
-# TODO: fill in once the GitHub repo exists, e.g. 'https://github.com/<you>/arti.git'.
-# Until then this script operates purely on local files (safe no-op for the
-# clone/pull step) - useful for bootstrapping ~/.arti from a local checkout.
+# Empty on purpose: the framework repo is private and the product ships as an installer / archive
+# (see UPDATING.md), so there is nothing to clone. This script syncs from the folder it runs in.
+# The clone/pull branches below stay for a maintainer who sets a private URL by hand.
 REPO_URL=""
 
 ARTI_HOME="$HOME/.arti"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRACKED_ITEMS=(tools skills dashboard logo installer CLAUDE.md README.md UPDATING.md prompt-templates.md install.ps1 install.sh install.bat VERSION .gitignore .mcp.json)
+TRACKED_ITEMS=(tools skills dashboard logo CLAUDE.md CAPABILITIES.md LICENSE.txt README.md UPDATING.md prompt-templates.md install.ps1 install.sh install.bat VERSION .gitignore .mcp.json)
 
 # Copy one tracked item into $ARTI_HOME under its own name.
 #
@@ -366,6 +366,26 @@ Categories=Development;"
     fi
   else
     echo "  WARNING: dashboard/start-arti-framework-hidden.sh not found - skipping Desktop icon." >&2
+  fi
+fi
+
+# --- 5b. license activation -------------------------------------------------------
+# A key from ARTI_LICENSE_KEY or a prompt. A blank answer skips it: the dashboard then stays locked
+# until Settings > License is filled in; skills and tools in Claude Code never need a license.
+
+if [ ! -f "$ARTI_HOME/license.json" ]; then
+  LICENSE_KEY="${ARTI_LICENSE_KEY:-}"
+  if [ -z "$LICENSE_KEY" ] && [ -t 0 ]; then
+    read -r -p "Enter your ARTi license key (ARTI-XXXX-XXXX-XXXX-XXXX), or press Enter to skip: " LICENSE_KEY || true
+  fi
+  if [ -n "$LICENSE_KEY" ]; then
+    if ! "$PYTHON_DIR/bin/python3" "$ARTI_HOME/tools/arti-license/cli.py" activate "$LICENSE_KEY"; then
+      echo "WARNING: license activation failed (see message above). ARTi is installed, but the dashboard stays locked." >&2
+      echo "Fix the key or your connection, then open the dashboard > Settings > License, or re-run this script." >&2
+      exit 1
+    fi
+  else
+    echo "WARNING: no license key entered. The dashboard stays locked until you activate in Settings > License." >&2
   fi
 fi
 
