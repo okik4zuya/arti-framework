@@ -1,21 +1,27 @@
 ﻿PERJANJIAN LISENSI PENGGUNA AKHIR (EULA) - ARTi Framework
 
-DRAF: teks ini belum ditinjau secara hukum. Tinjau sebelum perilisan.
+Perjanjian ini antara Anda dan pengembang ARTi Framework ("ARTi"). Perjanjian ini melengkapi Syarat Penggunaan di situs ARTi. Bila keduanya berbeda, yang lebih menguntungkan Anda sebagai konsumen yang berlaku. Hak Anda menurut UU Perlindungan Konsumen tetap berlaku.
 
-1. Lisensi. Anda memperoleh lisensi pribadi, tidak eksklusif, dan tidak dapat dipindahtangankan untuk memasang dan menggunakan ARTi Framework (skill, tool, dan dashboard) selama masa berlaku lisensi Anda. Satu lisensi berlaku untuk satu pengguna dan satu komputer pada satu waktu.
+1. Lisensi. Anda memperoleh hak pribadi, tidak eksklusif, dan tidak dapat dipindahtangankan untuk memasang dan menggunakan ARTi Framework (skill, tool, dan dashboard) selama masa berlaku lisensi Anda. ARTi Framework dilisensikan, tidak dijual, dan hak ciptanya tetap pada pengembangnya. Satu lisensi berlaku untuk satu pengguna dan satu komputer pada satu waktu.
 
-2. Aktivasi. Saat pemasangan, ARTi mengirim kunci lisensi, kode mesin yang sudah di-hash (kode asli tidak pernah dikirim), serta nama sistem operasi dan nama komputer Anda ke server lisensi ARTi, hanya untuk mengaktifkan lisensi. Pemasangan memerlukan koneksi internet satu kali.
+2. Aktivasi dan data. Saat aktivasi, ARTi mengirim kunci lisensi, kode mesin yang sudah di-hash (kode asli tidak pernah dikirim), serta nama sistem operasi dan nama komputer Anda ke server lisensi ARTi. Pengecekan berkala mengirim berkas lisensi, kode mesin yang sudah di-hash, dan versi ARTi. Data ini hanya dipakai untuk menjalankan lisensi, memberi dukungan, dan memberi tahu pembaruan. Rinciannya ada di Kebijakan Privasi di situs ARTi. Pemasangan memerlukan koneksi internet satu kali.
 
-3. Masa berlaku. Lisensi berlaku sesuai masa yang tertera pada lisensi Anda. Setelah lisensi berakhir, dashboard tidak dapat dibuka dan pembaruan tidak tersedia. Skill dan tool di Claude Code, serta seluruh data dan naskah Anda, tidak dihapus dan tetap milik Anda.
+3. Masa berlaku dan perpanjangan. Lisensi berlaku sesuai masa yang tertera pada lisensi Anda, dihitung sejak kunci diterbitkan. Setelah lisensi berakhir dan masa tenggang 14 hari lewat, pembaruan tidak tersedia. Dashboard tetap dapat dibuka, dan skill, tool, serta seluruh data dan naskah Anda tidak dihapus dan tetap milik Anda.
 
-4. Pembatasan. Anda tidak boleh membagikan kunci lisensi, menjual kembali, menyebarluaskan, atau mengunggah ARTi Framework atau bagiannya, serta tidak boleh menghilangkan atau menghindari pemeriksaan lisensi.
+4. Perangkat. Untuk pindah komputer, nonaktifkan lisensi di komputer lama lewat dashboard (Pengaturan > License), lalu aktifkan di komputer baru. Penonaktifan mandiri dibatasi 3 kali per tahun. Bila komputer lama tidak dapat dipakai lagi, hubungi admin: seat yang dipegang komputer lain hanya dapat dipindahkan oleh admin.
 
-5. Hak Anda atas karya Anda. Naskah, data, dan berkas proyek Anda tetap milik Anda dan disimpan di komputer Anda. ARTi tidak mengirimkannya ke server ARTi.
+5. Pencabutan. Lisensi dapat dicabut bila Anda meminta uang kembali sesuai garansi, atau bila kunci dibagikan atau dijual kembali, atau bila perjanjian ini dilanggar. Bila lisensi dicabut, dashboard berhenti dapat dipakai pada pengecekan online berikutnya, biasanya dalam satu sampai tiga hari saat komputer terhubung internet. Skill dan tool di Claude Code serta seluruh data dan naskah Anda tidak dihapus dan tetap dapat dipakai.
 
-6. Layanan pihak ketiga. ARTi bekerja bersama Claude Code (Anthropic) dan layanan pencarian literatur (OpenAlex, Semantic Scholar, Google Scholar). Penggunaan layanan tersebut tunduk pada ketentuan masing-masing; ARTi tidak mengendalikannya.
+6. Pembatasan. Anda tidak boleh membagikan kunci lisensi, menjual kembali, menyebarluaskan, atau mengunggah ARTi Framework atau bagiannya, dan tidak boleh menghilangkan atau menghindari pemeriksaan lisensi.
 
-7. Tanpa jaminan. ARTi Framework disediakan apa adanya. Sejauh diizinkan hukum, tanggung jawab ARTi dibatasi pada jumlah yang Anda bayar untuk lisensi ini. ARTi tidak bertanggung jawab atas keputusan jurnal, kebijakan penggunaan AI sebuah jurnal, atau perubahan layanan pihak ketiga.
+7. Hak Anda atas karya Anda. Naskah, data, dan berkas proyek Anda tetap milik Anda dan disimpan di komputer Anda. ARTi tidak mengirimkannya ke server ARTi.
 
-8. Hukum yang berlaku. Perjanjian ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan lebih dulu secara musyawarah.
+8. Layanan pihak ketiga. ARTi bekerja bersama Claude Code (Anthropic) dan layanan pencarian literatur (OpenAlex, Semantic Scholar, Google Scholar). Penggunaan layanan tersebut tunduk pada ketentuan masing-masing, dan ARTi tidak mengendalikannya.
+
+9. Ketersediaan dan tanggung jawab. ARTi Framework disediakan sebagaimana adanya, dan fitur dapat berubah. ARTi tidak bertanggung jawab atas keputusan jurnal, kebijakan penggunaan AI sebuah jurnal, atau perubahan layanan pihak ketiga yang di luar kendalinya. Untuk kerugian yang timbul dari kesalahan ARTi sendiri, ganti rugi mengikuti UU Perlindungan Konsumen, dan tidak ada ketentuan di sini yang meniadakannya.
+
+10. Perubahan. Perubahan perjanjian yang merugikan Anda tidak berlaku untuk masa lisensi yang sedang berjalan tanpa persetujuan Anda, dan baru berlaku pada pembelian atau perpanjangan berikutnya.
+
+11. Hukum yang berlaku dan sengketa. Perjanjian ini tunduk pada hukum Republik Indonesia. Sengketa diselesaikan lebih dulu secara musyawarah. Bila tidak selesai, Anda dapat mengajukannya ke Badan Penyelesaian Sengketa Konsumen (BPSK) atau ke pengadilan negeri di tempat Anda berdomisili.
 
 Dengan memilih "I Agree", Anda menyetujui perjanjian ini.
