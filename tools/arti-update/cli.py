@@ -15,12 +15,13 @@ import importlib.util
 import json
 import os
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "_shared"))
 import license as lic  # noqa: E402
 
-CHECK_EVERY_S = 20 * 3600
+CHECK_EVERY_S = 2 * 24 * 3600   # the update check is also the license heartbeat (revoke, renewal), +-1 h jitter
 
 # The license messages say "no such license key" for not_found, which is wrong for an update check.
 UPDATE_MESSAGES = {
@@ -90,7 +91,7 @@ def is_due(state=None):
         age = (lic.utcnow() - lic.parse_time(state["checked_at"])).total_seconds()
     except (KeyError, ValueError, TypeError):
         return True
-    return age >= CHECK_EVERY_S or state.get("current") != current_version()
+    return age >= lic.jittered(CHECK_EVERY_S) or state.get("current") != current_version()
 
 
 def verify_release(doc):
@@ -134,9 +135,16 @@ def check(force=False, channel=None):
     try:
         r = cli.post("/update", {"license": cur, "machine_hash": lic.machine_hash(), "channel": channel, "version": current})
     except cli.ApiFailure as e:
-        new["error"] = {"code": e.code, "message": UPDATE_MESSAGES.get(e.code) or cli.MESSAGES.get(e.code, str(e))}
+        if e.code == "key_revoked":
+            cli.mark_revoked()  # the update check is a free second signal that the license was revoked
+        new["error"] = {"code": e.code, "message": UPDATE_MESSAGES.get(e.code) or cli.message_for(e)}
         write_state(new)
         return new
+    if r.get("license"):  # a renewal: the server's dates changed, so the answer carries the new signed license
+        renewed = lic.evaluate(r["license"])
+        if renewed["state"] != "invalid":
+            lic.write_license(r["license"])
+    lic.write_check(confirmed_at=time.time())  # the server stands behind this license (not revoked)
     manifest = None
     if r.get("release"):
         manifest = verify_release(r["release"])

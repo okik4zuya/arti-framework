@@ -33,7 +33,7 @@ skill, tool or MCP server is added, renamed or removed.**
 | [arti-annotate](tools/arti-annotate/README.md) | Inline CriticMarkup comments/suggestions in any md file: parse, revise, accept, revert, strip | ARTi-annotate, dashboard |
 | [arti-jfinder](tools/arti-jfinder/README.md) | Scimago SJR snapshot database | ARTi-jfinder, ARTi-idea |
 | [citation-chase](tools/citation-chase/README.md) | Does set A cite or get cited by set B (OpenAlex, S2 fallback) | ARTi-crosscite |
-| [arti-license](tools/arti-license/README.md) | Client for paid licensing: activate, status, offline verify (Ed25519). Worker and `arti-admin` live outside `~/.arti` | ARTi-setup, dashboard (license gate, Settings > License), installers |
+| [arti-license](tools/arti-license/README.md) | Client for paid licensing: activate, status, offline verify (Ed25519). Worker and `arti-admin` live outside `~/.arti` | dashboard (license gate, Settings > License), installers; ARTi-setup (notice only, never blocks) |
 | [arti-update](tools/arti-update/README.md) | Update check: signed release manifest from the licensing server, notes, read-receipt (apply is phase 3b) | dashboard (sidebar card, Settings > About) |
 | [arti-memcheck](tools/arti-memcheck/README.md) | T0 memory composition checker, `SessionStart` hook | hook, ARTi-setup |
 | [_shared](tools/_shared/README.md) | Narrow shared helpers (paths, DB migration) | other tools |

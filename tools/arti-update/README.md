@@ -10,8 +10,7 @@ records that the researcher read it. It does **not** download or apply anything 
 "~/.arti/python/python.exe" "~/.arti/tools/arti-update/cli.py" ack 0.2.0
 ```
 
-The dashboard does the same through `dashboard/server/update_check.py`: a silent check at start (at most
-once a day), a card in the sidebar when a release is available, and Settings > About with the notes, the
+The dashboard does the same through `dashboard/server/update_check.py`: a silent check at start (about every 2 days), a card in the sidebar when a release is available, and Settings > About with the notes, the
 list of changed skills/instructions and an "I have read this" button.
 
 ## How it works
@@ -26,6 +25,8 @@ list of changed skills/instructions and an "I have read this" button.
   show as "needs the full installer".
 - The result is cached in `~/.arti/.update/state.json` (git-ignored). Offline or a server error never
   breaks the dashboard; the earlier finding is kept and the error is shown.
+- The check runs about every 2 days (+-1 h jitter). It is also the license heartbeat: a success counts as a confirmation (so no separate `/validate` is due), and when the server's dates changed the answer carries the renewed signed license, which is installed.
+- A `key_revoked` answer sets the license aside (see `tools/arti-license/README.md`), so the daily check is a free second signal for a revoke.
 - `ack` stores the read-receipt locally and tells the server (best effort; logged as `update_ack`).
 
 ## Manifest (signed, canonical JSON)

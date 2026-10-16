@@ -1983,6 +1983,10 @@
             </div>
             <div class="hint">Deactivating frees the license for another computer. Your projects and data stay where they are.</div>
           </div>
+          <div class="lic-block" id="licRevokedBlock" hidden>
+            <div class="hint">This license was revoked, so the dashboard is locked. Your skills, tools and Claude Code in VS Code keep working, and nothing was deleted. Contact support through the site where you bought ARTi. If the revoke was lifted, check again.</div>
+            <div class="lic-actions"><button class="btn" id="licRecheckBtn" type="button">Check again</button></div>
+          </div>
           <div class="lic-block" id="licActivate" hidden>
             <div class="hint">Enter the license key you received after purchase. This computer needs an internet connection once, to activate.</div>
             <div class="lic-key-row">
@@ -3681,6 +3685,9 @@
   function apiRaw(path, opts){
     return fetch(API + path, opts).then(function(r){
       return r.json().then(function(data){
+        if (!r.ok && r.status === 403 && data.code === "license_required" && path.indexOf("/license/") !== 0) {
+          refreshLicenseStatus().catch(function(){});
+        }
         if (!r.ok) throw new Error(data.error || ("request failed: " + path));
         return data;
       });
@@ -10292,10 +10299,11 @@
   var licenseStatus = null;
   var LIC_BADGES = {
     valid: ["Active", "ok"], grace: ["Grace period", "warn"], expired: ["Expired", "bad"],
-    missing: ["Not activated", "bad"], invalid: ["Not valid", "bad"]
+    missing: ["Not activated", "bad"], invalid: ["Not valid", "bad"], revoked: ["Revoked", "bad"]
   };
   var LIC_REASONS = {
     no_license: "No license is installed on this computer yet.",
+    revoked: "This license was revoked. The dashboard is locked; your skills and tools keep working.",
     wrong_machine: "This license belongs to another computer. Activate this computer with your key.",
     bad_signature: "The license file was changed or damaged. Activate again with your key.",
     unknown_kid: "The license file was not issued by ARTi. Activate again with your key.",
@@ -10310,6 +10318,7 @@
   }
 
   function applyLicenseStatus(st){
+    var wasUnlocked = licenseStatus !== null && !licenseLocked;
     licenseStatus = st;
     licenseLocked = !!st.locked;
     document.body.classList.toggle("license-locked", licenseLocked);
@@ -10319,9 +10328,10 @@
     badge.className = "lic-badge " + b[1];
     var hint = "";
     if (st.state === "valid" && st.days_left != null) hint = st.days_left + " days left";
-    else if (st.state === "grace") hint = "Renew soon. Everything keeps working; updates are paused after " + licFmtDate(st.grace_ends) + ".";
-    else if (st.state === "expired") hint = "Your tools and data keep working. Renew to receive updates.";
+    else if (st.state === "grace") hint = "Renew soon. Everything keeps working; updates are paused after " + licFmtDate(st.grace_ends) + ". Already renewed? Press Refresh status.";
+    else if (st.state === "expired") hint = "Your tools and data keep working. Renew to receive updates. Already renewed? Press Refresh status.";
     else hint = LIC_REASONS[st.reason] || "";
+    if (st.clock_behind) hint += " This computer's clock looks behind the last time ARTi spoke to the license server; set the date and time correctly.";
     document.getElementById("licStateHint").textContent = hint;
     var has = st.state === "valid" || st.state === "grace" || st.state === "expired";
     document.getElementById("licName").textContent = has ? (st.name || "—") : "—";
@@ -10331,24 +10341,32 @@
     document.getElementById("licMachine").textContent = st.machine || "—";
     document.getElementById("licManage").hidden = !has;
     // Expired licences may enter a renewed key; locked ones must.
-    document.getElementById("licActivate").hidden = !(st.state === "missing" || st.state === "invalid" || st.state === "expired");
+    document.getElementById("licActivate").hidden = !(st.state === "missing" || st.state === "invalid" || st.state === "expired" || st.state === "revoked");
+    document.getElementById("licRevokedBlock").hidden = st.state !== "revoked";
 
     var card = document.getElementById("licenseCard");
     var cardText = "", cardCls = "";
-    if (licenseLocked){ cardText = "License needed. Open Settings to activate."; cardCls = "bad"; }
+    if (st.state === "revoked"){ cardText = "License revoked. The dashboard is locked."; cardCls = "bad"; }
+    else if (licenseLocked){ cardText = "License needed. Open Settings to activate."; cardCls = "bad"; }
     else if (st.state === "expired"){ cardText = "License expired. Updates are off."; cardCls = "bad"; }
     else if (st.state === "grace"){ cardText = "License expired. Renew soon."; cardCls = "warn"; }
     else if (st.state === "valid" && st.days_left != null && st.days_left <= 30){
       cardText = "License ends in " + st.days_left + " day" + (st.days_left === 1 ? "" : "s") + "."; cardCls = "warn";
     }
+    if (!cardText && st.clock_behind){ cardText = "Computer clock looks wrong. Check the date and time."; cardCls = "warn"; }
     card.hidden = !cardText;
     card.textContent = cardText;
     card.className = "license-card " + cardCls;
+    // The server noticed a revoke while the dashboard was open: leave whatever view is showing.
+    if (wasUnlocked && licenseLocked){ switchMainView("settings"); showSettingsCat("license"); }
   }
 
   function refreshLicenseStatus(){
     return apiRaw("/license/status").then(function(st){ applyLicenseStatus(st); return st; });
   }
+
+  // The server may learn about a revoke or a renewal while the window stays open.
+  setInterval(function(){ refreshLicenseStatus().catch(function(){}); }, 10 * 60 * 1000);
 
   function licMessage(kind, text){
     var err = document.getElementById("licErr"), ok = document.getElementById("licOk");
@@ -10364,8 +10382,8 @@
       .then(function(r){ return r.json(); })
       .then(function(res){
         if (busyBtn) busyBtn.disabled = false;
-        if (!res.ok) { licMessage("err", res.error || "Request failed."); return res; }
-        applyLicenseStatus(res.status);
+        if (!res.ok) { licMessage("err", res.error || "Request failed."); if (res.status) applyLicenseStatus(res.status); return res; }
+        if (res.status) applyLicenseStatus(res.status);
         return res;
       }, function(){
         if (busyBtn) busyBtn.disabled = false;
@@ -10387,6 +10405,11 @@
   });
   document.getElementById("licKeyInput").addEventListener("keydown", function(e){
     if (e.key === "Enter") document.getElementById("licActivateBtn").click();
+  });
+  document.getElementById("licRecheckBtn").addEventListener("click", function(){
+    licPost("/license/recheck", {}, this).then(function(res){
+      if (res.ok) { licMessage("ok", "The license is active again."); loadAll().then(function(){}, function(){}); }
+    });
   });
   document.getElementById("licRefreshBtn").addEventListener("click", function(){
     licPost("/license/refresh", {}, this).then(function(res){ if (res.ok) licMessage("ok", "Status refreshed."); });

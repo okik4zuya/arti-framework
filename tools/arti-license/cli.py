@@ -2,8 +2,7 @@
 
     cli.py activate KEY            bind this machine and write ~/.arti/license.json
     cli.py status [--refresh]      show the local license (--refresh re-validates online first)
-    cli.py deactivate [--key KEY --machine HASH]   free this machine's seat (or another one, with the key)
-    cli.py activations KEY         list the seats of a key
+    cli.py deactivate              free this machine's seat (a seat held by another computer is freed by support only)
     cli.py install-file PATH       install a signed license file (site / offline)
     cli.py verify [--file PATH] [--now ISO]   offline check; exit 0 valid/grace, 1 expired, 2 invalid
 
@@ -22,14 +21,28 @@ sys.path.insert(0, os.path.join(HERE, "..", "_shared"))
 import license as lic  # noqa: E402
 
 MESSAGES = {
-    "seat_limit": "All seats of this key are in use. Run 'arti-license deactivate' on an old machine, or use --key to free one remotely.",
+    "seat_limit": "This key is already active on another computer and every seat is in use. Deactivate it on that computer "
+                  "(Settings > License there), or contact support to move it.",
     "key_revoked": "This license was revoked. Contact support.",
-    "expired": "This license has expired. Renew it to keep receiving updates; your data and installed version keep working.",
-    "not_found": "No such license key (or machine not activated).",
-    "not_entitled": "This machine is not entitled under that license.",
-    "rate_limited": "Too many requests or deactivation limit reached. Try later or contact support.",
+    "expired": "This license has expired and is not renewed yet. Once your renewal is processed, refresh the status and the new "
+               "date appears. Your data and installed version keep working.",
+    "not_found": "No such license key, or this computer is not activated under it.",
+    "not_entitled": "This computer is not activated under that license. Activate it with your key.",
+    "rate_limited": "Too many requests. Wait a minute and try again.",
     "bad_checksum": "That key has a typo. Check it and try again.",
+    "unreachable": "Cannot reach the licensing server. Check the internet connection. Existing licenses keep working offline.",
 }
+REVOKED_TEXT = ("REVOKED: this license was revoked. The dashboard is locked; skills, tools and Claude Code keep working. "
+                "Contact support, or run 'activate' with a different key.")
+
+
+def message_for(e):
+    """Plain text for an ApiFailure. The server's own wording wins for rate_limited, because that one code
+    covers both a request burst and the yearly self-service deactivation cap ("contact support")."""
+    if e.code == "rate_limited" and str(e) and str(e) != "HTTP 429":
+        text = str(e)
+        return text[0].upper() + text[1:] + ("" if text.endswith(".") else ".")
+    return MESSAGES.get(e.code, str(e))
 
 
 def api_base():
@@ -46,11 +59,11 @@ class ApiFailure(Exception):
         self.code = code
 
 
-def post(path, body):
+def post(path, body, timeout=15):
     req = urllib.request.Request(api_base() + path, data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "User-Agent": "arti-license/1.0"})
     try:
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.load(r)
     except urllib.error.HTTPError as e:
         try:
@@ -63,7 +76,7 @@ def post(path, body):
 
 
 def fail(e):
-    print("error [%s]: %s" % (e.code, MESSAGES.get(e.code, str(e))), file=sys.stderr)
+    print("error [%s]: %s" % (e.code, message_for(e)), file=sys.stderr)
     return 1
 
 
@@ -98,18 +111,61 @@ def activate_key(raw_key):
     if info["state"] == "invalid":
         raise ApiFailure("server_error", "The server returned a license this client rejects (%s)." % info["reason"])
     lic.write_license(r["license"])
+    _clear_revoked()
     info["seats_used"] = r.get("seats_used")
     return info
 
 
-def refresh_license():
+def _clear_revoked():
+    try:
+        os.remove(lic.revoked_path())
+    except FileNotFoundError:
+        pass
+
+
+def is_revoked():
+    """True when no usable license.json exists but one was set aside as revoked."""
+    return not os.path.exists(lic.license_path()) and os.path.exists(lic.revoked_path())
+
+
+def mark_revoked():
+    """The server said key_revoked: set license.json aside as license.revoked.json. The dashboard then shows
+    'revoked' (locked) instead of 'missing', and nothing re-activates that key on its own. Skills and tools
+    never read this file. The aside copy stays a valid signed credential, so recheck_revoked() can restore it
+    if the server later undoes the revoke."""
+    try:
+        os.replace(lic.license_path(), lic.revoked_path())
+    except FileNotFoundError:
+        pass
+
+
+def refresh_license(timeout=15):
     """Re-validate the local license online and store the renewed copy. Returns the evaluated info.
-    Raises ApiFailure (e.g. unreachable, key_revoked); FileNotFoundError if nothing is installed."""
+    Raises ApiFailure (e.g. unreachable, key_revoked); FileNotFoundError if nothing is installed.
+    A key_revoked answer sets the license aside (mark_revoked) before it is raised."""
     cur = lic.read_license()
-    r = post("/validate", {"license": cur, "machine_hash": lic.machine_hash()})
+    try:
+        r = post("/validate", {"license": cur, "machine_hash": lic.machine_hash()}, timeout=timeout)
+    except ApiFailure as e:
+        if e.code == "key_revoked":
+            mark_revoked()
+        raise
     info = lic.evaluate(r["license"])
     if info["state"] != "invalid":
         lic.write_license(r["license"])
+    return info
+
+
+def recheck_revoked():
+    """Ask again about a license set aside as revoked. Restores it when the server no longer revokes it;
+    raises ApiFailure(key_revoked) otherwise. FileNotFoundError if nothing was set aside."""
+    cur = lic.read_license(lic.revoked_path())
+    r = post("/validate", {"license": cur, "machine_hash": lic.machine_hash()})
+    info = lic.evaluate(r["license"])
+    if info["state"] == "invalid":
+        raise ApiFailure("server_error", "The server returned a license this client rejects (%s)." % info["reason"])
+    lic.write_license(r["license"])
+    _clear_revoked()
     return info
 
 
@@ -136,6 +192,7 @@ def cmd_activate(a):
         print("error: server returned a license this client rejects (%s)" % info["reason"], file=sys.stderr)
         return 2
     lic.write_license(r["license"])
+    _clear_revoked()
     print("Activated (%s seat(s) used).\n%s" % (r.get("seats_used"), describe(info)))
     return 0
 
@@ -144,59 +201,41 @@ def cmd_status(a):
     try:
         cur = lic.read_license()
     except FileNotFoundError:
+        if is_revoked():
+            print(REVOKED_TEXT)
+            return 2
         print("No license installed. Run 'arti-license activate KEY'.")
         return 1
     if a.refresh:
         try:
-            r = post("/validate", {"license": cur, "machine_hash": lic.machine_hash()})
-            if lic.evaluate(r["license"])["state"] != "invalid":
-                lic.write_license(r["license"])
-                cur = r["license"]
-                print("(refreshed online)")
+            refresh_license()
+            cur = lic.read_license()
+            print("(refreshed online)")
         except ApiFailure as e:
-            print("(could not refresh: [%s] %s)" % (e.code, MESSAGES.get(e.code, e)), file=sys.stderr)
+            print("(could not refresh: [%s] %s)" % (e.code, message_for(e)), file=sys.stderr)
+            if e.code == "key_revoked":
+                print(REVOKED_TEXT)
+                return 2
     info = lic.evaluate(cur)
     print(describe(info))
     return 0 if info["state"] in ("valid", "grace") else (1 if info["state"] == "expired" else 2)
 
 
 def cmd_deactivate(a):
-    body = {"machine_hash": a.machine or lic.machine_hash()}
-    if a.key:
-        key = need_key(a.key)
-        if key is None:
-            return 1
-        body["key"] = key
-    else:
-        try:
-            body["license"] = lic.read_license()
-        except FileNotFoundError:
-            print("No local license to deactivate; use --key.", file=sys.stderr)
-            return 1
     try:
-        post("/deactivate", body)
-    except ApiFailure as e:
-        return fail(e)
-    if not a.machine:
-        try:
-            os.remove(lic.license_path())
-        except FileNotFoundError:
-            pass
-    print("Deactivated.")
-    return 0
-
-
-def cmd_activations(a):
-    key = need_key(a.key)
-    if key is None:
+        cur = lic.read_license()
+    except FileNotFoundError:
+        print("No local license to deactivate.", file=sys.stderr)
         return 1
     try:
-        r = post("/activations", {"key": key})
+        post("/deactivate", {"machine_hash": lic.machine_hash(), "license": cur})
     except ApiFailure as e:
         return fail(e)
-    print("%s  seats=%s  status=%s  expires=%s" % (r["key_id"], r["seats"], r["status"], r["expires"]))
-    for x in r["activations"]:
-        print("  %s  %-30s last seen %s%s" % (x["machine_hash"][:12], x["label"], x["last_seen"], "  (deactivated)" if x["deactivated"] else ""))
+    try:
+        os.remove(lic.license_path())
+    except FileNotFoundError:
+        pass
+    print("Deactivated.")
     return 0
 
 
@@ -214,6 +253,9 @@ def cmd_install_file(a):
 
 def cmd_verify(a):
     now = lic.parse_time(a.now) if a.now else None
+    if not a.file and is_revoked():
+        print(REVOKED_TEXT)
+        return 2
     try:
         cur = lic.read_license(a.file)
     except (OSError, ValueError) as e:
@@ -231,8 +273,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("activate"); p.add_argument("key")
     p = sub.add_parser("status"); p.add_argument("--refresh", action="store_true")
-    p = sub.add_parser("deactivate"); p.add_argument("--key"); p.add_argument("--machine", help="64-hex machine hash of another seat (needs --key)")
-    p = sub.add_parser("activations"); p.add_argument("key")
+    sub.add_parser("deactivate")
     p = sub.add_parser("install-file"); p.add_argument("path")
     p = sub.add_parser("verify"); p.add_argument("--file"); p.add_argument("--now", help="ISO UTC time, e.g. 2027-01-01T00:00:00Z")
     a = ap.parse_args(argv)

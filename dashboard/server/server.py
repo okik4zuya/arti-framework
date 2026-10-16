@@ -292,11 +292,15 @@ class Handler(BaseHTTPRequestHandler):
         if pathname == "/api/license/status" and method == "GET":
             return self._send_json(200, license_gate.status())
 
-        if pathname in ("/api/license/activate", "/api/license/refresh", "/api/license/deactivate") and method == "POST":
+        if pathname in ("/api/license/activate", "/api/license/refresh", "/api/license/deactivate",
+                        "/api/license/recheck") and method == "POST":
             body = self._read_body()  # always drain the body: an unread one corrupts the next keep-alive request
-            if pathname.endswith("activate") and not pathname.endswith("deactivate"):
-                result = license_gate.activate(str(body.get("key") or ""))
-            elif pathname.endswith("refresh"):
+            key = str(body.get("key") or "")
+            if pathname.endswith("/recheck"):
+                result = license_gate.recheck()
+            elif pathname.endswith("/activate"):
+                result = license_gate.activate(key)
+            elif pathname.endswith("/refresh"):
                 result = license_gate.refresh()
             else:
                 result = license_gate.deactivate()

@@ -17,11 +17,12 @@ Owns two workflows: one-time cross-project setup for a researcher, and per-new-p
 scaffolding. Both used to live as Stage 0/1 inside `ARTi-idea`; they're pulled out here so a
 researcher can be onboarded or a project scaffolded without starting an idea-development session.
 
-**License check (run first, both workflows):**
-`"~/.arti/python/python.exe" "~/.arti/tools/arti-license/cli.py" verify` (offline, instant). Exit 0 or 1
-(valid, grace, expired) means carry on; an expired license only stops updates. Exit 2 (missing,
-invalid, other computer) means stop and tell the researcher to activate: dashboard Settings > License,
-or `cli.py activate KEY`. Nothing else in ARTi checks the license; only this skill and the dashboard do.
+**License notice (optional, never a gate):** a license only unlocks the dashboard. Setup, every skill and
+every tool work with no license, an expired one or a revoked one, so never stop or refuse because of it.
+You may run `"~/.arti/python/python.exe" "~/.arti/tools/arti-license/cli.py" verify` (offline, instant) and,
+on exit 2 (missing, invalid, revoked, other computer), add one line at the end of your reply: "The dashboard
+is locked: open Settings > License, or run `cli.py activate KEY`." Then carry on with the setup. Only the
+dashboard checks the license.
 
 ---
 

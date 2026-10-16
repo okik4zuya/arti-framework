@@ -30,6 +30,56 @@ def license_path():
     return os.path.join(ARTI_HOME, "license.json")
 
 
+def revoked_path():
+    """Where a license the server reported as revoked is set aside (see arti-license cli.mark_revoked)."""
+    return os.path.join(ARTI_HOME, "license.revoked.json")
+
+
+# ---- online-check bookkeeping (per machine, git-ignored) ------------------------------------------
+
+def check_path():
+    return os.path.join(ARTI_HOME, ".license-check.json")
+
+
+def read_check():
+    try:
+        with open(check_path(), encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_check(**fields):
+    """attempted_at: last online attempt (throttle). confirmed_at: last time a server answer confirmed the
+    license (validate or the update heartbeat), epoch seconds."""
+    data = read_check()
+    data.update(fields)
+    try:
+        with open(check_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f)
+    except OSError:
+        pass
+
+
+def last_confirmed():
+    """Epoch seconds of the freshest sign that the server still stands behind this license."""
+    try:
+        mtime = os.path.getmtime(license_path())
+    except OSError:
+        return 0.0
+    try:
+        return max(mtime, float(read_check().get("confirmed_at", 0)))
+    except (TypeError, ValueError):
+        return mtime
+
+
+def jittered(seconds, spread=3600):
+    """An interval with a random +-spread, so a fleet of machines does not call in lockstep."""
+    import random
+    return seconds + random.uniform(-spread, spread)
+
+
 # ---- key checksum -------------------------------------------------------------------------
 
 def normalize_key(key):
@@ -151,11 +201,21 @@ def evaluate(lic, now=None, local_machine=None, pubkeys=None):
             return {"state": "invalid", "reason": "wrong_machine"}
         expires = parse_time(payload["expires"])
         grace = datetime.timedelta(days=int(payload.get("grace_days", 0)))
+        issued = parse_time(payload["issued"]) if payload.get("issued") else None
     except (KeyError, TypeError, ValueError, AttributeError):
         return {"state": "invalid", "reason": "malformed"}
+    # Clock rollback: `issued` is signed by the server at the last activate/validate, so the real time
+    # cannot be earlier than that. Judge the term from the later of the two. A gap over a day is reported
+    # (clock_behind) so the UI can ask for the date to be fixed; it is never a lock on its own.
+    clock_behind = False
+    if issued is not None and now < issued:
+        clock_behind = (issued - now) > datetime.timedelta(days=1)
+        now = issued
     info = {"tier": payload["tier"], "name": payload.get("name"), "key_id": payload.get("key_id"),
             "seats": payload.get("seats"), "expires": payload["expires"],
             "updates_until": payload.get("updates_until"), "kid": kid}
+    if clock_behind:
+        info["clock_behind"] = True
     if now <= expires:
         info.update(state="valid", reason="ok")
     elif now <= expires + grace:

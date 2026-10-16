@@ -41,6 +41,8 @@ __pycache__/
 
 # the activated license file: per-machine, written by tools/arti-license, never committed or bundled
 /license.json
+/license.revoked.json
+/.license-check.json
 /license.json.tmp
 
 # API keys for arti-ref-search-mcp (OPENALEX_API_KEY, ...): per machine, never committed or shipped.

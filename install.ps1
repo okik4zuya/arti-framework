@@ -483,7 +483,7 @@ if (-not (Test-Path $licenseFile) -and -not $env:ARTI_LICENSE_HANDLED) {
     $licenseKey = Read-Host 'Enter your ARTi license key (ARTI-XXXX-XXXX-XXXX-XXXX), or press Enter to skip'
   }
   if ($licenseKey) {
-    & (Join-Path $pythonDir 'python.exe') (Join-Path $ArtiHome 'toolsrti-license\cli.py') activate $licenseKey.Trim()
+    & (Join-Path $pythonDir 'python.exe') (Join-Path $ArtiHome 'tools\arti-license\cli.py') activate $licenseKey.Trim()
     if ($LASTEXITCODE -ne 0) {
       Write-Warning "License activation failed (see message above). ARTi is installed, but the dashboard stays locked."
       Write-Warning "Fix the key or your connection, then open the dashboard > Settings > License, or re-run this script."
