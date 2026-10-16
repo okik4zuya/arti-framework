@@ -75,6 +75,25 @@ if not exist "%RIPGREP_DIR%\rg.exe" (
     copy /Y "%RIPGREP_DIR%\rg.exe" "%PAYLOAD_BIN%\ripgrep\rg.exe" >nul
 )
 
+REM ── Stage a ready-made Python (all packages installed) into payload\python ─────
+REM The installer copies it instead of downloading Python and running pip on the
+REM client's machine. Rebuilt only when VERSION's Python pin or tools\requirements.txt
+REM changes; the first run downloads the Python archive and runs pip (a few minutes).
+set "STAGE_PY=%SCRIPT_DIR%..\python\python.exe"
+if not exist "%STAGE_PY%" (
+    echo.
+    echo ERROR: %STAGE_PY% not found - this build uses the vendored ARTi Python to stage the payload.
+    exit /b 1
+)
+echo.
+echo Staging Python + packages into %SCRIPT_DIR%payload\python ...
+"%STAGE_PY%" "%SCRIPT_DIR%stage_python.py"
+if errorlevel 1 (
+    echo.
+    echo ERROR: staging the Python payload failed.
+    exit /b 1
+)
+
 REM ── Locate makensis ────────────────────────────────────────────────────────────
 where makensis >nul 2>nul
 if errorlevel 1 (

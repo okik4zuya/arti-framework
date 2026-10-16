@@ -22,6 +22,7 @@
 ; no earlier ARTi install was found, so a failed activation can remove what this run just wrote.
 Var LicenseKey
 Var KeyInput
+Var KeyStatus
 Var FreshInstall
 
 ; Removes the skill junctions, the install folder and the Desktop shortcut. Shared by the uninstaller
@@ -56,6 +57,19 @@ Var FreshInstall
 !define APP_NAME        "ARTi Framework"
 !define APP_PUBLISHER    "okik4zuya"
 !define UNINSTALL_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+
+; Licensing server for the pre-install key check, read from the same config.json the client uses, so the
+; two can never disagree. Falls back to the production address if the file's layout ever changes.
+!define API_BASE "https://lisensi.arti.ai.id/v1"
+!searchparse /noerrors /file "..\tools\arti-license\config.json" `"api_base": "` API_BASE_FOUND `"`
+!ifdef API_BASE_FOUND
+  !undef API_BASE
+  !define API_BASE "${API_BASE_FOUND}"
+!endif
+
+; The payload now holds a complete Python (about 600 MB unpacked), so compress it as one solid block.
+SetCompressor /SOLID lzma
+SetCompressorDictSize 64
 
 Name "${APP_NAME}"
 OutFile "dist\ArtiFrameworkSetup-${APP_VERSION}.exe"
@@ -95,10 +109,41 @@ Function LaunchDashboard
     ExecShell "" "$INSTDIR\python\pythonw.exe" '"$INSTDIR\dashboard\app.py"'
 FunctionEnd
 
+; Checks $LicenseKey (format, checksum, then a read-only look at the licensing server) BEFORE anything is
+; written to disk. Leaves the exit code in $0 and a plain sentence in $2; $0 = 0 means go ahead. Needs no
+; Python: it is a PowerShell script unpacked to the installer's temp folder. The key travels in an
+; environment variable, so a quote typed into the key box cannot break the command line.
+Function PrecheckKey
+    InitPluginsDir
+    File "/oname=$PLUGINSDIR\precheck.ps1" "precheck.ps1"
+    System::Call 'Kernel32::SetEnvironmentVariable(t "ARTI_PRECHECK_KEY", t "$LicenseKey")'
+    nsExec::ExecToStack 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\precheck.ps1" -Api "${API_BASE}"'
+    Pop $0
+    Pop $2
+    System::Call 'Kernel32::SetEnvironmentVariable(t "ARTI_PRECHECK_KEY", t "")'
+    ${If} $0 != 0
+    ${AndIf} $2 == ""
+        StrCpy $2 "The license key could not be checked."
+    ${EndIf}
+FunctionEnd
+
 Function .onInit
     ; Silent installs pass the key on the command line: ArtiFrameworkSetup.exe /S /KEY=ARTI-XXXX-...
     ${GetParameters} $0
     ${GetOptions} $0 "/KEY=" $LicenseKey
+    ; A key given on the command line is checked here, before the install starts. An update over an
+    ; activated install has no key to check.
+    ${If} $LicenseKey != ""
+    ${AndIfNot} ${FileExists} "$INSTDIR\license.json"
+        Call PrecheckKey
+        ${If} $0 != 0
+            ${IfNot} ${Silent}
+                MessageBox MB_OK|MB_ICONSTOP "ARTi was not installed.$\r$\n$\r$\n$2"
+            ${EndIf}
+            SetErrorLevel 2
+            Abort
+        ${EndIf}
+    ${EndIf}
 FunctionEnd
 
 Function KeyPageShow
@@ -110,10 +155,12 @@ Function KeyPageShow
     !insertmacro MUI_HEADER_TEXT "License key" "Enter the key you received after purchase."
     nsDialogs::Create 1018
     Pop $0
-    ${NSD_CreateLabel} 0 0 100% 36u "Enter your license key (ARTI-XXXX-XXXX-XXXX-XXXX).$\r$\nThis computer needs an internet connection once, to activate. If activation fails, nothing is installed."
+    ${NSD_CreateLabel} 0 0 100% 36u "Enter your license key (ARTI-XXXX-XXXX-XXXX-XXXX).$\r$\nThis computer needs an internet connection once, to activate. The key is checked before anything is installed."
     Pop $0
     ${NSD_CreateText} 0 44u 100% 12u ""
     Pop $KeyInput
+    ${NSD_CreateLabel} 0 62u 100% 12u ""
+    Pop $KeyStatus
     nsDialogs::Show
     Return
     skip:
@@ -127,6 +174,24 @@ Function KeyPageLeave
         MessageBox MB_OK|MB_ICONEXCLAMATION "Enter your license key (ARTI-XXXX-XXXX-XXXX-XXXX)."
         Abort
     ${EndIf}
+    ; Check it now, while nothing has been written: a wrong key keeps the user on this page.
+    ; The check takes a few seconds and the window does not repaint meanwhile, so show a status line first
+    ; and lock the buttons so it cannot be clicked twice.
+    ${NSD_SetText} $KeyStatus "Checking your license key, please wait..."
+    System::Call 'user32::UpdateWindow(p $KeyStatus)'
+    GetDlgItem $3 $HWNDPARENT 1
+    EnableWindow $3 0
+    GetDlgItem $4 $HWNDPARENT 3
+    EnableWindow $4 0
+    Call PrecheckKey
+    EnableWindow $3 1
+    EnableWindow $4 1
+    ${If} $0 != 0
+        ${NSD_SetText} $KeyStatus ""
+        MessageBox MB_OK|MB_ICONEXCLAMATION "$2"
+        Abort
+    ${EndIf}
+    ${NSD_SetText} $KeyStatus "Key accepted. Installing..."
 FunctionEnd
 
 ; ---------------------------------------------------------------------------
@@ -139,6 +204,16 @@ Section "Install" SEC01
         StrCpy $FreshInstall 1
     ${EndIf}
     SetOutPath "$INSTDIR"
+
+    ; The WebView2 Runtime (needed for the dashboard window) is the slowest download on a clean Windows 10.
+    ; Start it in the background now, before the big file copy, so both happen at the same time; install.ps1
+    ; later waits for it (lock file) instead of installing it a second time.
+    File "..\install.ps1"
+    ; Plain Exec (and powershell's own -WindowStyle Hidden) still flash a console, because the console is created
+    ; before powershell can hide it. ExecShell with SW_HIDE passes the hidden state in at process creation.
+    ExecShell "open" "powershell.exe" '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$INSTDIR\install.ps1" -OnlyWebView2' SW_HIDE
+
+    DetailPrint "Copying ARTi files and Python (about 600 MB unpacked, this takes a minute)..."
 
     ; Tracked repo content (mirrors $TrackedItems / TRACKED_ITEMS in install.ps1 / install.sh; neither ships
     ; installer/ itself, clients never build the installer, and mcp-keys.json is never shipped)
@@ -156,8 +231,8 @@ Section "Install" SEC01
     File "..\README.md"
     File "..\UPDATING.md"
     File "..\prompt-templates.md"
-    File "..\install.ps1"
     File "..\install.sh"
+    ; (install.ps1 was already written above, before the background WebView2 step started)
     File "..\install.bat"
     File "..\VERSION"
     File "..\.gitignore"
@@ -168,6 +243,14 @@ Section "Install" SEC01
     ; search path when rg.exe isn't present)
     SetOutPath "$INSTDIR\bin"
     File /r "payload\bin\*.*"
+
+    ; Ready-made Python with every package installed (built by stage_python.py). install.ps1 sees its stamps
+    ; (INSTALLED_VERSION, REQUIREMENTS_SHA256) and skips the download and pip. ifnewer: an update over an
+    ; existing install leaves unchanged files alone, so a running python.exe is never overwritten needlessly.
+    SetOutPath "$INSTDIR\python"
+    SetOverwrite ifnewer
+    File /r "payload\python\*.*"
+    SetOverwrite on
     SetOutPath "$INSTDIR"
 
     ; Everything else (vendored Python, pip installs, skill junctions, desktop shortcut) is

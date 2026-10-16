@@ -12,7 +12,11 @@ if not PUBLISH.is_file():
     raise SystemExit("publish_release.py not found; set ARTI_SERVICES")
 PY = str(CODE / "python" / "python.exe")
 HOME = Path(tempfile.mkdtemp(prefix="arti-upd-home-"))
-os.environ.update(ARTI_HOME=str(HOME), ARTI_MACHINE_ID="test-machine-1", ARTI_LICENSE_API="http://127.0.0.1:4198/v1")
+# The test releases are 0.2.0; the installed version must stay below that whatever the repo's VERSION is.
+FAKE_CODE = HOME / "code"
+FAKE_CODE.mkdir()
+(FAKE_CODE / "VERSION").write_text("FRAMEWORK_VERSION=0.1.8\n", encoding="utf-8")
+os.environ.update(ARTI_CODE_HOME=str(FAKE_CODE), ARTI_HOME=str(HOME),ARTI_MACHINE_ID="test-machine-1", ARTI_LICENSE_API="http://127.0.0.1:4198/v1")
 sys.path.insert(0, str(CODE / "dashboard" / "server")); sys.path.insert(0, str(CODE / "tools" / "_shared"))
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey

@@ -14,7 +14,11 @@
   Usage: right-click > "Run with PowerShell", or double-click install.bat.
 #>
 [CmdletBinding()]
-param()
+param(
+  # Internal: only make sure the WebView2 Runtime is present, then exit. The NSIS installer starts this in the
+  # background before it copies the (large) payload, so the runtime downloads while files are being written.
+  [switch]$OnlyWebView2
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -65,6 +69,87 @@ function Copy-TrackedItem {
   } else {
     Copy-Item $Source -Destination $dest -Force
   }
+}
+
+function Test-WebView2Present {
+  $guid = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+  $roots = @(
+    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
+    @{ RegPath = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
+    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:ProgramFiles },
+    @{ RegPath = "HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:LocalAppData }
+  )
+  foreach ($r in $roots) {
+    if (-not $r.Base) { continue }
+    if (-not (Test-Path $r.RegPath)) { continue }
+    $pv = (Get-ItemProperty -Path $r.RegPath -Name pv -ErrorAction SilentlyContinue).pv
+    if (-not $pv) { continue }
+    $exe = Join-Path $r.Base "Microsoft\EdgeWebView\Application\$pv\msedgewebview2.exe"
+    if (Test-Path $exe) { return $true }
+  }
+  return $false
+}
+
+function Ensure-WebView2 {
+  <#
+    pywebview's edgechromium backend needs the Evergreen WebView2 Runtime, an OS component pip can't install.
+    app.py's own launch-time check (dashboard/app.py) is the real safety net -- it verifies the actual
+    msedgewebview2.exe binary, not just registry metadata, and falls back to opening the dashboard in the
+    default browser instead of a blank window if it's missing or broken (registry can claim it's installed on a
+    stripped-down/servicing-only image -- e.g. Windows Sandbox -- when the binary itself isn't there). This
+    tries to make that fallback unnecessary by silently installing WebView2 if it looks absent, using the same
+    registry-then-binary check so a real, working install is never re-run for nothing.
+
+    Safe to run twice at the same time: the NSIS installer starts one copy in the background (-OnlyWebView2)
+    before it copies the payload, and the main run calls this again at step 3. An exclusive lock file decides
+    which copy installs; the other waits for it to finish.
+  #>
+  if (Test-WebView2Present) {
+    Write-Host "  [ok] WebView2 Runtime already present"
+    return
+  }
+  $lockPath = Join-Path $env:TEMP 'arti-webview2.lock'
+  try {
+    if ((Get-Item $lockPath -ErrorAction Stop).LastWriteTime -lt (Get-Date).AddMinutes(-20)) { Remove-Item $lockPath -Force }
+  } catch { }
+  $lock = $null
+  try { $lock = [IO.File]::Open($lockPath, 'CreateNew', 'Write', 'None') } catch { }
+  if (-not $lock) {
+    Write-Host "Waiting for the WebView2 Runtime install that is already running..."
+    $deadline = (Get-Date).AddMinutes(10)
+    while ((Test-Path $lockPath) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
+    if (Test-WebView2Present) {
+      Write-Host "  [ok] WebView2 Runtime installed"
+    } else {
+      Write-Warning "The WebView2 Runtime is still missing. The dashboard will still work, just as a browser tab instead of a native window."
+    }
+    return
+  }
+  Write-Host "Installing Microsoft Edge WebView2 Runtime (needed for the dashboard's native window)..."
+  $webview2BootstrapperUrl = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
+  $webview2BootstrapperPath = Join-Path $env:TEMP 'MicrosoftEdgeWebView2Setup.exe'
+  try {
+    Invoke-WebRequest -Uri $webview2BootstrapperUrl -OutFile $webview2BootstrapperPath
+    # No admin required: the bootstrapper detects it can't elevate and falls back to a per-user
+    # install automatically, matching this installer's own no-admin/per-user model.
+    $proc = Start-Process -FilePath $webview2BootstrapperPath -ArgumentList '/silent', '/install' -WindowStyle Hidden -Wait -PassThru
+    if ($proc.ExitCode -eq 0) {
+      Write-Host "  [ok] WebView2 Runtime installed"
+    } else {
+      Write-Warning "WebView2 Runtime installer exited with code $($proc.ExitCode). The dashboard will still work, just as a browser tab instead of a native window."
+    }
+  } catch {
+    Write-Warning "Could not install WebView2 Runtime ($($_.Exception.Message)). The dashboard will still work, just as a browser tab instead of a native window. Install it manually from $webview2BootstrapperUrl if you want the native window."
+  } finally {
+    Remove-Item $webview2BootstrapperPath -Force -ErrorAction SilentlyContinue
+    $lock.Dispose()
+    Remove-Item $lockPath -Force -ErrorAction SilentlyContinue
+  }
+}
+
+if ($OnlyWebView2) {
+  try { Ensure-WebView2 } catch { Write-Warning "WebView2 check failed: $($_.Exception.Message)" }
+  exit 0
 }
 
 Write-Host "=== ARTi installer ==="
@@ -320,86 +405,54 @@ if (Test-Path $pythonDir) {
   }
 }
 
+# The NSIS installer ships a Python that already holds every package (built by installer\stage_python.py), with
+# a REQUIREMENTS_SHA256 stamp of the requirements.txt it was built from. When the stamp matches there is nothing
+# to download or install, which is what makes that installer fast. A script install, or a requirements change,
+# has no matching stamp and reconciles with pip as before.
 $reqFile = Join-Path $ArtiHome 'tools\requirements.txt'
-if ((Test-Path $reqFile) -and (Test-Path $pythonDir)) {
+$reqStamp = Join-Path $pythonDir 'REQUIREMENTS_SHA256'
+$reqHash = $null
+if (Test-Path $reqFile) { $reqHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $reqFile).Hash.ToLower() }
+$packagesCurrent = $false
+if ($reqHash -and (Test-Path $reqStamp)) {
+  $packagesCurrent = ((Get-Content $reqStamp -Raw).Trim() -eq $reqHash)
+}
+if ($packagesCurrent) {
+  Write-Host "  [ok] Python packages already installed - skipping pip."
+} elseif ((Test-Path $reqFile) -and (Test-Path $pythonDir)) {
   $pyExe = Join-Path $pythonDir 'python.exe'
+  $pipOk = $true
   # Non-fatal on purpose: a failed pip (offline, proxy) should still leave a usable
   # install - every tool but arti-docx is stdlib-only. Re-running fixes it later.
+  # Progress lines are shown (no --quiet) so a long install does not look stuck; --progress-bar off keeps the
+  # log readable when the output is captured.
   try {
-    & $pyExe -m pip install --quiet --disable-pip-version-check -r $reqFile
+    Write-Host "Installing Python packages (pandas, scipy, matplotlib and others; this can take a few minutes)..."
+    & $pyExe -m pip install --disable-pip-version-check --no-warn-script-location --progress-bar off -r $reqFile
     if ($LASTEXITCODE -ne 0) { throw "pip exited with code $LASTEXITCODE" }
     Write-Host "  [ok] pip dependencies reconciled from requirements.txt"
   } catch {
+    $pipOk = $false
     Write-Warning "pip install failed ($($_.Exception.Message)). Everything except arti-docx (.docx export) still works; re-run this installer once you're online to finish."
   }
-}
 
-# pywebview (+ pythonnet, for the WebView2/EdgeChromium bridge) powers the
-# dashboard's native window (dashboard/app.py) -- Windows-only for now, kept
-# out of tools/requirements.txt so a failure here never blocks the mac/linux
-# reconciliation above or arti-docx. Non-fatal for the same reason: without
-# it, app.py won't launch, but every other ARTi tool still works.
-if (Test-Path $pythonDir) {
-  $pyExe = Join-Path $pythonDir 'python.exe'
+  # pywebview (+ pythonnet, for the WebView2/EdgeChromium bridge) powers the dashboard's native window
+  # (dashboard/app.py) -- Windows-only for now, kept out of tools/requirements.txt so a failure here never
+  # blocks the mac/linux reconciliation above or arti-docx. Non-fatal for the same reason: without it,
+  # app.py won't launch, but every other ARTi tool still works.
   try {
-    & $pyExe -m pip install --quiet --disable-pip-version-check pywebview pythonnet
+    & $pyExe -m pip install --disable-pip-version-check --no-warn-script-location --progress-bar off pywebview pythonnet
     if ($LASTEXITCODE -ne 0) { throw "pip exited with code $LASTEXITCODE" }
     Write-Host "  [ok] pywebview installed (dashboard native window)"
   } catch {
+    $pipOk = $false
     Write-Warning "pywebview install failed ($($_.Exception.Message)). The dashboard native window (app.py) won't launch until this is resolved; re-run this installer once you're online to finish."
   }
+  if ($pipOk -and $reqHash) { Write-StubFile -Path $reqStamp -Content $reqHash }
 }
 
-# pywebview's edgechromium backend additionally needs the Evergreen WebView2 Runtime, an OS
-# component pip can't install. app.py's own launch-time check (dashboard/app.py) is the real
-# safety net -- it verifies the actual msedgewebview2.exe binary, not just registry metadata,
-# and falls back to opening the dashboard in the default browser instead of a blank window if
-# it's missing or broken (registry can claim it's installed on a stripped-down/servicing-only
-# image -- e.g. Windows Sandbox -- when the binary itself isn't there). This step tries to make
-# that fallback unnecessary in the first place by silently installing WebView2 if it looks
-# absent, using the same registry-then-binary check so a real, working install is never re-run
-# for nothing.
-function Test-WebView2Present {
-  $guid = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
-  $roots = @(
-    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
-    @{ RegPath = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\$guid"; Base = ${env:ProgramFiles(x86)} },
-    @{ RegPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:ProgramFiles },
-    @{ RegPath = "HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$guid"; Base = $env:LocalAppData }
-  )
-  foreach ($r in $roots) {
-    if (-not $r.Base) { continue }
-    if (-not (Test-Path $r.RegPath)) { continue }
-    $pv = (Get-ItemProperty -Path $r.RegPath -Name pv -ErrorAction SilentlyContinue).pv
-    if (-not $pv) { continue }
-    $exe = Join-Path $r.Base "Microsoft\EdgeWebView\Application\$pv\msedgewebview2.exe"
-    if (Test-Path $exe) { return $true }
-  }
-  return $false
-}
-
-if (Test-WebView2Present) {
-  Write-Host "  [ok] WebView2 Runtime already present"
-} else {
-  Write-Host "Installing Microsoft Edge WebView2 Runtime (needed for the dashboard's native window)..."
-  $webview2BootstrapperUrl = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
-  $webview2BootstrapperPath = Join-Path $env:TEMP 'MicrosoftEdgeWebView2Setup.exe'
-  try {
-    Invoke-WebRequest -Uri $webview2BootstrapperUrl -OutFile $webview2BootstrapperPath
-    # No admin required: the bootstrapper detects it can't elevate and falls back to a per-user
-    # install automatically, matching this installer's own no-admin/per-user model.
-    $proc = Start-Process -FilePath $webview2BootstrapperPath -ArgumentList '/silent', '/install' -Wait -PassThru
-    if ($proc.ExitCode -eq 0) {
-      Write-Host "  [ok] WebView2 Runtime installed"
-    } else {
-      Write-Warning "WebView2 Runtime installer exited with code $($proc.ExitCode). The dashboard will still work, just as a browser tab instead of a native window."
-    }
-  } catch {
-    Write-Warning "Could not install WebView2 Runtime ($($_.Exception.Message)). The dashboard will still work, just as a browser tab instead of a native window. Install it manually from $webview2BootstrapperUrl if you want the native window."
-  } finally {
-    Remove-Item $webview2BootstrapperPath -Force -ErrorAction SilentlyContinue
-  }
-}
+# WebView2 Runtime: usually already started in the background by the NSIS installer; this waits for it or does it.
+Ensure-WebView2
 
 # --- 4. wire skills into ~/.claude/skills --------------------------------------
 # Junctions, not copies: ~/.arti/skills/<name> is the only place a skill is ever edited.

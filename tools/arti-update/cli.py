@@ -458,12 +458,12 @@ def _spawn_updater(args, opts):
     log_path = update_dir("updater.out")
     out = open(log_path, "ab")
     try:
-        try:
-            return subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=out, stderr=out, close_fds=True, **kw)
+        try:   # cwd=run: never inherit the dashboard's folder, which the updater has to rename
+            return subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=out, stderr=out, close_fds=True, cwd=run, **kw)
         except OSError:
             if sys.platform == "win32":   # the job does not allow breakaway: run without it
                 kw["creationflags"] = base
-                return subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=out, stderr=out, close_fds=True, **kw)
+                return subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=out, stderr=out, close_fds=True, cwd=run, **kw)
             raise
     finally:
         out.close()

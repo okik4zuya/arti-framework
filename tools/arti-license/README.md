@@ -55,9 +55,11 @@ the Worker side is `arti-services/licensing-worker/tests/update_unit.mjs`).
 | Event | What the buyer sees | Behind the scenes | Skills and tools |
 |---|---|---|---|
 | First install, good key, online | Install finishes, dashboard opens | Installer runs `activate`, Worker binds the machine hash, signed `license.json` written | Usable |
-| Install with bad key (typo) | "That key has a typo" before any network call | Checksum fails locally, nothing is written, a fresh install is cleaned up | n/a |
-| Install offline | "Cannot reach the licensing server", install stops | `activate` needs the Worker once, fresh install is cleaned up | n/a |
-| Install, seat already used elsewhere | "This key is already active on another computer ..." | Worker answers `seat_limit` (409); fresh install is cleaned up. Deactivate on the old computer (Settings > License) or ask support | n/a |
+| Install with bad key (typo) | The key page says "That key has a typo" and stays on the page; nothing was installed | `installer/precheck.ps1` (PowerShell, no Python needed) checks format and checksum when Next is pressed, before any file is written | n/a |
+| Install offline | The key page says "Cannot reach the licensing server" and stays on the page | The pre-check needs the Worker once (read-only `/activations`); nothing is written | n/a |
+| Install, seat already used elsewhere | The key page says "This key is already active on another computer ..." | The pre-check sees every seat held by another machine hash (a seat already bound to this computer passes); nothing is written. Deactivate on the old computer (Settings > License) or ask support | n/a |
+| Install with an unknown, revoked or expired key | The key page says so and stays on the page | Same pre-check (`not_found`, status `revoked`, `expires` in the past) | n/a |
+| Silent install (`/S /KEY=...`) with any of the above | No UI; the installer exits with code 2 and writes nothing | `.onInit` runs the same pre-check | n/a |
 | Dashboard start, license fine | Nothing | Offline check only (signature, machine, dates). Validated online only if nothing has confirmed the license for 3 days (+-1 h jitter; the update heartbeat counts as a confirmation), 4 s timeout, silent, at most one attempt per 6 h; a running dashboard re-evaluates every 12 h (no request unless due) | Usable |
 | License ends within 30 days | Amber card "License ends in N days" | Offline date check | Usable |
 | Expired, inside grace (14 d) | Amber card "License expired. Renew soon", hint "Already renewed? Press Refresh status" | Refresh attempted at every start | Usable |

@@ -679,6 +679,57 @@ if sys.platform == "win32":
     res = run_apply("0.2.0", o)
     held.close()
     check("locked file in a later item: what was swapped is put back", not res.get("ok") and res["reason"] == "locked" and tree_hash(CODE) == snap_tree and cli.current_version() == "0.1.0", res)
+    # The real dashboard has children (the WebView2 browser processes) that inherit its working directory, the dashboard
+    # folder, and outlive it by seconds. And the updater is itself started BY the dashboard, so it is one of the
+    # dashboard's descendants. A stand-in that does both: it starts a child with that working directory, calls cli.apply
+    # (which starts the updater as its child), and exits on its own 1.5 s after the updater reports "waiting", like the
+    # real dashboard does, leaving the child running.
+    print("== swap fails: a child of the old dashboard outlives it ==")
+    reset(); prepare("0.2.0")
+    for port in list(_stubs):
+        quit_stub(port)
+    time.sleep(0.5)
+    child_file = HOME / "orphan.pid"
+    opts_file = HOME / "orphan-opts.json"
+    parent_src = """
+import importlib.util, json, os, subprocess, sys, time
+code, child_file, opts_file, pubkeys = sys.argv[1:5]
+c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(600)'], cwd=os.path.join(code, 'dashboard'),
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+open(child_file, 'w').write(str(c.pid))
+spec = importlib.util.spec_from_file_location('cli_in_dashboard', os.path.join(code, 'tools', 'arti-update', 'cli.py'))
+cli = importlib.util.module_from_spec(spec); spec.loader.exec_module(cli)
+cli.lic.PUBKEYS_PATH = pubkeys   # the test keys, as the test process itself uses
+opts = json.load(open(opts_file)); opts['pid'] = os.getpid()
+cli.apply('0.2.0', opts=opts)
+end = time.time() + 60
+while time.time() < end and (cli.read_progress() or {}).get('phase') != 'waiting':
+    time.sleep(0.1)
+time.sleep(1.5)
+os._exit(0)
+"""
+    o = options(pid=0, relaunch=True, wait_s=30)
+    opts_file.write_text(json.dumps(o))
+    (HOME / ".update").mkdir(exist_ok=True)
+    (HOME / ".update" / "updater.lock").write_text("999999")   # left by an updater that died: must not block this one
+    parent_err = open(HOME / "orphan-parent.err", "wb")
+    parent = subprocess.Popen([PY, "-c", parent_src, str(CODE), str(child_file), str(opts_file), str(PK)],
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=parent_err,
+                              cwd=str(CODE / "dashboard"))   # like the real dashboard: its folder is the working directory, inherited by the updater
+    res, end = None, time.time() + 90
+    while res is None and time.time() < end:
+        time.sleep(0.4)
+        res = cli.read_result()
+    parent.wait(timeout=30)
+    parent_err.close()
+    if res is None:
+        print((HOME / "orphan-parent.err").read_text(errors="replace")[-1500:])
+    orphan = int(child_file.read_text())
+    check("the dashboard folder as the updater's inherited working directory, a leftover child and a dead updater's lock do not block the update", res and res.get("ok") and cli.current_version() == "0.2.0", res)
+    check("the relaunched dashboard answers", ping(o["port"]) == "0.2.0", ping(o["port"]))
+    check("the leftover child was ended by the updater", str(orphan) not in subprocess.run(["tasklist", "/FI", "PID eq %d" % orphan, "/NH"], capture_output=True, text=True).stdout)
+    check("the update log names the leftover process", "leftover process" in (HOME / ".update" / "updater.log").read_text(encoding="utf-8"))
+    subprocess.run(["taskkill", "/PID", str(orphan), "/T", "/F"], capture_output=True)   # in case the check above failed
 else:
     print("SKIP locked-file scenario (Windows only)")
 
@@ -742,6 +793,7 @@ def ui_options(pid=0):
 
 
 update_check.arti_update.dashboard_options = ui_options
+update_check.arti_update.DASHBOARD_PING = cli.DASHBOARD_PING   # the dashboard's own copy of the module: never ping the real 4174
 import urllib.request, urllib.error
 
 

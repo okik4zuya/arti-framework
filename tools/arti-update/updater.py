@@ -40,6 +40,14 @@ import license as lic  # noqa: E402
 KEEP_BACKUPS = 2
 LOCK_STALE_S = 30 * 60
 WIN = sys.platform == "win32"
+# The updater runs detached, without a console: a console program it starts (taskkill, python, cmd) would open a
+# window of its own. CREATE_NO_WINDOW keeps every such call invisible.
+NOWIN = 0x08000000 if WIN else 0
+
+
+LOCKED_MESSAGE = ("Some ARTi files are in use, so nothing was changed. Close other ARTi windows, Claude Code sessions, "
+                  "and any terminal, File Explorer or editor window that is open inside the ARTi folder "
+                  "(a folder that is the current directory of a program cannot be replaced), then try again.")
 
 
 class UpdateError(Exception):
@@ -176,7 +184,7 @@ def kill_tree(pid):
     if not pid:
         return
     if WIN:
-        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, creationflags=NOWIN)
     else:
         try:
             os.kill(int(pid), 15)
@@ -184,9 +192,83 @@ def kill_tree(pid):
             pass
 
 
+def process_table():
+    """{pid: parent pid} of every running process (Windows, via a toolhelp snapshot; stdlib only). Empty elsewhere."""
+    if not WIN:
+        return {}
+    import ctypes
+    from ctypes import wintypes
+
+    class ENTRY(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ProcessID", wintypes.DWORD),
+                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+                    ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", ctypes.c_long), ("dwFlags", wintypes.DWORD),
+                    ("szExeFile", ctypes.c_wchar * 260)]
+
+    k = ctypes.windll.kernel32
+    k.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    snap = k.CreateToolhelp32Snapshot(0x2, 0)   # TH32CS_SNAPPROCESS
+    if snap in (None, wintypes.HANDLE(-1).value):
+        return {}
+    table = {}
+    try:
+        e = ENTRY()
+        e.dwSize = ctypes.sizeof(ENTRY)
+        ok = k.Process32FirstW(snap, ctypes.byref(e))
+        while ok:
+            table[e.th32ProcessID] = e.th32ParentProcessID
+            ok = k.Process32NextW(snap, ctypes.byref(e))
+    finally:
+        k.CloseHandle(snap)
+    return table
+
+
+def descendants(pid):
+    """{pid: parent pid} of everything below `pid`. Take it while `pid` is still alive: Windows never re-parents orphans,
+    so the parent link is what later tells a leftover child from a reused pid."""
+    table = process_table()
+    found = {}
+    grew = True
+    while grew:
+        grew = False
+        for child, parent in table.items():
+            if child not in found and child != pid and (parent == pid or parent in found):
+                found[child] = parent
+                grew = True
+    return found
+
+
+def stop_leftovers(ctx, kids):
+    """The dashboard's own children (the WebView2 browser processes) inherit its working directory, the folder that is
+    about to be renamed, and may outlive it by seconds: end the ones still running before the swap."""
+    if not kids:
+        return
+    for _ in range(3):
+        table = process_table()
+        alive = [p for p, parent in kids.items() if table.get(p) == parent]   # same pid, same recorded parent
+        if not alive:
+            return
+        log(ctx, "ending %d leftover process(es) of the old dashboard: %s" % (len(alive), ", ".join(map(str, alive))))
+        for p in alive:
+            kill_tree(p)
+        time.sleep(0.5)
+
+
 def stop_dashboard(ctx):
     if not ctx.pid:
         return
+    kids = descendants(ctx.pid)
+    # The dashboard started this updater, so the updater is one of its descendants: never end ourselves.
+    me = os.getpid()
+    for pid in [me] + list(descendants(me)):
+        kids.pop(pid, None)
+    try:
+        _wait_dashboard_exit(ctx)
+    finally:
+        stop_leftovers(ctx, kids)
+
+
+def _wait_dashboard_exit(ctx):
     deadline = time.time() + ctx.wait_s
     while pid_alive(ctx.pid) and time.time() < deadline:
         time.sleep(0.25)
@@ -230,7 +312,7 @@ def wait_ping(url, seconds):
 def healthy(ctx):
     """The new version counts as working when its smoke command exits 0 and the relaunched dashboard answers."""
     if ctx.smoke:
-        r = subprocess.run(ctx.smoke, capture_output=True, timeout=60)
+        r = subprocess.run(ctx.smoke, capture_output=True, timeout=60, creationflags=NOWIN)
         if r.returncode != 0:
             log(ctx, "smoke command failed (%s): %s" % (r.returncode, r.stderr.decode("utf-8", "replace")[-400:]))
             return False
@@ -342,10 +424,9 @@ def swap_in(ctx, items, backup_dir):
             done[-1] = (item, had_old, True)
             log(ctx, "swapped " + item)
     except OSError as e:
-        log(ctx, "swap failed on %s: %s" % (done[-1][0] if done else "?", e))
+        log(ctx, "swap failed at %s (after %s): %s" % (getattr(e, "filename", None) or "?", ", ".join(d[0] for d in done) or "nothing", e))
         undo_swap(ctx, done, backup_dir)
-        raise UpdateError("locked", "Some ARTi files are in use, so nothing was changed. Close other ARTi windows and "
-                                    "Claude Code sessions that use ARTi, then try again.")
+        raise UpdateError("locked", LOCKED_MESSAGE)
 
 
 def undo_swap(ctx, done, backup_dir):
@@ -453,7 +534,7 @@ def relink_skills(ctx):
             log(ctx, "skill %s is a real folder in the Claude skills folder; left as it is" % name)
             continue
         if WIN:
-            r = subprocess.run(["cmd", "/c", "mklink", "/J", p, os.path.join(skills, name)], capture_output=True)
+            r = subprocess.run(["cmd", "/c", "mklink", "/J", p, os.path.join(skills, name)], capture_output=True, creationflags=NOWIN)
             if r.returncode != 0:
                 log(ctx, "mklink failed for %s: %s" % (name, r.stdout.decode("utf-8", "replace").strip()))
         else:
@@ -474,7 +555,13 @@ def acquire_lock(ctx):
     os.makedirs(ctx.update_dir, exist_ok=True)
     lock = ctx.path("updater.lock")
     try:
-        if time.time() - os.path.getmtime(lock) > LOCK_STALE_S:
+        try:
+            with open(lock, encoding="utf-8") as f:
+                holder = int(f.read().strip() or 0)
+        except (OSError, ValueError):
+            holder = 0
+        # A lock left by an updater that died (crash, killed) must not block the next update until it ages out.
+        if (holder and not pid_alive(holder)) or time.time() - os.path.getmtime(lock) > LOCK_STALE_S:
             os.remove(lock)
     except OSError:
         pass
@@ -585,7 +672,7 @@ def do_rollback(ctx, a):
         restore_from_backup(ctx, backup_dir, strict=True)
     except OSError as e:
         relaunch_old(ctx)
-        raise UpdateError("locked", "Some ARTi files are in use, so nothing was changed. Close other ARTi windows and Claude Code sessions, then try again. (%s)" % e)
+        raise UpdateError("locked", "%s (%s)" % (LOCKED_MESSAGE, e))
     relink_skills(ctx)
     phase(ctx, "checking")
     if not healthy(ctx):
@@ -616,6 +703,10 @@ def main(argv=None):
     ap.add_argument("--health-s", type=float, default=30)
     a = ap.parse_args(argv)
     ctx = Ctx(a)
+    # The dashboard starts this process, so it inherits the dashboard's working directory: the very folder that is
+    # about to be renamed. Stand in our own folder (not an update item) before anything is swapped.
+    os.makedirs(ctx.update_dir, exist_ok=True)
+    os.chdir(ctx.update_dir)
     if not a.rollback and not (a.zip and a.doc and a.version and a.from_version):
         ap.error("an update needs --zip --doc --version --from")
     try:

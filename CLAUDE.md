@@ -25,7 +25,7 @@ directly.
   avoid clashing with any system Python), so that command has nothing to resolve to on a clean
   client machine.** Always call it by full path: `"~/.arti/python/python.exe" <script>.py ...`
   (Windows) or `~/.arti/python/bin/python3 <script>.py ...` (Mac/Linux); a top-level
-  `~/.arti/python.cmd` / `~/.arti/python3` wrapper (created by the installer alongside `python/`)
+  `python.cmd` (Windows) / `python3` (Mac/Linux) wrapper at the top of `~/.arti` (created by the installer alongside `python/`)
   also forwards to the same binary if the subpath is forgotten. This applies everywhere, not just
   inside a scaffolded paper project — a paper project's generated `CLAUDE.md` repeats this
   convention for its own tool calls, but this repo has no such generated file, so this line is the
