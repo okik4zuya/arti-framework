@@ -45,9 +45,12 @@ __pycache__/
 /.license-check.json
 /license.json.tmp
 
-# API keys for arti-ref-search-mcp (OPENALEX_API_KEY, ...): per machine, never committed or shipped.
-# Read by tools/arti-ref-search-mcp/config.py; the tracked .mcp.json keeps empty env values.
+# API keys for arti-search (OPENALEX_API_KEY, ...): per machine, never committed or shipped.
+# Read by tools/arti-search/config.py (the file keeps its old name; the dashboard Settings page writes it).
 /mcp-keys.json
+
+# per-machine runtime state (arti-search throttle state): never committed or shipped
+/.cache/
 
 # maintainer scratch notes and the dashboard side note: not part of the product
 /notes/

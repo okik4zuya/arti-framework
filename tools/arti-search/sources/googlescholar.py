@@ -27,6 +27,7 @@ from typing import Dict, Optional
 import requests
 from bs4 import BeautifulSoup
 
+import state
 from config import get_env
 from http_client import SourceFetchError
 from merge import extract_doi
@@ -46,7 +47,7 @@ _MIN_INTERVAL = 3.0
 _PAGE_SIZE = 10
 _MAX_RETRIES = 3
 _RETRY_DELAY = 2.0
-_FALLBACK_HINT = "Use search_openalex_works or search_semanticscholar_papers instead."
+_FALLBACK_HINT = "Use the OpenAlex search (cli.py search) or Semantic Scholar search (cli.py s2-search) instead."
 
 
 def _retry_after(response) -> float:
@@ -89,10 +90,29 @@ class GoogleScholarSource(PaperSource):
 
     def __init__(self):
         self._lock = Lock()
+        # Wall-clock epoch seconds, persisted in state.py so the guard survives separate CLI processes.
         self._cooldown_until = 0.0
         self._consecutive_blocks = 0
         self._last_call = 0.0
+        self._paused = False  # Retry-After beyond 24 h: paused until the persisted cooldown expires
         self._session: Optional[requests.Session] = None
+
+    # ---- persisted state -------------------------------------------------------------------
+
+    def _load_state(self) -> None:
+        s = state.load("googlescholar")
+        try:
+            self._cooldown_until = float(s.get("cooldown_until", 0.0))
+            self._consecutive_blocks = int(s.get("consecutive_blocks", 0))
+            self._last_call = float(s.get("last_call", 0.0))
+        except (TypeError, ValueError):
+            self._cooldown_until, self._consecutive_blocks, self._last_call = 0.0, 0, 0.0
+        self._paused = bool(s.get("paused", False)) and time.time() < self._cooldown_until
+
+    def _save_state(self) -> None:
+        state.save("googlescholar", {
+            "cooldown_until": self._cooldown_until, "consecutive_blocks": self._consecutive_blocks,
+            "last_call": self._last_call, "paused": self._paused})
 
     # ---- session / cooldown ----------------------------------------------------------------
 
@@ -110,14 +130,12 @@ class GoogleScholarSource(PaperSource):
         return s
 
     def cooldown_remaining(self) -> float:
-        if math.isinf(self._cooldown_until):
-            return math.inf
-        return max(0.0, self._cooldown_until - time.monotonic())
+        return max(0.0, self._cooldown_until - time.time())
 
     def status(self) -> Dict:
-        rem = self.cooldown_remaining()
-        return {"cooldown_remaining_s": None if math.isinf(rem) else round(rem),
-                "paused_for_process": math.isinf(rem),
+        self._load_state()
+        return {"cooldown_remaining_s": round(self.cooldown_remaining()),
+                "paused_for_24h": self._paused,
                 "proxy_configured": bool(get_env("GOOGLE_SCHOLAR_PROXY_URL"))}
 
     def _begin_cooldown(self, response=None) -> None:
@@ -125,12 +143,16 @@ class GoogleScholarSource(PaperSource):
         delay = min(_COOLDOWN_SECONDS * (2 ** (self._consecutive_blocks - 1)), _MAX_COOLDOWN_SECONDS)
         if response is not None:
             delay = max(delay, _retry_after(response))
-        self._cooldown_until = max(self._cooldown_until, time.monotonic() + delay)
+        if math.isinf(delay):
+            delay = _MAX_RETRY_AFTER_SECONDS
+            self._paused = True
+        self._cooldown_until = max(self._cooldown_until, time.time() + delay)
+        self._save_state()
 
     def _cooldown_hint(self) -> str:
-        if math.isinf(self._cooldown_until):
-            return ("Upstream Retry-After exceeds 24 hours; Scholar requests are paused for this "
-                    "process. " + _FALLBACK_HINT)
+        if self._paused:
+            return ("Upstream Retry-After exceeds 24 hours; Scholar requests are paused for 24 hours. "
+                    + _FALLBACK_HINT)
         return f"Retry after {math.ceil(self.cooldown_remaining())} seconds. {_FALLBACK_HINT}"
 
     # ---- search ----------------------------------------------------------------------------
@@ -157,7 +179,8 @@ class GoogleScholarSource(PaperSource):
             raise SourceFetchError("Google Scholar is busy (another search holds the session). "
                                    + _FALLBACK_HINT)
         try:
-            if time.monotonic() < self._cooldown_until:
+            self._load_state()
+            if time.time() < self._cooldown_until:
                 raise SourceFetchError("Google Scholar is cooling down after an access limit. "
                                        + self._cooldown_hint())
             return self._fetch_page(query, max_results, year_from, year_to, max(0, start))
@@ -176,7 +199,7 @@ class GoogleScholarSource(PaperSource):
         consent_retried = False
         response = None
         for attempt in range(_MAX_RETRIES):
-            wait = _MIN_INTERVAL - (time.monotonic() - self._last_call)
+            wait = _MIN_INTERVAL - (time.time() - self._last_call)
             time.sleep(max(0.0, wait) + random.uniform(0.0, 1.0))
             self._session.headers["User-Agent"] = random.choice(_BROWSERS)
             try:
@@ -187,7 +210,8 @@ class GoogleScholarSource(PaperSource):
                     f"Google Scholar request failed ({type(e).__name__}); check connectivity or "
                     f"GOOGLE_SCHOLAR_PROXY_URL. {_FALLBACK_HINT}") from None
             finally:
-                self._last_call = time.monotonic()
+                self._last_call = time.time()
+                self._save_state()
 
             soup = None
             if response.status_code in (200, 403, 429, 503):
@@ -224,6 +248,8 @@ class GoogleScholarSource(PaperSource):
 
         self._consecutive_blocks = 0
         self._cooldown_until = 0.0
+        self._paused = False
+        self._save_state()
         papers = []
         for item in soup.find_all("div", class_="gs_ri"):
             paper = self._parse(item)

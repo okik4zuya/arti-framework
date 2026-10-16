@@ -217,7 +217,9 @@ Section "Install" SEC01
 
     ; Tracked repo content (mirrors $TrackedItems / TRACKED_ITEMS in install.ps1 / install.sh; neither ships
     ; installer/ itself, clients never build the installer, and mcp-keys.json is never shipped)
-    File /r /x "__pycache__" /x "*.pyc" "..\tools"
+    ; tools\arti-compose\examples\out and \panels are git-ignored render output (about 4 MB), never part of a release;
+    ; no other folder under tools, skills, dashboard or logo is named out or panels.
+    File /r /x "__pycache__" /x "*.pyc" /x "out" /x "panels" "..\tools"
     File /r /x "__pycache__" /x "*.pyc" "..\skills"
     ; server.log is runtime state (app.py truncates/recreates it on each fresh spawn, gitignored) --
     ; never something to ship. Without this exclude, whatever happens to be on the maintainer's own

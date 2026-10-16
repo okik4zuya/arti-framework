@@ -10,7 +10,6 @@ from tools._shared.paths import poppler_bin_dir, tesseract_exe, ripgrep_exe  # n
 from tools._shared.browser import find_browser  # noqa: E402
 
 SKILLS_DIR = Path.home() / ".claude" / "skills"
-CLAUDE_JSON = Path.home() / ".claude.json"
 
 
 def _item(name, ok, detail, fix=None):
@@ -25,14 +24,19 @@ def _skills():
                  "Missing: %s. Run install.ps1 again." % ", ".join(missing))
 
 
-def _mcp_registered():
+def _search_tool():
+    """The literature search is a CLI (tools/arti-search), so there is nothing to register: check the files
+    and report which optional keys are set (names only, never values). No network call."""
+    cli = ARTI_HOME / "tools" / "arti-search" / "cli.py"
     try:
-        servers = json.loads(CLAUDE_JSON.read_text(encoding="utf-8")).get("mcpServers", {})
+        keys = json.loads((ARTI_HOME / "mcp-keys.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        servers = {}
-    ok = "arti-ref-search-mcp" in servers
-    return _item("Literature search (MCP, user scope)", ok, "registered" if ok else "not registered",
-                 "Optional: makes literature search work outside ~/.arti. See UPDATING.md (MCP servers).")
+        keys = {}
+    names = [("OpenAlex", "OPENALEX_API_KEY"), ("Semantic Scholar", "SEMANTIC_SCHOLAR_API_KEY")]
+    have = [label for label, k in names if keys.get(k)]
+    detail = "ready; keys: %s" % (", ".join(have) if have else "none (optional, anonymous pools are used)")
+    return _item("Literature search (arti-search)", cli.is_file(), detail if cli.is_file() else "missing",
+                 "tools/arti-search/cli.py is missing. Reinstall or update ARTi.")
 
 
 def system_status():
@@ -51,7 +55,7 @@ def system_status():
         _item("Edge / Chrome (PDF export)", browser, os.path.basename(browser) if browser else "not found",
               "Install Microsoft Edge or Google Chrome to export PDFs and figures."),
         _skills(),
-        _mcp_registered(),
+        _search_tool(),
     ]
     return {"items": items}
 

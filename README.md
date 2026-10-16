@@ -1,7 +1,7 @@
 # ARTi Framework
 
 A Claude Code workflow for taking a research paper from "I don't have an idea yet" to
-"it's submitted" — ten skills, a set of export tools, and a local dashboard.
+"it's submitted" — eleven skills, a set of export tools, and a local dashboard.
 
 - **ARTi-setup** — one-time onboarding; scaffolds each new paper project
 - **ARTi-idea** — gap map → idea canvas → novelty scoring → research design → journal target
@@ -13,6 +13,7 @@ A Claude Code workflow for taking a research paper from "I don't have an idea ye
   drafting
 - **ARTi-jfinder** — ad-hoc journal lookup and ranking questions (SJR, quartile, aims & scope)
 - **ARTi-crosscite** — cross-citation overlap check between two literature clusters
+- **ARTi-demo** — one command, one question (the topic), then an unattended tour: search, screening, full texts, figures, a Word manuscript with Zotero citations and a scoreboard
 - **ARTi-annotate** — resolve the inline comments and suggested edits you made in the dashboard md preview
 - **ARTi-SLR** — PRISMA systematic literature review, from research question to synthesis
 
@@ -94,7 +95,7 @@ You never have to run the tools in `tools/` by hand — the skills invoke them.
 ```
 
 and in Claude Code, `/skills` should list `ARTi-setup`, `ARTi-idea`, `ARTi-writing`,
-`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`, `ARTi-annotate`, `ARTi-SLR`.
+`ARTi-figure`, `ARTi-ref`, `ARTi-scratchbook`, `ARTi-jfinder`, `ARTi-crosscite`, `ARTi-annotate`, `ARTi-SLR`, `ARTi-demo`.
 
 ## Troubleshooting
 
@@ -128,7 +129,7 @@ Your paper project folders are separate and are not touched.
 ```
 ~/.arti/
   skills/     the ten ARTi-* skills (linked into ~/.claude/skills/)
-  tools/      arti-lit, arti-render, arti-docx, arti-convert, arti-memcheck, arti-ref-search-mcp, ...
+  tools/      arti-lit, arti-render, arti-docx, arti-convert, arti-memcheck, arti-search, ...
   CAPABILITIES.md  one-line map of every skill, tool and MCP server
   dashboard/  local launcher (127.0.0.1:4174)
   python/     vendored Python 3.11 - downloaded by the installer, never tracked

@@ -122,7 +122,7 @@ def main():
             sys.exit("pip failed (exit %d); the payload was not stamped" % r.returncode)
 
     # The pieces the app imports at start: fail the build here, not on a client's machine.
-    check = subprocess.run([py, "-s", "-c", "import cryptography, webview, docx, matplotlib, pandas, scipy, mcp, openai, tiktoken, requests, bs4"], env=env)
+    check = subprocess.run([py, "-s", "-c", "import cryptography, webview, docx, matplotlib, pandas, scipy, openai, tiktoken, requests, bs4"], env=env)
     if check.returncode != 0:
         sys.exit("the staged Python cannot import the app's packages; not stamped")
 

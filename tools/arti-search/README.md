@@ -1,37 +1,78 @@
-# arti-ref-search-mcp
+# arti-search
 
-In-house, multi-source-ready MCP server for live literature-discovery search. Replaces the
-third-party `openags/paper-search-mcp` pip package (see `CLAUDE.md`'s `.mcp.json` bullet for why).
-Discovery only — never writes to a project's `arti-lit.db` directly; a chosen candidate goes
-through `ARTi-ref`'s own dedup path like any researcher-supplied paper.
+Live literature discovery as a command-line tool: OpenAlex, Semantic Scholar and (scraping, opt-in by use)
+Google Scholar, plus citation tracing, candidate resolution, open-access full-text download and RIS output.
+Discovery only: it never writes a project's `arti-lit.db`; a chosen candidate goes through `ARTi-ref`'s own
+dedup path like any researcher-supplied paper.
+
+Renamed from `arti-ref-search-mcp` on 2026-10-16. It used to be an MCP server that had to be registered by hand
+at Claude Code's user scope, which the installers never did, so on a client machine every search route was
+missing. It is a plain CLI now, like every other tool here: nothing to register, available in the middle of a
+session, works from any folder and with any agent that has a shell. Build history:
+`memory/memories/arti-ref-search-mcp-build.md` and `arti-search-migration.md` (maintainer memory).
 
 ## Invocation
 
-Registered in `.mcp.json` (project scope, `~/.arti` only) and at Claude Code's user scope (every
-paper project) — not meant to be run by hand. For a standalone check:
-
 ```
-"~/.arti/python/python.exe" "~/.arti/tools/arti-ref-search-mcp/server.py"
+"~/.arti/python/python.exe" "~/.arti/tools/arti-search/cli.py" <subcommand> [options]
 ```
 
-Reads on stdio (MCP stdio transport); exits on EOF/Ctrl-C.
+(Mac/Linux: `~/.arti/python/bin/python3`.) One JSON object on stdout; exit 0, or the
+`{"error", "error_type", "hint"?}` envelope and exit 1 (argparse mistakes exit 2). In the skills the command is
+written `arti-search <subcommand>`.
+
+| Subcommand | Route | API function (parameters below) |
+|---|---|---|
+| `search` | OpenAlex works search | `search_openalex_works` |
+| `count` (`--group-by`) | counts, optionally grouped | `count_openalex_works` |
+| `related` | OpenAlex related works of one seed | `related_openalex_works` |
+| `get` | one OpenAlex work | `get_openalex_work` |
+| `lookup` | autocomplete to OpenAlex IDs | `lookup_openalex_entity` |
+| `fulltext` (`--dry-run`, `--source`) | open-access PDF download | `download_openalex_fulltext` |
+| `s2-search`, `s2-recommend`, `s2-get` | Semantic Scholar | `search_/recommend_/get_semanticscholar_*` |
+| `trace` | citation tracing from 1-5 seeds | `trace_openalex_citations` |
+| `resolve` | DOIs or titles to OpenAlex records | `resolve_external_candidates` |
+| `scholar` | Google Scholar search | `search_googlescholar_papers` |
+| `sources` | which routes are live | `check_search_sources` |
+
+Parameter names in the sections below are the API names; the CLI flag is the same name in kebab-case
+(`year_from` -> `--year-from`, `open_access_only` -> `--oa-only`, `max_results` -> `--max`).
+
+### Options every subcommand shares
+
+| Option | Meaning |
+|---|---|
+| `--query TEXT`, `--query-file PATH` | the query; `PATH` `-` reads stdin. Use a file for Boolean queries: quotes and parentheses do not survive Windows shells |
+| `--out PATH` | write the full result to `PATH` and print only a summary (`ok`, `bytes`, `meta`, `returned`, or `total`/`groups`). Keeps 100 records with abstracts out of the conversation |
+| `--max-chars N` | bound on stdout without `--out` (default 24000: Bash output is cut near 30,000). Over the limit, abstracts are dropped first, then results are cut, and `truncated` says so |
+| `--ris PATH` | also write the records as RIS (TY, AU, TI, PY, T2, DO, AB, UR) for `arti-lit library import-ris`; keys come out as `surname-year` |
+| `--snapshot PATH` | also write the raw JSON (a dated record of what the search returned) |
+| `--no-keys` | ignore `OPENALEX_API_KEY` and `SEMANTIC_SCHOLAR_API_KEY` from env and `mcp-keys.json`, to test the anonymous path |
+
+`search` with no query and no `--cites`/`--cited-by`/`--related-to`/`--topic-id`/`--source-issn`/`--filters` is
+refused (OpenAlex would return the whole index).
+
+### State that survives between calls
+
+The Google Scholar cooldown (exponential, 60 s up to 900 s, Retry-After honoured) and the Semantic Scholar
+call spacing used to live in the memory of the MCP server process. Each CLI call is a new process, so both are
+kept in `<arti home>/.cache/search-state.json` (`state.py`, wall-clock timestamps, atomic write, a corrupt or
+missing file counts as "no state"; the `ARTI_SEARCH_STATE` env var points tests elsewhere). `.cache/` is
+git-ignored and never shipped. A `scholar` call during a cooldown is refused with no network request.
 
 ## Configuration
 
-Both env vars are optional; the server works with neither set (anonymous OpenAlex pool).
+All optional; with none set the CLI uses the anonymous OpenAlex pool and open-access links.
 
-- `OPENALEX_API_KEY` — OpenAlex API key, raises the daily request budget ~10x over anonymous use.
-  Get one free from OpenAlex; see `notes/openalex-api.md`.
-- `ARTI_REF_CONTACT_EMAIL` — contact email sent as OpenAlex's `mailto` param (the "polite pool"
-  mechanism) — a real identifier, not a placeholder.
-- `SEMANTIC_SCHOLAR_API_KEY` — free key from semanticscholar.org/product/api. Without it the shared
-  pool returned HTTP 429 on every `search_semanticscholar_papers` call (2026-10-03); with it S2 gives a
-  dedicated 1 request/second, which the source respects.
+- `OPENALEX_API_KEY`: raises the daily request budget about 10x and enables the OpenAlex cached-PDF route.
+- `ARTI_REF_CONTACT_EMAIL`: contact email sent as OpenAlex's `mailto` (polite pool); also used by `arti-lit library enrich` for Crossref.
+- `SEMANTIC_SCHOLAR_API_KEY`: free key; without it `s2-search` gets HTTP 429 (the shared pool); `s2-recommend` works without one.
+- `GOOGLE_SCHOLAR_PROXY_URL`: optional proxy for `scholar` only.
 
-- `GOOGLE_SCHOLAR_PROXY_URL` — optional HTTP(S) proxy for `search_googlescholar_papers` only.
-
-All four are resolved by `config.get_env()`: process env first, then `<arti home>/mcp-keys.json` (git-ignored, per machine, never shipped; flat
-`{"OPENALEX_API_KEY": "..."}`), then the stanza's `env` in `<arti home>/.mcp.json` (tracked, kept empty).
+`config.get_env()` reads the process env first, then `<arti home>/mcp-keys.json` (flat `{"OPENALEX_API_KEY": "..."}`,
+git-ignored, per machine, never shipped; the dashboard's Settings > APIs page writes it). The file keeps its
+old name because the dashboard, the installer checks and the licensing tests refer to it. The old fallback that
+read an `env` stanza from `.mcp.json` is gone (that file is empty now).
 
 ## Tools
 
@@ -62,11 +103,7 @@ Paper dicts keep `paper_id`, `title`, `authors`, `abstract`, `doi`, `published_d
 | `max_results`, `cursor` | cursor paging, 100 per request, so no 10,000-result ceiling; pass `meta.next_cursor` back as `cursor` |
 | `include_abstract`, `abstract_max_chars` | shrink the payload; `select=` is applied server-side |
 
-**API key reach (2026-10-03).** `config.get_env()` reads `OPENALEX_API_KEY` / `ARTI_REF_CONTACT_EMAIL` from the
-process env first, then from `<arti home>/mcp-keys.json`, then from the `arti-ref-search-mcp` stanza of `<arti home>/.mcp.json`. The user-scope entry in
-`~/.claude.json` has `"env": {}`, so before this fix only sessions opened inside `~/.arti` had the key and
-`download_openalex_fulltext` (which needs it) failed everywhere else. One copy of the secret, reachable from every
-project; no restart-time env wiring needed beyond restarting the server.
+**API key reach.** `config.get_env()` reads the keys from the process env, then from `<arti home>/mcp-keys.json`: one copy of the secret, reachable from every project and every working directory. Without an OpenAlex key, `fulltext` still works through open-access links (`--source oa_location`); only OpenAlex's own cached-PDF route needs the key.
 
 **Semantic outage fallback (2026-10-03).** OpenAlex's own embedding backend can fail (its Databricks
 gateway returned a TLS hostname-mismatch error, so every `semantic` call got HTTP 400 "Failed to embed
@@ -82,7 +119,7 @@ real figure. Note `search_in='all'` also matches full text and is the pricier, b
 `title_abstract` is now the default for prior-review and gap checks. Counts logged before 2026-10-03
 (e.g. 3,501 in the abstract-coverage test) used the old `all` default and are not comparable.
 
-Concept search (no keywords, or `semantic` down): use the openalex MCP keyword route; see the note in
+Concept search (no keywords, or `semantic` down): use the openalex connector's keyword route when the researcher has it signed in, otherwise `s2-recommend` or `trace`; see the note in
 `skills/ARTi-idea/references/stage2-gap-map-protocol.md`.
 
 ### `count_openalex_works(query=None, group_by=None, ...)`
@@ -194,27 +231,16 @@ Which route to use for which task: `skills/ARTi-ref/references/search-routing.md
 - **Secrets.** Keys are read by `config.get_env()` and never printed; errors redact `api_key=` and `mailto=`.
 - **`check_search_sources`** reports which routes are live. Run it before a search session.
 
-### Registration (moved here from `~/.arti/CLAUDE.md`)
-
-- Project scope: `~/.arti/.mcp.json`, launched as `${ARTI_PYTHON:-python} tools/arti-ref-search-mcp/server.py`
-  (a script path, not `-m <module>`). `install.ps1`/`install.sh` create the `python.cmd`/`python3` wrapper and
-  point `ARTI_PYTHON` at it. Applies only when Claude Code's working directory is `~/.arti`.
-- User scope: `~/.claude.json` top-level `mcpServers` (what makes it available in every paper project). Added once
-  by hand (`claude mcp add --scope user ...` or a direct edit); not re-applied by the installers. The entry holds
-  the resolved absolute `python/python.exe` and `server.py` paths, not `${ARTI_PYTHON:-python}`: env var changes
-  do not reach an already-running Claude Code process tree, so the literal path avoids a second failure mode.
-- Dependency: only the `mcp` SDK (unpinned, `tools/requirements.txt`). It replaced `openags/paper-search-mcp`,
-  which needed `mcp<2` because its 0.1.4 imported `FastMCP` (renamed `MCPServer` in mcp 2.x), swallowed every
-  OpenAlex/S2 HTTP failure into an empty list and had no OpenAlex key support.
-
 ## Architecture
 
 ```
-server.py              # MCP instance + one thin @mcp.tool() wrapper per source
+cli.py                 # argparse CLI: one subcommand per route, --out/--ris/--snapshot, JSON output
+api.py                 # plain functions, one per route, plus safe() -> {error, error_type, hint}
+state.py               # persisted Scholar cooldown and S2 call spacing (<arti home>/.cache/search-state.json)
 paper.py               # shared Paper dataclass (source-agnostic)
 merge.py               # DOI/title normalization, dedupe, title similarity
 resolve.py             # resolve_candidates(): external DOI/title lists -> OpenAlex records
-config.py              # get_env(): process env, then mcp-keys.json, then the stanza's env in <arti home>/.mcp.json
+config.py              # get_env(): process env, then mcp-keys.json; ignore_keys() for --no-keys
 http_client.py         # shared retry/backoff GET-JSON helper (any source can call this)
 sources/
   base.py               # PaperSource ABC: abstract search(query, **kwargs) -> result built from Paper objects
@@ -223,28 +249,22 @@ sources/
   googlescholar.py       # GoogleScholarSource: one-page HTML search (scraping)
 ```
 
-Not pip-installed, no `pyproject.toml` — a plain directory of modules invoked directly by path,
-same convention as every other `tools/` script (one level deeper, like `arti-lit`'s `cli.py` +
-`db.py` split). Python adds a directly-run script's own directory to `sys.path[0]` automatically,
-so cwd never matters — only the script's own location does.
+Not pip-installed, no `pyproject.toml`: a plain directory of modules invoked by path, like every other `tools/`
+script. Python adds a directly-run script's own directory to `sys.path[0]`, so cwd never matters.
+
+Tests: `tests/search/test_cli.py` (offline; `ARTI_TEST_LIVE=1` adds three live calls) covers the persisted state,
+query files, `--out`, `--max-chars`, `--no-keys` and the RIS round trip through `arti-lit`.
 
 ### Adding a new source later
 
-1. New `sources/<name>.py` implementing `PaperSource` (one `search(query, **kwargs)` returning Paper-based results
-   method), reusing `http_client.get_json_with_retry` for HTTP.
-2. One new thin `@mcp.tool() def search_<name>_works(...)` in `server.py`, same shape as the
-   OpenAlex one: call the source's `.search(...)`, return `[p.to_dict() for p in papers]`.
-3. Its own optional API-key/contact env var(s) if the source needs them, read the same
-   `os.environ.get(...)` way — no config-file-loading machinery.
-
-No change needed to `paper.py`, `sources/base.py`, `http_client.py`, or the existing OpenAlex tool.
-A unified multi-source dispatcher tool (aggregating across sources in one call, like the original
-package's `search_papers(sources=...)`) is deliberately not built with only one source — YAGNI —
-but this per-source-module shape means adding one later is a small additive change (a `SOURCES`
-registry dict in `server.py`, fanned out via `asyncio.gather`), not a rewrite.
+1. New `sources/<name>.py` implementing `PaperSource`, reusing `http_client.get_json_with_retry`. If it needs a
+   cooldown or call spacing, keep it in `state.py`, not in memory.
+2. One function in `api.py` and one subcommand in `cli.py`, same shape as the OpenAlex ones.
+3. Its own optional key in `mcp-keys.json` / env, read through `config.get_env()`.
 
 ## Not in this tool
 
-- **PDF-to-Markdown conversion and library registration** — that's `arti-convert ingest` (this server only downloads PDFs).
-- **A multi-source dispatcher tool** — not yet; see the extension recipe above.
+- **PDF-to-Markdown conversion and library registration** — that's `arti-convert ingest` (this tool only downloads PDFs).
+- **A multi-source dispatcher** — not built with only a few sources; see the extension recipe above.
+- **An MCP server** — retired 2026-10-16 (see the top of this file).
 - **Writing to `arti-lit.db`** — discovery only; a chosen candidate goes through `ARTi-ref`.

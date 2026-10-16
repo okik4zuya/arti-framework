@@ -1,10 +1,10 @@
 """Crossref lookup for `arti-lit library enrich`: DOI -> CSL-JSON (the item format Zotero and
-CSL engines consume). Self-contained on purpose -- `arti-ref-search-mcp`'s retry helper lives in a
+CSL engines consume). Self-contained on purpose -- `arti-search`'s retry helper lives in a
 hyphenated directory that isn't importable as a package, so the small retry loop is copied here
 rather than reached across tools.
 
 Crossref asks polite clients to identify themselves: the contact email (env
-`ARTI_REF_CONTACT_EMAIL`, shared with arti-ref-search-mcp) goes in the User-Agent and as `mailto`.
+`ARTI_REF_CONTACT_EMAIL`, shared with arti-search) goes in the User-Agent and as `mailto`.
 """
 import json
 import os

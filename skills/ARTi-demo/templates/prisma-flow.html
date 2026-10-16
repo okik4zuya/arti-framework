@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PRISMA-ScR flow</title>
+<!-- Filled by scripts/build_fig_prisma.py ({{placeholders}}) and rendered with arti-compose. Print mode, 170 mm wide. -->
+<meta name="arti:width" content="170mm">
+<meta name="arti:height" content="112mm">
+<meta name="arti:dpi" content="600">
+<meta name="arti:min-pt" content="7">
+<style>
+/*ARTI_BASE_CSS*/
+.flow { width: var(--page-w); height: var(--page-h); padding: 3mm; display: grid;
+        grid-template-columns: 11mm 1fr 9mm 58mm; grid-template-rows: auto 6mm auto 6mm auto 6mm auto; column-gap: 0; row-gap: 0; align-items: stretch; }
+.phase { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font-weight: 700; font-size: 8pt;
+         background: #e8edf3; border: var(--stroke) solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.main, .side { border: var(--stroke) solid var(--ink); background: var(--plain-fill); padding: 1.6mm 2.2mm; font-size: 8pt; line-height: 1.25; }
+.main { text-align: center; display: flex; flex-direction: column; justify-content: center; }
+.main.dark { background: var(--dark-fill); color: var(--dark-text); }
+.main small { display: block; font-size: 7pt; margin-top: 0.8mm; }
+.side { align-self: center; }
+.side ul { margin: 0.8mm 0 0 0; padding-left: 3.4mm; font-size: 7pt; }
+.joiner { grid-column: 3; height: 0; border-top: var(--stroke) solid var(--ink); align-self: center; }
+.down { grid-column: 2; display: flex; justify-content: center; align-items: stretch; }
+.down i { width: 0; border-left: var(--stroke) solid var(--ink); position: relative; }
+.down i::after { content: ""; position: absolute; left: -1.1mm; bottom: -0.2mm; border-left: 1.1mm solid transparent; border-right: 1.1mm solid transparent; border-top: 1.6mm solid var(--ink); }
+.pair { display: flex; gap: 2mm; margin-top: 1.6mm; }
+.pair div { flex: 1; border: var(--stroke) solid var(--dark-text); padding: 1mm; font-size: 7.5pt; }
+</style>
+</head>
+<body>
+<div class="flow">
+  <div class="phase" style="grid-row: 1">Identification</div>
+  <div class="main" style="grid-row: 1; grid-column: 2">Records identified from databases (n&nbsp;=&nbsp;{{identified}})<small>{{id_sources}}</small></div>
+  <div class="joiner" style="grid-row: 1"></div>
+  <div class="side" style="grid-row: 1; grid-column: 4">Duplicates removed before screening (n&nbsp;=&nbsp;{{dups}})</div>
+
+  <div class="down" style="grid-row: 2; grid-column: 2"><i></i></div>
+
+  <div class="phase" style="grid-row: 3 / span 3">Screening</div>
+  <div class="main" style="grid-row: 3; grid-column: 2">Records screened by title and abstract (n&nbsp;=&nbsp;{{screened}})</div>
+  <div class="joiner" style="grid-row: 3"></div>
+  <div class="side" style="grid-row: 3; grid-column: 4">Records excluded (n&nbsp;=&nbsp;{{excl_ta}})<ul>{{reasons_ta}}</ul></div>
+
+  <div class="down" style="grid-row: 4; grid-column: 2"><i></i></div>
+
+  <div class="main" style="grid-row: 5; grid-column: 2">Sources assessed for eligibility (n&nbsp;=&nbsp;{{eligible}})</div>
+  <div class="joiner" style="grid-row: 5"></div>
+  <div class="side" style="grid-row: 5; grid-column: 4">Sources excluded (n&nbsp;=&nbsp;{{excl_elig}})<ul>{{reasons}}</ul></div>
+
+  <div class="down" style="grid-row: 6; grid-column: 2"><i></i></div>
+
+  <div class="phase" style="grid-row: 7">Included</div>
+  <div class="main dark" style="grid-row: 7; grid-column: 2">Sources included in the review (n&nbsp;=&nbsp;{{included}})
+    <div class="pair"><div>Read at full text<br>n&nbsp;=&nbsp;{{inc_full}}</div><div>Assessed from abstract only<br>n&nbsp;=&nbsp;{{inc_abs}}</div></div></div>
+</div>
+</body>
+</html>

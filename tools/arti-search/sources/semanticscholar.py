@@ -13,6 +13,7 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional
 
+import state
 from config import get_env
 from http_client import SourceFetchError, get_json_with_retry
 from paper import Paper
@@ -30,7 +31,6 @@ _FIELDS_WITH_TLDR = _FIELDS + ",tldr"  # the recommendations endpoint rejects `t
 _MIN_INTERVAL = 1.1  # seconds between calls (key tier: 1 request/second)
 _SEARCH_MAX = 100  # /paper/search page ceiling
 _REC_MAX = 500
-_last_call = 0.0
 
 
 def _headers() -> Dict[str, str]:
@@ -39,10 +39,14 @@ def _headers() -> Dict[str, str]:
 
 
 def _call(url: str, params: Optional[Dict] = None, json_body=None) -> Dict:
-    """One rate-spaced call. Adds a how-to-fix hint to a 429 when no key is configured."""
-    global _last_call
-    wait = _MIN_INTERVAL - (time.monotonic() - _last_call)
-    if wait > 0:
+    """One rate-spaced call. The last-call time is persisted (state.py) so that separate CLI
+    processes keep the spacing too. Adds a how-to-fix hint to a 429 when no key is configured."""
+    try:
+        last = float(state.load("semanticscholar").get("last_call", 0.0))
+    except (TypeError, ValueError):
+        last = 0.0
+    wait = _MIN_INTERVAL - (time.time() - last)
+    if 0 < wait <= _MIN_INTERVAL:
         time.sleep(wait)
     try:
         return get_json_with_retry(url, params, _headers(), json_body)
@@ -50,12 +54,12 @@ def _call(url: str, params: Optional[Dict] = None, json_body=None) -> Dict:
         if "HTTP 429" in str(e) and not get_env("SEMANTIC_SCHOLAR_API_KEY"):
             raise SourceFetchError(
                 f"{e} -- no SEMANTIC_SCHOLAR_API_KEY configured, so the shared unauthenticated "
-                "pool is saturated. Get a free key at semanticscholar.org/product/api and add "
-                "SEMANTIC_SCHOLAR_API_KEY to the arti-ref-search-mcp env in <arti home>/.mcp.json."
+                "pool is saturated. Get a free key at semanticscholar.org/product/api and add it in "
+                "the dashboard under Settings > APIs (stored in <arti home>/mcp-keys.json)."
             )
         raise
     finally:
-        _last_call = time.monotonic()
+        state.save("semanticscholar", {"last_call": time.time()})
 
 
 def _normalize_ref(ref: str) -> str:

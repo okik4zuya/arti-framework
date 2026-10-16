@@ -1,15 +1,3 @@
 {
-  "mcpServers": {
-    "arti-ref-search-mcp": {
-      "command": "${ARTI_PYTHON:-python}",
-      "args": [
-        "${CLAUDE_PROJECT_DIR:-.}/tools/arti-ref-search-mcp/server.py"
-      ],
-      "env": {
-        "OPENALEX_API_KEY": "",
-        "SEMANTIC_SCHOLAR_API_KEY": "",
-        "ARTI_REF_CONTACT_EMAIL": ""
-      }
-    }
-  }
+  "mcpServers": {}
 }

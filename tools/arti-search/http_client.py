@@ -15,7 +15,7 @@ import urllib.parse
 import urllib.request
 
 MAX_RETRIES = 5
-USER_AGENT = "arti-ref-search-mcp/0.1 (~/.arti/tools/arti-ref-search-mcp)"
+USER_AGENT = "arti-search/0.1 (~/.arti/tools/arti-search)"
 
 
 class SourceFetchError(RuntimeError):

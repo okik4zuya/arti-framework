@@ -161,7 +161,7 @@ from the source. Every entry written this way must be:
 **Hallucination Prevention:**
 - Never add citations, references, or factual claims to the Scratchbook that were not explicitly
   provided by the researcher
-- If asked to suggest supporting literature, Claude should use the search MCP routes rather than
+- If asked to suggest supporting literature, Claude should use the `arti-search` routes rather than
   generic web search (route choice: `ARTi-ref/references/search-routing.md`; results carry real DOIs),
   but must still clearly label any suggested reference as `[UNVERIFIED — USER MUST CONFIRM]` and
   instruct the researcher to verify the actual source before accepting it

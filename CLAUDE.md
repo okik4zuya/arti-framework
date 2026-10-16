@@ -17,9 +17,10 @@ directly.
   the one canonical copy, rendered by both ARTi-setup and the dashboard scaffolder
 - `dashboard/` — the local launcher (`dashboard/server/server.py` + `arti-dashboard.html`), a general
   project launcher with ARTi-specific detail for paper projects — see `dashboard/README.md`
-- `.mcp.json` — configures one MCP server, `arti-ref-search-mcp` (in-house, live literature discovery, never
-  writes `arti-lit.db`). Launch, registration at project and user scope, keys, and limits are in
-  `tools/arti-ref-search-mcp/README.md`; which route to use is `skills/ARTi-ref/references/search-routing.md`
+- `.mcp.json` — empty on purpose (`{"mcpServers": {}}`; the file stays because the installers and the update
+  bundle list it). ARTi registers no MCP server: live literature discovery is the CLI `tools/arti-search`
+  (never writes `arti-lit.db`; keys optional in `mcp-keys.json`). Commands, keys and limits are in
+  `tools/arti-search/README.md`; which route to use is `skills/ARTi-ref/references/search-routing.md`
 - `python/` — vendored interpreter, fetched by `install.ps1`/`install.sh`, not tracked. **Never
   invoke a bare `python`/`python3`/`py` — nothing on this machine puts it on `PATH` (deliberate, to
   avoid clashing with any system Python), so that command has nothing to resolve to on a clean

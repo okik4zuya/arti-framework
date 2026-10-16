@@ -46,17 +46,11 @@ Everything that is not your own content (`tools/`, `skills/`, `dashboard/`, `log
 
 If a new version changes a SQLite database's schema (`~/.arti/memory/arti.db` or a project's `literature/arti-lit.db`), the migration runs automatically the next time that database is opened, and your rows are preserved. Migrations are always additive (new tables or columns, never removals or renames), so a rollback to the previous version still works on the migrated database.
 
-## MCP servers (`.mcp.json`) need a manual step after adding/changing one
+## Literature search (no MCP server)
 
-`.mcp.json` (which registers MCP servers like `arti-ref-search-mcp`) is part of what gets replaced on update (it holds no API keys; those live in `mcp-keys.json`, which updates never touch), same as `tools/`, `skills/`, etc. — so a new version's server additions or config changes land automatically in `~/.arti` itself.
+ARTi does not register any MCP server. Literature search is the command-line tool `tools/arti-search`, called by the skills, so nothing needs registering in Claude Code and nothing in `~/.claude.json` is touched by an install or an update. `.mcp.json` stays in `~/.arti` as an empty file.
 
-That only covers `~/.arti`. Reaching every other paper project without copying `.mcp.json` into each one relies on registering the same server at Claude Code's **user scope** (stored in `~/.claude.json`, not anything the installer or the updater touches or ever will — it's Claude Code's own live app state, outside `~/.arti` entirely). If an update adds a new MCP server, or you want an existing one reachable from your paper projects, run it by hand once per server:
-
-```
-claude mcp add --scope user <name> -- "C:\Users\<you>\.arti\python\python.exe" <script-path>
-```
-
-(substitute the server's actual command/args from `.mcp.json`; an HTTP server uses `--transport http <url>` instead). Use the **literal, resolved absolute path** here, not `${ARTI_PYTHON:-python}` — env var expansion works fine in the project-scope `.mcp.json`, but a `~/.claude.json` (user-scope) change like this needs a full Claude Code restart to take effect regardless, and a freshly-set env var doesn't reliably reach an already-running process tree even after that, so the literal path avoids stacking a second failure mode on top of the restart requirement.
+Older versions (before 2026-10-16) asked for a one-time `arti-ref-search-mcp` entry at Claude Code's user scope. If you added it, it now points to a script that no longer exists: remove the `arti-ref-search-mcp` entry from `mcpServers` in `~/.claude.json` (or run `claude mcp remove arti-ref-search-mcp --scope user`). Your API keys in `mcp-keys.json` keep working unchanged.
 
 ## ⚠️ Don't uninstall to update
 
