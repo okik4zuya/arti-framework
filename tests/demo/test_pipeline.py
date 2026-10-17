@@ -203,6 +203,44 @@ info = json.loads(out)
 check("check_docx counts the image and the table", info["images"] >= 1 and info["tables"] >= 1, out)
 code, out, err = run("check_docx.py", docx, "--expect-zotero")
 check("check_docx --expect-zotero fails on a plain docx (exit 1)", code == 1, out)
+check("check_docx reports the plain docx as not built from the Zotero template", info["zotero_template"] is False, out)
+zt = TMP / "zt.docx"
+p = subprocess.run([sys.executable, str(CODE / "tools" / "arti-docx" / "render.py"), "--md", str(md), "--out", str(zt),
+                    "--template", str(CODE / "tools" / "arti-docx" / "assets" / "default-academic-template-zotero.docx")],
+                   capture_output=True, text=True, encoding="utf-8")
+code, out, err = run("check_docx.py", zt)
+check("check_docx recognises a docx built from default-academic-template-zotero.docx", json.loads(out)["zotero_template"] is True, p.stdout + p.stderr + out)
+# arti-docx house style (every project): Arial, three-line tables, wide tables in a landscape section
+import re as _re
+import zipfile as _zf
+wide = TMP / "wide.md"
+wide.write_text("# W\n\n## Results\n\n**Table 1.** Narrow.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n**Table 2.** Wide.\n\n"
+                "| Study | Year | Host material | Dopant | Band gap (eV) | CB (V vs NHE) | VB (V vs NHE) | Product | Yield (umol g-1 h-1) | Light source |\n"
+                "|---|---|---|---|---|---|---|---|---|---|\n"
+                "| hu-2024 | 2024 | SnO2 nanofibers/carbon dots | none | 3.54 | -0.78 | 2.76 | CO | 12.4 | 300 W Xe lamp |\n\nEnd.\n", encoding="utf-8")
+for label, extra in (("default template", []), ("zotero template", ["--template", str(CODE / "tools" / "arti-docx" / "assets" / "default-academic-template-zotero.docx")])):
+    wd = TMP / ("wide-%s.docx" % label.split()[0])
+    subprocess.run([sys.executable, str(CODE / "tools" / "arti-docx" / "render.py"), "--md", str(wide), "--out", str(wd)] + extra,
+                   capture_output=True, text=True, encoding="utf-8")
+    with _zf.ZipFile(wd) as zz:
+        dx = zz.read("word/document.xml").decode("utf-8")
+        sx = zz.read("word/styles.xml").decode("utf-8")
+    sizes = _re.findall(r'<w:pgSz [^>]*/>', dx)
+    check("%s: no Calibri in the styles (Arial)" % label, "Calibri" not in sx and 'w:ascii="Arial"' in sx)
+    check("%s: tables have only top and bottom rules" % label,
+          dx.count('<w:insideV w:val="nil"/>') == 2 and dx.count('<w:left w:val="nil"/>') == 2 and "TableGrid" not in dx)
+    check("%s: the wide table sits in a landscape section, the rest portrait" % label,
+          len(sizes) == 3 and "landscape" in sizes[1] and "landscape" not in sizes[0] + sizes[2], str(sizes))
+# arti-docx drops ARTi-annotate markup (comment, revised comment, suggestion) and keeps the current text
+ann = TMP / "ann.md"
+ann.write_text("# A\n\n## Intro\n\n{==New span (Gates et al., 2018).==}{>>#a1 revised | was \"Old span.\" | add sources<<} Next {~~old~>new~~}{>>#a2 open | fix<<} and {==kept==}{>>#a3 open | note<<}.\n", encoding="utf-8")
+annd = TMP / "ann.docx"
+p = subprocess.run([sys.executable, str(CODE / "tools" / "arti-docx" / "render.py"), "--md", str(ann), "--out", str(annd)], capture_output=True, text=True, encoding="utf-8")
+with _zf.ZipFile(annd) as zz:
+    at = _re.sub(r"<[^>]+>", "", zz.read("word/document.xml").decode("utf-8"))
+check("annotation markup does not reach the docx", not any(t in at for t in ("{==", "==}", "{>>", "<<}", "{~~", "~~}", "#a1", "Old span")), at)
+check("the docx keeps the revised span, the old suggestion text and the kept span", "New span (Gates et al., 2018)." in at and "Next old and kept." in at, at)
+check("the source md keeps its annotations", "{>>#a1 revised" in ann.read_text(encoding="utf-8"))
 code, out, err = run("scoreboard.py", "--project", PROJ)
 board = (PROJ / "demo-scoreboard.md").read_text(encoding="utf-8")
 check("scoreboard is written from the project files", "Synthetic topic" in board and "| Sources included | 30 |" in board and "Scholar cooldown" in board, board[:600])
@@ -229,7 +267,7 @@ if os.environ.get("ARTI_TEST_LIVE") == "1":
     check("arti-docx --cite zotero builds", zd.is_file(), p.stdout + p.stderr)
     code, out, err = run("check_docx.py", zd, "--expect-zotero")
     zi = json.loads(out)
-    check("the .docx holds two citation fields and one bibliography field", code == 0 and zi["zotero_citation_fields"] == 2 and zi["zotero_bibliography_fields"] == 1, out)
+    check("the .docx holds two citation fields and one bibliography field", code == 0 and zi["zotero_citation_fields"] == 2 and zi["zotero_bibliography_fields"] == 1 and zi["zotero_template"] is True, out)
 
 # ---- 8. profile seeding never overwrites ---------------------------------------------------------------------------------
 fake = TMP / "fakehome"

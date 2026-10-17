@@ -1,6 +1,6 @@
 """Create the standard ARTi paper-project layout (ARTi-setup Workflow B) for the demo, in one call.
 
-    python.exe scripts/scaffold_project.py --path ~/ARTi-demo/<slug> --name "<project name>" [--no-register]
+    python.exe scripts/scaffold_project.py --path <working folder> --name "<project name>" [--no-register]
 
 Uses the dashboard scaffolder (`dashboard/server/server.py: _scaffold_paper_folders`), the same code behind the
 dashboard's "new paper project", so the folders, the memory trio and the root CLAUDE.md (rendered from
@@ -24,6 +24,9 @@ ap.add_argument("--no-register", action="store_true")
 a = ap.parse_args()
 
 project = Path(a.path).expanduser().resolve()
+if ARTI_HOME.resolve() in (project, *project.parents):
+    print(json.dumps({"ok": False, "error": "the project folder is inside the ARTi home (%s); open Claude Code in a separate empty folder" % ARTI_HOME}))
+    sys.exit(1)
 project.mkdir(parents=True, exist_ok=True)
 
 server_dir = str(ARTI_HOME / "dashboard" / "server")

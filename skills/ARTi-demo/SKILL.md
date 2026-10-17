@@ -40,14 +40,19 @@ message instead of asking.
 - The title page carries "ARTi demo output: generated unattended, not peer reviewed".
 - Stay inside the caps (100 records, 13 full-text attempts, 4 numbered figures plus a graphical abstract, 2 tables, about
   4,000 words). A step that fails uses its fallback and the run goes on.
+- Figures are not monotonous: before phase 7 read `references/figure-variety.md` and look at the reference images in `templates/`;
+  every figure gets a different form, and the reference images are never copied.
+- The manuscript `.docx` is always built from `~/.arti/tools/arti-docx/assets/default-academic-template-zotero.docx`
+  (the template that ships with the `arti-docx` tool, passed explicitly with `--template`). No copy of it lives in this
+  skill, and no other template is used.
 - Never overwrite a real researcher profile or voice profile (`seed_profiles.py` only fills gaps).
 - Nothing here changes how the other skills behave outside this skill.
 
 ## Presenter checklist (read this to the researcher only if asked, or if preflight shows a problem)
 
 - Permission mode that does not stop for every file edit (accept edits or bypass), because the run writes hundreds of files.
-- Open Claude Code in an empty folder such as `~/ARTi-demo`, **not** in `~/.arti` (that folder loads the framework's own
-  maintenance rules).
+- Open Claude Code in an empty folder of your choice (the run writes everything there: `data/`, `figures/`, `writing/`,
+  `submission/`, `demo-scoreboard.md`), **not** in `~/.arti` (that folder loads the framework's own maintenance rules). One folder, one demo run.
 - Internet access. Optional keys in the dashboard under Settings > APIs (OpenAlex, Semantic Scholar): without them the run
   uses the anonymous pools and open-access links, with fewer Semantic Scholar results. With an OpenAlex key, full texts
   come from OpenAlex's cache at $0.01 per file (at most 13 files, so $0.13 for the run).
@@ -64,6 +69,7 @@ message instead of asking.
 | `references/classification-schema.md` | The four labels each included record gets |
 | `references/demo-researcher-profile.md`, `references/demo-voice-profile.md` | Placeholders installed only if the real ones are missing |
 | `references/scoreboard-template.md` | Layout of `demo-scoreboard.md` |
+| `references/figure-variety.md` | Rules for varied figure forms, with the four reference images in `templates/` (`Fig_1_materials`, `Fig_3_trend`, `Fig_4_band_edges`, `graphical-abstract`) |
 | `templates/prisma-flow.html` | PRISMA-ScR flow for `arti-compose` |
 | `scripts/` | preflight, seed_profiles, scaffold_project, screen, aggregate, build_fig_*, verify_refs, check_docx, run_log, scoreboard |
 

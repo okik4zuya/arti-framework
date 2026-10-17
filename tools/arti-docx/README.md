@@ -45,6 +45,24 @@ A project can keep its own house-style copy (e.g. `writing/manuscript-template.d
 and pass it via `--template`; `assets/default-academic-template.docx` is the
 ARTi-wide fallback for a paper with no template of its own yet.
 
+**Annotations never reach the .docx.** Before rendering, `render.py` runs `arti-annotate`'s `strip` on the Markdown
+(comments keep their current span, suggestions keep the old text) and prints how many annotations it left out and
+how many are still open. The source `.md` keeps them, so resolving and re-rendering can go on.
+
+**House style (every project, any template).** Both default templates use Arial throughout. Tables get the
+three-line look (rule on top and bottom, one rule under the header row, no vertical or inner lines) unless the
+template defines its own table style (anything other than "Table Grid"/"Normal Table"). Cell text is single
+spaced and left aligned, 10 pt shrinking to 8 pt (7 pt as a last resort); column widths follow the content, and
+the header row repeats across pages. A table that does not fit portrait at 8 pt goes into its own landscape
+section together with its caption (the caption line directly before the table), and the next content returns to
+portrait. Page numbering and the footer continue across the section breaks.
+
+**Layout check (developer aid).** `python preview.py manuscript.docx` renders the file to PDF and PNG pages in a
+`preview/` folder next to it, through LibreOffice and the vendored poppler, so a layout change can be looked at.
+LibreOffice is not shipped with ARTi; without it the script says so and exits 0. It is a rough stand-in for
+Word, never evidence about Zotero fields, and it does not modify the `.docx` (never save a manuscript from
+LibreOffice: it rewrites the Zotero fields).
+
 See the module docstring in `render.py` for the supported Markdown subset and
 v1 non-goals (nested/numbered lists, footnotes, section-by-section merging).
 Extend the converter for these if a document needs them, rather than reaching

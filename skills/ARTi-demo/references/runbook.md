@@ -10,7 +10,7 @@ included records: `classification-schema.md`.
 - `PY` = `"ARTI/python/python.exe"` (Windows) or `ARTI/python/bin/python3` (Mac/Linux). **Never** a bare `python`.
 - `SK` = `ARTI/skills/ARTi-demo` (scripts in `SK/scripts`).
 - `S` = `PY "ARTI/tools/arti-search/cli.py"`; `L` = `PY "ARTI/tools/arti-lit/cli.py"`.
-- `PROJ` = `~/ARTi-demo/<slug>`. Every path below is inside it unless it starts with `ARTI` or `SK`.
+- `PROJ` = the working folder Claude Code was started in (the current directory, as an absolute path). Every path below is inside it unless it starts with `ARTI` or `SK`. Nothing is written to `~/ARTi-demo` or any other folder.
 - Write each Boolean query to a file and pass `--query-file`; add `--out` for anything large (see `search-routing.md`).
 - After a phase: `PY SK/scripts/run_log.py phase --project PROJ --n N --name "..." --status done --note "one line with the key numbers"`.
 - Anything that fails: apply the fallback in the last column of the phase table, log it with
@@ -29,7 +29,7 @@ graphical abstract, 2 tables, about 4,000 words, 2 render iterations per figure.
    the topic as `header`; options: "AI and large language models for literature screening and evidence synthesis (default)",
    "Microplastics in freshwater: detection methods and ecological effects", "Machine learning for crop yield prediction",
    and the automatic "Other" for free text. Everything after this is autonomous.
-2. `slug` = lower-case topic, words joined with `-`, at most 40 characters. `PROJ = ~/ARTi-demo/<slug>` (add `-2`, `-3` if it exists).
+2. `PROJ` = the current working directory (absolute path). No `<slug>` subfolder is created. If `PROJ` is `~/.arti` or inside it, end the run with the message "open Claude Code in a separate empty folder, not in ~/.arti". If `PROJ` already holds a demo run (`run_log.py status --project PROJ` shows phases), that is a resume, so continue it; for a different topic in a non-empty folder, tell the presenter to use another empty folder.
 3. `PY SK/scripts/preflight.py`. `STATUS: FATAL` ends the run with that message (no internet, or a core tool missing);
    `WARN` continues, using the fallbacks named in the table.
 4. `PY SK/scripts/seed_profiles.py` (never overwrites).
@@ -139,7 +139,11 @@ Run `screen.py counts` again first (the full-text numbers changed in phase 4), t
 | Graphical abstract | `PY ARTI/tools/arti-compose/compose.py --new graphical-abstract --src figures/src/graphical-abstract.html`, edit, then `--src figures/src/graphical-abstract.html --out-dir figures` | view `figures/graphical-abstract.png` |
 | Table 1, Table 2 | `PY ARTI/tools/arti-table/render.py --spec "figures/Table 1.json" --out-dir figures` (and Table 2) | read the Markdown |
 
-Graphical abstract: three zones left to right. Input: a funnel or stack icon with the number of records identified. Process: four small
+Before building, read `figure-variety.md` and look at the four images in `templates/`: the figures must differ in form (no two
+the same chart type or layout), one multi-panel figure mixes two chart types, and the default build scripts are only a starting point.
+
+Graphical abstract: not the same strip every run; choose a cycle, hub-and-spoke, central overlap, funnel with branches or timeline
+arc per `figure-variety.md`. The default layout, if no other fits, is three zones left to right. Input: a funnel or stack icon with the number of records identified. Process: four small
 tags for the four labels (task, approach, field, evidence). Result: two or three numbers that matter (sources included; share read in full; the most
 common approach). Colours from `figure-style.md`. Obey the ARTi-figure rule: no sentences, only a title, one- or two-word labels, numbers and units,
 at least 24 px text. Numbers come from `data/prisma-counts.json` and `data/*.csv`.
@@ -172,8 +176,8 @@ Fallbacks: no Edge or Chrome -> Fig. 3 and 4 (matplotlib) still render; skip Fig
 ## Phase 10: export (3 min)
 
 1. `L library enrich --keys $(contents of data/cited-keys.txt) --project PROJ`. `no_doi` or `failed` keys: fix the metadata if it is known, otherwise remove the citation and re-run `verify_refs.py`.
-2. `PY ARTI/tools/arti-docx/render.py --md writing/manuscript_draft1_<date>.md --out submission/manuscript.docx --cite zotero --project PROJ`.
-3. `PY SK/scripts/check_docx.py submission/manuscript.docx --expect-zotero` must exit 0; the numbers it prints go into the final message.
+2. `PY ARTI/tools/arti-docx/render.py --md writing/manuscript_draft1_<date>.md --out submission/manuscript.docx --cite zotero --template ARTI/tools/arti-docx/assets/default-academic-template-zotero.docx --project PROJ`.
+3. `PY SK/scripts/check_docx.py submission/manuscript.docx --expect-zotero` must exit 0; it also confirms the .docx was built from `default-academic-template-zotero.docx` (`"zotero_template": true`). The numbers it prints go into the final message.
 4. The text inside each citation field is an author-year placeholder until the researcher opens the file in Word with Zotero and presses Refresh.
    Figures are embedded as PNG; each figure also exists as a vector PDF (`figures/Fig_1.pdf`, `Fig_2.pdf`, `graphical-abstract.pdf`).
 

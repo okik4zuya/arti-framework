@@ -52,4 +52,4 @@ Mutating commands rewrite FILE in place (UTF-8, line endings preserved). Python 
 ## Used by
 
 `ARTi-annotate` (resolve procedure), the dashboard preview (create/accept/revert, side panel, PDF
-export strips markup), and any skill that must read a file as final text.
+export strips markup), `arti-docx` (`render.py` strips markup before building the .docx), and any skill that must read a file as final text.
