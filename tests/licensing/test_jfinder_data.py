@@ -34,10 +34,13 @@ tables = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='
 counts = [con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("journals", "journal_metrics", "journal_categories")]
 years = con.execute("SELECT DISTINCT year FROM journal_metrics").fetchall()
 ver = con.execute("PRAGMA user_version").fetchone()[0]
+mode = con.execute("PRAGMA journal_mode").fetchone()[0]
 con.close()
 check("shipped snapshot has no journal_scope table (no user data in a shipped file)", "journal_scope" not in tables, tables)
 check("shipped snapshot: 32,193 journals, 2025 only", counts[:2] == [32193, 32193] and years == [(2025,)], (counts, years))
 check("shipped snapshot is stamped with user_version 1", ver == 1, ver)
+
+check("shipped snapshot is in rollback-journal mode, not WAL (WAL would leave -wal/-shm files in tools/)", mode == "delete", mode)
 
 sys.path.insert(0, str(CODE / "tools" / "arti-update"))
 import bundle  # noqa: E402
@@ -71,6 +74,7 @@ with tempfile.TemporaryDirectory(prefix="arti-jf-") as tmp:
     check("legacy row is imported on first use", r["ok"] and r["row"] and r["row"]["aims_scope_text"] == "legacy text", r)
     check("scope store lives under memory/", store.exists())
     check("importing did not modify the snapshot", sha(snap) == before)
+    check("no -wal/-shm files appear next to the snapshot", not list(snap.parent.glob("*.db-*")), list(snap.parent.glob("*.db-*")))
 
     r = cli("scope", "set", "--id", "17854", "--text", "new text", "--source-url", "https://y")
     check("scope set returns the new row", r["ok"] and r["row"]["aims_scope_text"] == "new text", r)
