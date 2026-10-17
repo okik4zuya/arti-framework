@@ -46,6 +46,8 @@ Everything that is not your own content (`tools/`, `skills/`, `dashboard/`, `log
 
 If a new version changes a SQLite database's schema (`~/.arti/memory/arti.db` or a project's `literature/arti-lit.db`), the migration runs automatically the next time that database is opened, and your rows are preserved. Migrations are always additive (new tables or columns, never removals or renames), so a rollback to the previous version still works on the migrated database.
 
+The Scimago journal data (`tools/arti-jfinder/arti-jfinder.db`) is reference data and is replaced by each update, which is how a new year arrives. The journal aims-and-scope notes that Claude collects for you are kept separately in `memory/jfinder-scope.db` and are never touched by an update or a rollback. If you imported a newer Scimago year yourself, import it again after an update.
+
 ## Literature search (no MCP server)
 
 ARTi does not register any MCP server. Literature search is the command-line tool `tools/arti-search`, called by the skills, so nothing needs registering in Claude Code and nothing in `~/.claude.json` is touched by an install or an update. `.mcp.json` stays in `~/.arti` as an empty file.

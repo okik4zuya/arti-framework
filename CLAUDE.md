@@ -46,8 +46,11 @@ directly.
   appended
 - `memory/` — everything else: this project's own tracker plus every cross-project singleton the
   skills read by hardcoded path (researcher profile, idea bank, project index, working
-  preferences, figure style). **The whole folder is git-ignored** — nothing in it enters git
-  history except the blank scaffold stubs the installer seeds on a fresh install.
+  preferences, figure style). **The whole folder is git-ignored by the framework repo** — nothing
+  in it enters that history except the blank scaffold stubs the installer seeds on a fresh install.
+  Instead `memory/` is its own nested git repo, remote `github.com/okik4zuya/arti-memory` (private),
+  as the only backup. `*.db` files are not tracked: `memory/dump-db.py` writes `arti.sql` and
+  `jfinder-scope.sql`, the tracked text form. Never push this repo anywhere public.
 
 ## Memory system
 
@@ -83,6 +86,11 @@ Any phrasing meaning "we're done for now" — not only the exact words "update m
 checklist:
 - Update the relevant `memory/` file(s), including `memory/memories/` topic files touched this
   session
+- **Back up memory (standing permission to commit and push, `memory/` repo only):** run
+  `"~/.arti/python/python.exe" -I memory/dump-db.py`, then in `memory/`: `git add -A`, commit with a
+  short message of what changed, `git push`. Do this last, after the memory files and
+  `status.md`/`todo-list.md` are final. Skip if `git status` is clean. Never touch the framework
+  repo's remote this way.
 - **Only if the session moved outstanding work or produced a state change worth recording:**
   overwrite `status.md`'s "Current state" pointer and/or check off/add `todo-list.md` items. A
   session that was pure discussion, research, or Q&A with no checklist or state change skips both

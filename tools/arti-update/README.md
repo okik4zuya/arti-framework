@@ -49,7 +49,7 @@ Never touched: `memory/`, `voice-profiles/`, `workflow-sessions/`, `inbox/`, `li
 
 ## Rollback
 
-`cli.py rollback [VERSION]` (or **Roll back to vX** in Settings > About) moves the saved items from `.backup/<version>/` back (all or nothing), recreates skill links, starts the dashboard again and consumes that backup. It does **not** restore the database: schemas change additively only (see `memory/memories/release-checklist.md`), so older code runs on a newer database, and restoring would lose the work done since the update.
+`cli.py rollback [VERSION]` (or **Roll back to vX** in Settings > About) moves the saved items from `.backup/<version>/` back (all or nothing), recreates skill links, starts the dashboard again and consumes that backup. It does **not** restore the database: schemas change additively only (see `memory/memories/release-checklist.md`), so older code runs on a newer database, and restoring would lose the work done since the update. The additive rule is enforced by `tests/licensing/test_schema_additive.py` (baseline `tests/licensing/schema_baseline.json`, regenerated after each published release). Data a researcher writes never lives under an `UPDATE_ITEMS` path: the Scimago snapshot in `tools/arti-jfinder/` is replaced on update, the scope cache is `memory/jfinder-scope.db`.
 
 ## Environment (tests only)
 

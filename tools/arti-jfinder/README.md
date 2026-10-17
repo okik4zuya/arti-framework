@@ -70,8 +70,25 @@ scope set --id SOURCEID --text TEXT [--source-url URL]
   needs no migration.
 - `journal_categories` — one row per category+quartile pair exploded from the source `Categories`
   column (e.g. `"Materials Science (miscellaneous) (Q1); Chemistry (Q2)"` → two rows).
-- `journal_scope` — lazy cache: `aims_scope_text`, `source_url`, `fetched_at`. Populated only via
-  `scope set`, one row per journal (a second `set` overwrites, not appends).
+
+`journal_scope` is **not** in this file any more; see "Two files" below.
+
+## Two files
+
+| File | Holds | Behaviour on update |
+|---|---|---|
+| `tools/arti-jfinder/arti-jfinder.db` | Scimago snapshot (`journals`, `journal_metrics`, `journal_categories`). Reference data, shipped in git and in every update bundle, stamped `user_version 1`, opened without WAL so reading it never rewrites it | **Replaced** by every update and install. A new Scimago year reaches users by replacing this one file |
+| `memory/jfinder-scope.db` | `journal_scope` (lazy cache: `aims_scope_text`, `source_url`, `fetched_at`; written only by `scope set`, one row per journal, a second `set` overwrites). Researcher data, git-ignored, `SCOPE_SCHEMA_VERSION 1` via `tools/_shared/db_migrate.py` | **Never touched** (`memory/` is not an update item; the updater does not back it up, it can be re-fetched) |
+
+Before 2026-10-17 the scope table lived inside the snapshot and was wiped by every update. On first use the
+code copies any `journal_scope` rows found in an older snapshot into the scope store (`INSERT OR IGNORE`, never
+overwriting a newer row, the snapshot is opened read-only). `scope set` still checks that the journal exists in
+the snapshot. If you `ingest` a newer Scimago year yourself it goes into the snapshot, so the next update puts
+the bundled year back; ingest again after an update if you hold a newer year.
+
+Schema changes in both files must stay additive (rollback runs old code on the new file); the guard is
+`tests/licensing/test_schema_additive.py` against `tests/licensing/schema_baseline.json`
+(regenerate with `tools/_shared/schema_snapshot.py --write` after each published release).
 
 Metrics are SJR-based only — true Journal Impact Factor (Clarivate/JCR) is a separate paid source,
 out of scope for this tool.
@@ -88,5 +105,5 @@ before `float()`). Parsed with stdlib `csv` only — no pandas dependency.
 - Automated/historical scraping — Scimago has no public API; every refresh is a manual download +
   `ingest` of the current-year snapshot.
 - True JIF/Clarivate metrics.
-- Bulk aims-and-scope pre-scraping — `journal_scope` is populated lazily, one `scope set` call per
+- Bulk aims-and-scope pre-scraping — the scope cache is populated lazily, one `scope set` call per
   shortlist candidate during actual consultation.

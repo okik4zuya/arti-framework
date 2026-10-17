@@ -1,0 +1,918 @@
+{
+ "arti-db": {
+  "indexes": {},
+  "tables": {
+   "chat_messages": {
+    "content": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "is_context": {
+     "default": "1",
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "role": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "session_id": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "sort_order": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "tokens_used": {
+     "default": "0",
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    }
+   },
+   "chat_models": {
+    "api_key": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "base_url": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_projects": {
+    "color": {
+     "default": "'#007bff'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "linked_project_path": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_session_skills": {
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "session_id": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "skill_id": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    }
+   },
+   "chat_sessions": {
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "cross_session_position": {
+     "default": "'before'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "files_position": {
+     "default": "'before'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "linked_project_path": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "model_id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "project_id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "system_role": {
+     "default": "'You are a helpful assistant.'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "temperature": {
+     "default": "0.7",
+     "notnull": 1,
+     "pk": 0,
+     "type": "REAL"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_settings": {
+    "key": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "TEXT"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "value": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_skills": {
+    "content": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "description": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_system_roles": {
+    "content": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "is_default": {
+     "default": "0",
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "chat_templates": {
+    "content": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "name": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "idea_bank": {
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "date_parked": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "idea_text": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "label": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "notes": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "novelty_c": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "novelty_e": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "novelty_label": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "novelty_m": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "reason_parked": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "source_project": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "tag": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "idea_index": {
+    "archived": {
+     "default": "0",
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "date_added": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "file": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "hook": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "project": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "status": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "tipe": {
+     "default": "'Ide'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "used_in": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "idea_index_log": {
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "note": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "ts": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   },
+   "project_index": {
+    "added_at": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "category": {
+     "default": "'Paper'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "last_opened_at": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "lifecycle": {
+     "default": "'active'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "project_path": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "stage": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "status": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "summary": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "tags": {
+     "default": "'[]'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "target_journal": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "topic": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   }
+  },
+  "user_version": 1
+ },
+ "arti-lit": {
+  "indexes": {},
+  "tables": {
+   "sources": {
+    "abstract": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "article_type": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "citation": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "created_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "csl_json": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "doi": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "exclusion_reason": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "issn": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "journal_name": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "key": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "local_file": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "read_status": {
+     "default": "'export-only'",
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "screening_stage": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "search_source": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "summary": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "updated_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "used_in": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   }
+  },
+  "user_version": 1
+ },
+ "jfinder-scope": {
+  "indexes": {},
+  "tables": {
+   "journal_scope": {
+    "aims_scope_text": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "fetched_at": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "journal_id": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "source_url": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   }
+  },
+  "user_version": 1
+ },
+ "jfinder-snapshot": {
+  "indexes": {
+   "idx_journal_categories_lookup": {
+    "columns": [
+     "year",
+     "category",
+     "quartile"
+    ],
+    "table": "journal_categories",
+    "unique": 0
+   }
+  },
+  "tables": {
+   "journal_categories": {
+    "category": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "journal_id": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "quartile": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "year": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "INTEGER"
+    }
+   },
+   "journal_metrics": {
+    "citable_docs_3y": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "cites_per_doc_2y": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "REAL"
+    },
+    "female_pct": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "REAL"
+    },
+    "h_index": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "journal_id": {
+     "default": null,
+     "notnull": 1,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "overton": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "ref_per_doc": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "REAL"
+    },
+    "sdg": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "sjr": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "REAL"
+    },
+    "sjr_best_quartile": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "total_cites_3y": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "total_docs": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "total_docs_3y": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "total_refs": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "INTEGER"
+    },
+    "year": {
+     "default": null,
+     "notnull": 1,
+     "pk": 2,
+     "type": "INTEGER"
+    }
+   },
+   "journals": {
+    "country": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "coverage": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "eissn": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "issn": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "publisher": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "sourceid": {
+     "default": null,
+     "notnull": 0,
+     "pk": 1,
+     "type": "INTEGER"
+    },
+    "title": {
+     "default": null,
+     "notnull": 1,
+     "pk": 0,
+     "type": "TEXT"
+    },
+    "type": {
+     "default": null,
+     "notnull": 0,
+     "pk": 0,
+     "type": "TEXT"
+    }
+   }
+  },
+  "user_version": 1
+ }
+}

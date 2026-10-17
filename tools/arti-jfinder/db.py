@@ -21,12 +21,28 @@ Source file quirks (informed the parsing below):
 import csv
 import re
 import sqlite3
+import sys
 import threading
 from datetime import datetime
 from pathlib import Path
 
 ARTI_HOME = Path(__file__).resolve().parent.parent.parent
+if str(ARTI_HOME) not in sys.path:
+    sys.path.insert(0, str(ARTI_HOME))
+from tools._shared.db_migrate import migrate as _run_migrations  # noqa: E402
+
+# Two files, on purpose (see README "Two files"). The Scimago snapshot ships with the code and is replaced
+# whole by every update, so it must never hold anything the researcher wrote. The scope cache, which Claude
+# fills through `scope set`, lives under memory/ where updates, the installer and rollback do not reach.
 DB_PATH = ARTI_HOME / "tools" / "arti-jfinder" / "arti-jfinder.db"
+SCOPE_DB_PATH = ARTI_HOME / "memory" / "jfinder-scope.db"
+
+# Snapshot: stamped when built, replaced rather than migrated.
+SNAPSHOT_SCHEMA_VERSION = 1
+# Scope store: bump + add a MIGRATIONS entry only for renames/drops/type changes/backfills; purely additive
+# changes are handled by SCOPE_SCHEMA's IF NOT EXISTS (same rule as tools/arti-db and tools/arti-lit).
+SCOPE_SCHEMA_VERSION = 1
+SCOPE_MIGRATIONS = {}
 
 _lock = threading.Lock()
 
@@ -69,9 +85,11 @@ CREATE TABLE IF NOT EXISTS journal_categories (
 );
 CREATE INDEX IF NOT EXISTS idx_journal_categories_lookup
   ON journal_categories (year, category, quartile);
+"""
 
+SCOPE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS journal_scope (
-  journal_id      INTEGER PRIMARY KEY REFERENCES journals(sourceid),
+  journal_id      INTEGER PRIMARY KEY,
   aims_scope_text TEXT NOT NULL,
   source_url      TEXT,
   fetched_at      TEXT NOT NULL
@@ -89,9 +107,56 @@ def _connect():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH, timeout=5)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    # No WAL on the snapshot: it ships in git and in the update bundle, and switching it to WAL rewrites its
+    # header on first open and leaves -wal/-shm files inside tools/. Only the scope store uses WAL.
     conn.execute("PRAGMA busy_timeout=5000")
     return conn
+
+
+_scope_ready = False
+
+
+def _connect_scope():
+    """Connection to the scope store; creates it and imports legacy rows on first use in this process."""
+    global _scope_ready
+    SCOPE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(SCOPE_DB_PATH, timeout=5)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    if not _scope_ready:
+        conn.executescript(SCOPE_SCHEMA)
+        _run_migrations(conn, SCOPE_MIGRATIONS, SCOPE_SCHEMA_VERSION)
+        _import_legacy_scope(conn)
+        _scope_ready = True
+    return conn
+
+
+def _import_legacy_scope(conn):
+    """Copy journal_scope rows from a snapshot that still carries the old table (older installs, this
+    machine before the split). INSERT OR IGNORE: never overwrites a row written since. Idempotent; the
+    snapshot is opened read-only and never modified."""
+    if not DB_PATH.exists():
+        return
+    try:
+        old = sqlite3.connect(f"{DB_PATH.as_uri()}?mode=ro", uri=True, timeout=5)
+    except sqlite3.Error:
+        return
+    try:
+        has = old.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='journal_scope'").fetchone()
+        if not has:
+            return
+        rows = old.execute(
+            "SELECT journal_id, aims_scope_text, source_url, fetched_at FROM journal_scope").fetchall()
+    except sqlite3.Error:
+        return
+    finally:
+        old.close()
+    conn.executemany(
+        "INSERT OR IGNORE INTO journal_scope (journal_id, aims_scope_text, source_url, fetched_at) "
+        "VALUES (?, ?, ?, ?)", rows)
+    conn.commit()
 
 
 def _row_to_dict(row):
@@ -103,9 +168,12 @@ def init_db():
         conn = _connect()
         try:
             conn.executescript(SCHEMA)
+            if conn.execute("PRAGMA user_version").fetchone()[0] == 0:
+                conn.execute(f"PRAGMA user_version = {SNAPSHOT_SCHEMA_VERSION}")
             conn.commit()
         finally:
             conn.close()
+        _connect_scope().close()
 
 
 # ---------------------------------------------------------------------------
@@ -446,7 +514,7 @@ def journal_categories(year=None):
 
 def scope_get(sourceid):
     with _lock:
-        conn = _connect()
+        conn = _connect_scope()
         try:
             row = conn.execute(
                 "SELECT * FROM journal_scope WHERE journal_id = ?", (sourceid,)
@@ -458,13 +526,17 @@ def scope_get(sourceid):
 
 def scope_set(sourceid, text, source_url=None):
     with _lock:
-        conn = _connect()
+        snap = _connect()
         try:
-            journal = conn.execute(
+            journal = snap.execute(
                 "SELECT sourceid FROM journals WHERE sourceid = ?", (sourceid,)
             ).fetchone()
-            if journal is None:
-                raise ValueError(f"no journal with sourceid {sourceid!r}")
+        finally:
+            snap.close()
+        if journal is None:
+            raise ValueError(f"no journal with sourceid {sourceid!r}")
+        conn = _connect_scope()
+        try:
             now = _now()
             conn.execute(
                 "INSERT INTO journal_scope (journal_id, aims_scope_text, source_url, fetched_at) "
