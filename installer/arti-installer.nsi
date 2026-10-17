@@ -219,13 +219,23 @@ Section "Install" SEC01
     ; installer/ itself, clients never build the installer, and mcp-keys.json is never shipped)
     ; tools\arti-compose\examples\out and \panels are git-ignored render output (about 4 MB), never part of a release;
     ; no other folder under tools, skills, dashboard or logo is named out or panels.
-    File /r /x "__pycache__" /x "*.pyc" /x "out" /x "panels" "..\tools"
-    File /r /x "__pycache__" /x "*.pyc" "..\skills"
+    ; Always `File /r "..\<dir>\*.*"` with SetOutPath, never `File /r "..\<dir>"`: with a bare directory name
+    ; makensis searches the whole parent tree for anything with that name, so on the maintainer's machine it also
+    ; packed every folder called tools or skills from the vendored dev Python (fastmcp, mcp, pywin32, typer) and from
+    ; installer\payload. Found 2026-10-17 when verify_payload.py's mcp check failed; verify_payload.py now rejects
+    ; any file that is neither tracked nor part of the staged payload.
+    SetOutPath "$INSTDIR\tools"
+    File /r /x "__pycache__" /x "*.pyc" /x "out" /x "panels" "..\tools\*.*"
+    SetOutPath "$INSTDIR\skills"
+    File /r /x "__pycache__" /x "*.pyc" "..\skills\*.*"
     ; server.log is runtime state (app.py truncates/recreates it on each fresh spawn, gitignored) --
     ; never something to ship. Without this exclude, whatever happens to be on the maintainer's own
     ; machine at build time gets baked into every install.
-    File /r /x "server.log" /x "__pycache__" /x "*.pyc" "..\dashboard"
-    File /r "..\logo"
+    SetOutPath "$INSTDIR\dashboard"
+    File /r /x "server.log" /x "__pycache__" /x "*.pyc" "..\dashboard\*.*"
+    SetOutPath "$INSTDIR\logo"
+    File /r "..\logo\*.*"
+    SetOutPath "$INSTDIR"
     File "..\CLAUDE.md"
     File "..\CAPABILITIES.md"
     File "..\LICENSE.txt"

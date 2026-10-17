@@ -67,6 +67,26 @@ def shipped_files(extracted):
     return found
 
 
+def unexpected_files(extracted, payload=os.path.join(HERE, "payload")):
+    """Files in the extracted installer that are neither under an update item, nor in the staged python/ or bin/
+    payload. Found 2026-10-17: `File /r "..\\tools"` made makensis pack every folder named tools or skills from the
+    maintainer's vendored Python (fastmcp, mcp, pywin32, typer) and from installer\\payload itself; none of it sits
+    under an update item, so the tracked-files comparison never saw it."""
+    bad = []
+    for d, dirs, files in os.walk(extracted):
+        for f in files:
+            rel = os.path.relpath(os.path.join(d, f), extracted)
+            top = rel.split(os.sep)[0]
+            if top in UPDATE_ITEMS or rel == "Uninstall.exe":
+                continue   # compare() covers the items; Uninstall.exe is written by the installer itself
+            if top in ("python", "bin"):
+                if not os.path.exists(os.path.join(payload, rel)):
+                    bad.append(rel.replace(os.sep, "/"))
+                continue
+            bad.append(rel.replace(os.sep, "/"))
+    return sorted(bad)
+
+
 def compare(extracted, expected, root=ROOT):
     """Returns (missing, extra, different) lists for the update items. expected = tracked relative paths."""
     shipped = shipped_files(extracted)
@@ -124,6 +144,10 @@ def main():
     check("nothing but tracked files shipped inside the update items", not extra, "extra: %s" % extra[:10])
     check("every shipped file is byte-identical to the working copy", not different, "different: %s" % different[:10])
 
+    stray = unexpected_files(out)
+    check("every file outside the update items is part of the staged python/ or bin/ payload", not stray,
+          "%d unexpected, for example %s" % (len(stray), stray[:6]))
+
     # 2. updater
     upd_rel = "tools/arti-update/updater.py"
     inst, disk = os.path.join(out, upd_rel), os.path.join(ROOT, upd_rel)
@@ -152,6 +176,11 @@ def main():
     check("REQUIREMENTS_SHA256 stamp equals tools/requirements.txt", stamp("REQUIREMENTS_SHA256") == req_hash, "got %r" % stamp("REQUIREMENTS_SHA256"))
     check("packages are inside python\\ (site-packages has webview, pandas, cryptography)",
           all(os.path.isdir(os.path.join(py, "Lib", "site-packages", n)) for n in ("webview", "pandas", "cryptography")))
+    # ARTi ships no MCP server since 2026-10-17; the `mcp` package must not travel (found 2026-10-17: three stray files
+    # under site-packages\mcp\server\mcpserver\tools made `import mcp` succeed as an empty namespace package).
+    sp = os.path.join(py, "Lib", "site-packages")
+    stray = sorted(n for n in (os.listdir(sp) if os.path.isdir(sp) else []) if n.lower().split("-")[0] in ("mcp", "mcp_types"))
+    check("no mcp package (or leftover folder) in site-packages", not stray, "found %r" % stray)
 
     # 4. bin
     check("bin\\poppler and bin\\tesseract\\tesseract.exe are in the installer",
