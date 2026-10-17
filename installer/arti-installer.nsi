@@ -41,6 +41,9 @@ Var FreshInstall
         Goto ${P}loop
     ${P}done:
     FindClose $0
+    ; $INSTDIR is this process's working directory (SetOutPath), and Windows will not delete a folder that is
+    ; some process's current directory: the failed-activation cleanup left an empty .arti behind (Sandbox A1c, 2026-10-17).
+    SetOutPath "$TEMP"
     RMDir /r "$INSTDIR"
     Delete "$DESKTOP\ARTi Framework.lnk"
 !macroend
@@ -94,6 +97,7 @@ RequestExecutionLevel user
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom KeyPageShow KeyPageLeave
+ShowInstDetails show
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -102,7 +106,49 @@ Page custom KeyPageShow KeyPageLeave
 
 !insertmacro MUI_LANGUAGE "English"
 
+; Sets $0 to 1 when the WebView2 Runtime binary exists (same registry-then-file test as dashboard\app.py), else 0.
+; The registry alone is not enough: a machine can carry the registration without msedgewebview2.exe.
+Function CheckWebView2
+    StrCpy $0 0
+    ${ForEach} $2 0 2 + 1
+        ${If} $2 == 0
+            SetRegView 32
+            ReadRegStr $1 HKLM "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+            StrCpy $3 "$PROGRAMFILES32"
+        ${ElseIf} $2 == 1
+            SetRegView 64
+            ReadRegStr $1 HKLM "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+            StrCpy $3 "$PROGRAMFILES32"
+        ${Else}
+            SetRegView 64
+            ReadRegStr $1 HKCU "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+            StrCpy $3 "$LOCALAPPDATA"
+        ${EndIf}
+        ${If} $1 != ""
+            ${If} ${FileExists} "$3\Microsoft\EdgeWebView\Application\$1\msedgewebview2.exe"
+                StrCpy $0 1
+                ${ExitFor}
+            ${EndIf}
+        ${EndIf}
+    ${Next}
+    SetRegView 32
+FunctionEnd
+
+; After an aborted install (activation failed and the cleanup ran) the only button reads "Cancel", which looks as
+; if the installer were still waiting for an answer. Nothing is left to cancel, so call it "Close".
+Function .onInstFailed
+    GetDlgItem $0 $HWNDPARENT 2
+    SendMessage $0 0x000C 0 "STR:Close"
+FunctionEnd
+
 Function LaunchDashboard
+    ; Without the WebView2 Runtime the dashboard would open as a browser tab, which looks like a failed install
+    ; when the runtime is still downloading on a slow connection. Say so instead of opening a tab.
+    Call CheckWebView2
+    ${If} $0 == 0
+        MessageBox MB_OK|MB_ICONINFORMATION "ARTi is installed, but its window needs the Microsoft WebView2 Runtime, which is not ready yet (it can still be downloading on a slow connection).$\r$\n$\r$\nWait a few minutes, then open ARTi Framework from the Desktop shortcut."
+        Return
+    ${EndIf}
     ; Launch via the vendored pythonw.exe (install.ps1 has just installed it), same target the
     ; Desktop shortcut points at - not a bare .py double-click, which would use whatever python
     ; the system has associated (if any) instead of the one this installer just set up.
@@ -267,7 +313,7 @@ Section "Install" SEC01
 
     ; Everything else (vendored Python, pip installs, skill junctions, desktop shortcut) is
     ; install.ps1's job - one source of truth, unchanged by this installer.
-    DetailPrint "Running install.ps1 (vendored Python, skills, shortcut)..."
+    DetailPrint "Running install.ps1 (vendored Python, skills, shortcut; may wait for the WebView2 Runtime on a slow connection)..."
     ; This installer activates the license itself (below), so install.ps1 must not prompt for a key.
     System::Call 'Kernel32::SetEnvironmentVariable(t "ARTI_LICENSE_HANDLED", t "1")'
     nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\install.ps1"'

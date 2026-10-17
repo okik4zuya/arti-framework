@@ -19,6 +19,11 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "_shared"))
 import license as lic  # noqa: E402
+try:  # the license check gates the dashboard: a missing TLS helper must not take it down
+    from tls import use_certifi_bundle  # noqa: E402
+    use_certifi_bundle()  # arti-update's download and update check call this module's post(), so they are covered too
+except ImportError:
+    pass
 
 MESSAGES = {
     "seat_limit": "This key is already active on another computer and every seat is in use. Deactivate it on that computer "

@@ -39,6 +39,7 @@ def _view(state):
         avail = None   # an update that was just applied: the cached finding is stale until the next check
     return {
         "current": current,
+        "channel": arti_update.update_channel(),
         "available": avail,
         "acked": bool(avail and state.get("acked") == avail.get("version")),
         "locked_newer": state.get("locked_newer"),

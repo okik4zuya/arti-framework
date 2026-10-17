@@ -116,8 +116,17 @@ function Ensure-WebView2 {
   try { $lock = [IO.File]::Open($lockPath, 'CreateNew', 'Write', 'None') } catch { }
   if (-not $lock) {
     Write-Host "Waiting for the WebView2 Runtime install that is already running..."
-    $deadline = (Get-Date).AddMinutes(10)
-    while ((Test-Path $lockPath) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
+    $started = Get-Date
+    $deadline = $started.AddMinutes(10)
+    $nextNote = $started.AddSeconds(20)
+    while ((Test-Path $lockPath) -and (Get-Date) -lt $deadline) {
+      Start-Sleep -Seconds 2
+      if ((Get-Date) -ge $nextNote) {
+        # The NSIS installer shows the last output line on its progress page; without this it looks hung on a slow connection.
+        Write-Host ("Still downloading the WebView2 Runtime (about 150 MB), {0} min {1:00} s so far. A slow connection can take 10 minutes or more; this is not stuck." -f [int]((Get-Date) - $started).TotalMinutes, ((Get-Date) - $started).Seconds)
+        $nextNote = (Get-Date).AddSeconds(20)
+      }
+    }
     if (Test-WebView2Present) {
       Write-Host "  [ok] WebView2 Runtime installed"
     } else {

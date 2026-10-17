@@ -106,7 +106,7 @@ def make_tree(root, version, flags=(), break_cli=False, with_old_skill=False, ju
         (root / sub).mkdir(parents=True)
     for f in ("cli.py", "bundle.py", "updater.py"):
         shutil.copy(REAL / "tools" / "arti-update" / f, root / "tools" / "arti-update" / f)
-    for f in ("license.py", "paths.py"):
+    for f in ("license.py", "paths.py", "tls.py"):
         shutil.copy(REAL / "tools" / "_shared" / f, root / "tools" / "_shared" / f)
     for f in ("cli.py", "pubkeys.json", "config.json"):
         shutil.copy(REAL / "tools" / "arti-license" / f, root / "tools" / "arti-license" / f)
@@ -406,7 +406,7 @@ sh = (REAL / "install.sh").read_text(encoding="utf-8")
 nsi = (REAL / "installer" / "arti-installer.nsi").read_text(encoding="utf-8")
 ps_items = re.findall(r"'([^']+)'", re.search(r"\$TrackedItems = @\((.*?)\)", ps1, re.S).group(1))
 sh_items = re.search(r"TRACKED_ITEMS=\((.*?)\)", sh).group(1).split()
-nsi_items = [m.group(1) for m in re.finditer(r'^\s*File (?:/r )?(?:/x "[^"]*" )*"\.\.\\([^"\\]+)"\s*$', nsi, re.M)]
+nsi_items = [m.group(1) for m in re.finditer(r'^\s*File (?:/r )?(?:/x "[^"]*" )*"\.\.\\([^"\\]+)(?:\\\*\.\*)?"\s*$', nsi, re.M)]
 check("UPDATE_ITEMS equals install.ps1 TrackedItems", list(bundle.UPDATE_ITEMS) == ps_items, ps_items)
 check("UPDATE_ITEMS equals install.sh TRACKED_ITEMS", list(bundle.UPDATE_ITEMS) == sh_items, sh_items)
 check("UPDATE_ITEMS equals the NSIS File list (same set)", set(bundle.UPDATE_ITEMS) == set(nsi_items), sorted(set(bundle.UPDATE_ITEMS) ^ set(nsi_items)))
@@ -575,6 +575,15 @@ except cli.UpdateFailure as e:
     check("Worker says key_revoked: apply stops", e.code == "revoked", e.code)
 check("...and key_revoked sets the license aside", not (HOME / "license.json").exists() and (HOME / "license.revoked.json").exists())
 check("code untouched after all that", cli.current_version() == "0.1.0")
+reset(); prepare("0.2.0")
+W["dl_error"] = (429, "rate_limited")
+try:
+    cli.apply("0.2.0", opts=options(relaunch=False)); check("daily download cap (429): apply stops", False)
+except cli.UpdateFailure as e:
+    check("daily download cap (429): apply stops with its own code", e.code == "download_limit", e.code)
+    check("...and a message that names the daily limit, not 'slow down'", "daily download limit" in str(e) and "slow down" not in str(e).lower(), str(e))
+check("...and the license is still in place after a cap", (HOME / "license.json").exists())
+W["dl_error"] = None
 
 print("== download problems ==")
 reset(); prepare("0.2.0")
@@ -827,6 +836,18 @@ with sync_playwright() as pw:
     check("UI: before acknowledging there is no Update now button", not pg.is_visible("#updApplyBtn") and pg.is_visible("#updAckBtn"))
     check("UI: no rollback row, no progress, no overlay, no banners at rest", not pg.is_visible("#updRollback") and not pg.is_visible("#updProgress") and not pg.is_visible("#updOverlay") and not pg.is_visible("#updResult") and not pg.is_visible("#updFail"))
     pg.screenshot(path=str(SHOTS / "a1-notes.png"))
+    check("UI: on the stable channel the update hint does not mention a channel", "Update channel" not in pg.inner_text("#updHint"), pg.inner_text("#updHint"))
+    check("API status carries the channel (stable by default)", api("/api/update/status")[1].get("channel") == "stable")
+    os.environ["ARTI_UPDATE_CHANNEL"] = "beta"
+    try:
+        check("API status follows ARTI_UPDATE_CHANNEL", api("/api/update/status")[1].get("channel") == "beta")
+        pg.reload(); time.sleep(1.2)
+        pg.click('.nav-item[data-view="settings"]'); pg.click('.settings-nav-item[data-cat="about"]'); time.sleep(0.8)
+        check("UI: on the beta channel the update hint names it", "Update channel: beta." in pg.inner_text("#updHint"), pg.inner_text("#updHint"))
+    finally:
+        del os.environ["ARTI_UPDATE_CHANNEL"]
+    pg.reload(); time.sleep(1.2)
+    pg.click('.nav-item[data-view="settings"]'); pg.click('.settings-nav-item[data-cat="about"]'); time.sleep(0.8)
     pg.click("#updAckBtn"); time.sleep(1.0)
     check("UI: after 'I have read this' the Update now button appears", pg.is_visible("#updApplyBtn") and not pg.is_visible("#updAckBtn"))
     check("UI: the old 'comes in a later version' text is gone", "later version" not in pg.inner_text("#updAfterAck") and "restarts by itself" in pg.inner_text("#updAfterAck"), pg.inner_text("#updAfterAck"))

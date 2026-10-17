@@ -70,3 +70,11 @@ depend on `~/.arti` alone, with zero reference to `artipdf`.
 
 No version pinning, no download URLs: the binaries are a straight local copy of whatever currently
 sits in `C:\python_tools\artipdf` at installer-build time.
+
+## `tls.py`
+
+`use_certifi_bundle()` points `SSL_CERT_FILE` at the `certifi` bundle that ships with the vendored Python, so
+HTTPS also trusts roots a clean Windows store may lack (found on api.crossref.org in a Sandbox, 2026-10-17). It adds
+roots and removes none, and leaves a value the user already set alone. Called at import by `arti-lit/crossref.py`,
+`arti-search/http_client.py`, `citation-chase/cli.py` and the licensing CLI (`arti-update` goes through that
+one). Any new tool that calls `urllib.request.urlopen` on a public site should call it too.

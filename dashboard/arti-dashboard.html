@@ -10568,6 +10568,8 @@
       hint.textContent = "Installed v" + u.current + (u.locked_newer ? ". Version " + u.locked_newer.version + " exists but comes after the updates your license covers." : "") +
         (u.checked_at ? " Last checked " + licFmtDate(u.checked_at) + "." : "");
     }
+    // A channel other than stable is easy to forget (a wrong channel looks exactly like "no update").
+    if (u.channel && u.channel !== "stable") hint.textContent += " Update channel: " + u.channel + ".";
     var box = document.getElementById("updBox");
     box.hidden = !a;
     if (!a) return;

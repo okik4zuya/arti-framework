@@ -12,9 +12,15 @@ import re
 import time
 import urllib.error
 import urllib.parse
+import sys
 import urllib.request
 
-API = "https://api.crossref.org/works/"
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_shared"))
+from tls import use_certifi_bundle  # noqa: E402
+
+use_certifi_bundle()  # a clean Windows can lack Crossref's root in its store (see tools/_shared/tls.py)
+
+API ="https://api.crossref.org/works/"
 MAX_RETRIES = 4
 CSL_ACCEPT = "application/vnd.citationstyles.csl+json"
 

@@ -128,6 +128,11 @@ def summarize(manifest):
     return out
 
 
+def update_channel():
+    """The release channel this install asks the server about: ARTI_UPDATE_CHANNEL, or stable."""
+    return os.environ.get("ARTI_UPDATE_CHANNEL") or "stable"
+
+
 def check(force=False, channel=None):
     """Ask the server and store the result. Returns the new state. Never raises on network trouble."""
     state = read_state()
@@ -147,7 +152,7 @@ def check(force=False, channel=None):
         new["error"] = {"code": "not_activated", "message": "No license is installed on this computer."}
         write_state(new)
         return new
-    channel = channel or os.environ.get("ARTI_UPDATE_CHANNEL") or "stable"
+    channel = channel or update_channel()
     try:
         r = cli.post("/update", {"license": cur, "machine_hash": lic.machine_hash(), "channel": channel, "version": current})
     except cli.ApiFailure as e:
@@ -215,6 +220,8 @@ APPLY_MESSAGES = {
     "not_entitled": "Your license does not cover this release.",
     "dashboard_running": "The ARTi window is open. Close it first, or use Update now inside it.",
     "bad_download": "The download did not match the signed release and was thrown away. Nothing was changed.",
+    "download_limit": "The daily download limit for this license was reached (10 downloads a day, counted from 00:00 UTC, "
+                      "which is 07:00 in Jakarta). Try again after that. A download that was already started still resumes.",
     "unreachable": "Cannot reach the licensing server. Check the internet connection and try again.",
     "busy": "An update is already running.",
     "no_backup": "There is no saved earlier version to go back to.",
@@ -380,6 +387,8 @@ def download(version, progress=None, attempts=3, retry_wait=2.0, timeout=30):
                 if e.code == 416 and have:   # the partial file does not fit the object any more: start over
                     os.remove(part)
                     continue
+                if e.code == 429:   # the download endpoint has one limit only: the daily cap on download starts
+                    raise UpdateFailure("download_limit")
                 if e.code < 500:
                     raise _api_error(cli, cli.ApiFailure(code, err.get("message", "HTTP %s" % e.code)))
                 last = UpdateFailure(code, err.get("message", "The server had a problem."))

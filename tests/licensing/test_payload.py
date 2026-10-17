@@ -34,7 +34,7 @@ spec.loader.exec_module(vp)
 nsi = (CODE / "installer" / "arti-installer.nsi").read_text(encoding="utf-8")
 excludes = {}
 for line in nsi.splitlines():
-    m = re.match(r'\s*File /r (.*)"\.\.\\(\w+)"\s*$', line)
+    m = re.match(r'\s*File /r (.*)"\.\.\\(\w+)\\\*\.\*"\s*$', line)
     if m:
         excludes[m.group(2)] = re.findall(r'/x "([^"]+)"', m.group(1))
 check("the NSIS script packs tools, skills, dashboard and logo with File /r", set(excludes) == {"tools", "skills", "dashboard", "logo"}, sorted(excludes))
@@ -86,6 +86,25 @@ with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as ext:
     write(src, "tools/lf.py", b"a\nb\n")
     check("normalised hash ignores CRLF", vp.norm_hash(os.path.join(src, "tools", "crlf.py")) == vp.norm_hash(os.path.join(src, "tools", "lf.py")))
     check("tracked_files() lists the updater", "tools/arti-update/updater.py" in vp.tracked_files())
+
+    # files that sit outside the update items (the 2026-10-17 `File /r "..\tools"` bug packed dev-Python folders)
+    with tempfile.TemporaryDirectory() as payload:
+        write(payload, "python/python.exe", b"MZ")
+        write(payload, "python/Lib/site-packages/webview/__init__.py", b"")
+        write(payload, "bin/poppler/pdftoppm.exe", b"MZ")
+        clean = vp.unexpected_files(ext, payload=payload)
+        check("unexpected_files: python/ and bin/ files that are in the payload are fine", clean == [], clean)
+        write(ext, "python/Lib/site-packages/webview/__init__.py", b"")
+        write(ext, "bin/poppler/pdftoppm.exe", b"MZ")
+        check("unexpected_files: an identical staged tree is clean", vp.unexpected_files(ext, payload=payload) == [])
+        write(ext, "python/Lib/site-packages/mcp/server/mcpserver/tools/base.py", b"x")   # dev-Python leftover
+        write(ext, "python/Lib/site-packages/fastmcp/tools/base.py", b"x")
+        write(ext, "installer/payload/python/Lib/x/tools/y.py", b"x")                        # outside every known root
+        write(ext, "stray.txt", b"x")
+        bad = vp.unexpected_files(ext, payload=payload)
+        check("unexpected_files: dev-Python leftovers, installer/ files and root strays are reported",
+              bad == ["installer/payload/python/Lib/x/tools/y.py", "python/Lib/site-packages/fastmcp/tools/base.py",
+                      "python/Lib/site-packages/mcp/server/mcpserver/tools/base.py", "stray.txt"], bad)
 
 print("\n%d checks, %d failed" % (len(results), results.count(False)))
 sys.exit(0 if all(results) else 1)

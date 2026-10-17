@@ -8,11 +8,18 @@ returning `None`/`{}`; a real 200 response with zero results still returns an em
 so the two cases stay distinguishable by construction.
 """
 import json
+import os
 import re
+import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_shared"))
+from tls import use_certifi_bundle  # noqa: E402
+
+use_certifi_bundle()
 
 MAX_RETRIES = 5
 USER_AGENT = "arti-search/0.1 (~/.arti/tools/arti-search)"

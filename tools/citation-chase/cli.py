@@ -29,6 +29,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_shared"))
+from tls import use_certifi_bundle  # noqa: E402
+
+use_certifi_bundle()
+
 OPENALEX_BASE = "https://api.openalex.org"
 S2_BASE = "https://api.semanticscholar.org/graph/v1"
 MAX_RETRIES = 5
