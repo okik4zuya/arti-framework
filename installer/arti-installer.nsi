@@ -125,7 +125,12 @@ Function CheckWebView2
             StrCpy $3 "$LOCALAPPDATA"
         ${EndIf}
         ${If} $1 != ""
-            ${If} ${FileExists} "$3\Microsoft\EdgeWebView\Application\$1\msedgewebview2.exe"
+            ; FileOpen, not ${FileExists}: the Windows Sandbox base image lists a msedgewebview2.exe that cannot be opened
+            ; (dashboard\app.py's is_file() rejects it), and ${FileExists} accepted that phantom entry.
+            ClearErrors
+            FileOpen $4 "$3\Microsoft\EdgeWebView\Application\$1\msedgewebview2.exe" r
+            ${IfNot} ${Errors}
+                FileClose $4
                 StrCpy $0 1
                 ${ExitFor}
             ${EndIf}
@@ -134,12 +139,6 @@ Function CheckWebView2
     SetRegView 32
 FunctionEnd
 
-; After an aborted install (activation failed and the cleanup ran) the only button reads "Cancel", which looks as
-; if the installer were still waiting for an answer. Nothing is left to cancel, so call it "Close".
-Function .onInstFailed
-    GetDlgItem $0 $HWNDPARENT 2
-    SendMessage $0 0x000C 0 "STR:Close"
-FunctionEnd
 
 Function LaunchDashboard
     ; Without the WebView2 Runtime the dashboard would open as a browser tab, which looks like a failed install
@@ -344,7 +343,10 @@ Section "Install" SEC01
                 ${Else}
                     MessageBox MB_OK|MB_ICONINFORMATION "Files were copied to $INSTDIR. Delete that folder by hand if you do not want to keep them."
                 ${EndIf}
-                Abort
+                ; Abort here would leave the progress page open with a lone "Cancel" button (.onInstFailed did not
+                ; run after Abort in a section, Sandbox A1c 2026-10-17); nothing is left to show, so exit with code 2.
+                SetErrorLevel 2
+                Quit
             ${Else}
                 MessageBox MB_OK|MB_ICONEXCLAMATION "Activation failed:$\r$\n$\r$\n$2$\r$\nARTi was updated, but the dashboard stays locked until you activate in Settings > License."
             ${EndIf}

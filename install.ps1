@@ -123,7 +123,8 @@ function Ensure-WebView2 {
       Start-Sleep -Seconds 2
       if ((Get-Date) -ge $nextNote) {
         # The NSIS installer shows the last output line on its progress page; without this it looks hung on a slow connection.
-        Write-Host ("Still downloading the WebView2 Runtime (about 150 MB), {0} min {1:00} s so far. A slow connection can take 10 minutes or more; this is not stuck." -f [int]((Get-Date) - $started).TotalMinutes, ((Get-Date) - $started).Seconds)
+        $waited = [int][math]::Floor(((Get-Date) - $started).TotalSeconds)   # [int] alone rounds, so 40 s showed as "1 min"
+        Write-Host ("Still downloading the WebView2 Runtime (about 150 MB), {0} min {1:00} s so far. A slow connection can take 10 minutes or more; this is not stuck." -f [math]::Floor($waited / 60), ($waited % 60))
         $nextNote = (Get-Date).AddSeconds(20)
       }
     }
