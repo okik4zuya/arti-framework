@@ -34,6 +34,7 @@ import lit
 import platform_ops
 import system_info
 import update_check
+import webview2_runtime
 
 HOST = "127.0.0.1"
 PORT = 4174
@@ -341,7 +342,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(200, dict(update_check.progress(), ok=True))
 
         if pathname == "/api/system/status" and method == "GET":
-            return self._send_json(200, system_info.system_status())
+            return self._send_json(200, system_info.system_status(native=_window is not None))
+
+        if pathname == "/api/webview2/status" and method == "GET":
+            return self._send_json(200, webview2_runtime.status(native=_window is not None))
+
+        if pathname == "/api/webview2/retry" and method == "POST":
+            # Manual retry: skips the 24-hour wait after a failure, still honours the lock of a running install.
+            verdict = webview2_runtime.maybe_start_install(force=True)
+            return self._send_json(200, dict(webview2_runtime.status(native=_window is not None), started=verdict == "start", verdict=verdict))
 
         if pathname == "/api/about" and method == "GET":
             return self._send_json(200, system_info.about())

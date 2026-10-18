@@ -505,6 +505,19 @@ if (Test-Path $skillsSrc) {
       Write-Host "  [ok] skill copied (no live-edit link): $($_.Name)"
     }
   }
+  # Links to skills this version no longer ships: junctions that point into our skills folder at something that is
+  # gone (an update over an older install, after the installer removed the old skills folder). Same rule as
+  # relink_skills in tools/arti-update/updater.py. Directory.Delete(path, $false) unlinks the junction only.
+  $skillsRoot = $skillsSrc.TrimEnd('\') + '\'
+  Get-ChildItem $skillsDst -Force -ErrorAction SilentlyContinue | Where-Object {
+    $_.PSIsContainer -and ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)
+  } | ForEach-Object {
+    $t = ([string]($_.Target | Select-Object -First 1)) -replace '^\\\\\?\\', ''
+    if ($t -and $t.StartsWith($skillsRoot, [StringComparison]::OrdinalIgnoreCase) -and -not (Test-Path -LiteralPath $t)) {
+      [IO.Directory]::Delete($_.FullName, $false)
+      Write-Host "  [ok] removed link to a skill that is no longer shipped: $($_.Name)"
+    }
+  }
 }
 
 # --- 5. Desktop shortcut: "ARTi Framework" -------------------------------------

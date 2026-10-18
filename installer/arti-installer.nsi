@@ -24,6 +24,28 @@ Var LicenseKey
 Var KeyInput
 Var KeyStatus
 Var FreshInstall
+Var AsideFailed
+
+; An update over an existing install first moves the tracked code folders out of the way (the installer only
+; adds and overwrites, so a file the new version no longer ships would stay behind). Rename, not delete, so that a
+; locked folder (ARTi or a Claude Code session still using it) is found before anything is lost: AsideFailed then
+; holds its name and the caller puts back what was already moved. $INSTDIR\<N>.old-install is deleted after the copy.
+!macro AsideItem N
+    ${If} $AsideFailed == ""
+    ${AndIf} ${FileExists} "$INSTDIR\${N}\*.*"
+        ClearErrors
+        Rename "$INSTDIR\${N}" "$INSTDIR\${N}.old-install"
+        ${If} ${Errors}
+            StrCpy $AsideFailed "${N}"
+        ${EndIf}
+    ${EndIf}
+!macroend
+
+!macro PutBackItem N
+    ${If} ${FileExists} "$INSTDIR\${N}.old-install\*.*"
+        Rename "$INSTDIR\${N}.old-install" "$INSTDIR\${N}"
+    ${EndIf}
+!macroend
 
 ; Removes the skill junctions, the install folder and the Desktop shortcut. Shared by the uninstaller
 ; and by the installer's "activation failed on a fresh install" path. P is a label prefix so the
@@ -248,6 +270,35 @@ Section "Install" SEC01
     ${Else}
         StrCpy $FreshInstall 1
     ${EndIf}
+
+    ; Update over an existing install: tools, skills, dashboard and logo are code only (the researcher's data is in
+    ; memory, voice-profiles, license.json, mcp-keys.json ...; the audit is in memory/memories/installer-update-safety-plan.md),
+    ; so they are replaced as a whole, the same as "Update now" does. Done before anything is written: if one of the
+    ; folders is in use, put back what was moved and stop without changing the install.
+    ${If} $FreshInstall == 0
+        ; $INSTDIR may be this process's working directory, which Windows will not move or delete (see RemoveArtiInstall).
+        SetOutPath "$TEMP"
+        StrCpy $AsideFailed ""
+        ; leftovers of an earlier run that was interrupted after the move
+        RMDir /r "$INSTDIR\tools.old-install"
+        RMDir /r "$INSTDIR\skills.old-install"
+        RMDir /r "$INSTDIR\dashboard.old-install"
+        RMDir /r "$INSTDIR\logo.old-install"
+        !insertmacro AsideItem "tools"
+        !insertmacro AsideItem "skills"
+        !insertmacro AsideItem "dashboard"
+        !insertmacro AsideItem "logo"
+        ${If} $AsideFailed != ""
+            !insertmacro PutBackItem "tools"
+            !insertmacro PutBackItem "skills"
+            !insertmacro PutBackItem "dashboard"
+            !insertmacro PutBackItem "logo"
+            MessageBox MB_OK|MB_ICONSTOP "ARTi could not be updated, because the folder $INSTDIR\$AsideFailed is in use. Nothing was changed.$\r$\n$\r$\nClose ARTi (the dashboard window), every Claude Code session and any terminal or File Explorer window that is open inside the ARTi folder, then run this installer again." /SD IDOK
+            SetErrorLevel 3
+            Quit
+        ${EndIf}
+    ${EndIf}
+
     SetOutPath "$INSTDIR"
 
     ; The WebView2 Runtime (needed for the dashboard window) is the slowest download on a clean Windows 10.
@@ -309,6 +360,12 @@ Section "Install" SEC01
     File /r "payload\python\*.*"
     SetOverwrite on
     SetOutPath "$INSTDIR"
+
+    ; The old code folders moved aside at the start of an update are no longer needed.
+    RMDir /r "$INSTDIR\tools.old-install"
+    RMDir /r "$INSTDIR\skills.old-install"
+    RMDir /r "$INSTDIR\dashboard.old-install"
+    RMDir /r "$INSTDIR\logo.old-install"
 
     ; Everything else (vendored Python, pip installs, skill junctions, desktop shortcut) is
     ; install.ps1's job - one source of truth, unchanged by this installer.

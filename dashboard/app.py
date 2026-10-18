@@ -11,11 +11,9 @@ another instance already owns it, so this process POSTs /api/focus to bring
 the existing window forward and exits without creating a second window. This
 replaces the old .vbs's IsAlive() liveness-check/reuse loop.
 """
-import os
 import sys
 import threading
 import webbrowser
-import winreg
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -28,53 +26,16 @@ import webview  # noqa: E402
 HOST = dashboard_server.HOST
 PORT = dashboard_server.PORT
 
-# Evergreen WebView2 Runtime's fixed client GUID -- same one Microsoft's own
-# detection guidance checks. pywebview's edgechromium backend needs this OS
-# component installed; without it, CoreWebView2Environment init fails inside
-# the WinForms/pythonnet interop layer (logged by pywebview, not raised as a
+# pywebview's edgechromium backend needs the Evergreen WebView2 Runtime, an OS
+# component; without it, CoreWebView2Environment init fails inside the
+# WinForms/pythonnet interop layer (logged by pywebview, not raised as a
 # catchable Python exception), leaving a blank white window with no error
 # surfaced to the user. Checking for it *before* creating the window lets us
-# fall back to a browser tab instead of showing that dead window.
-_WEBVIEW2_CLIENT_GUID = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
-_WEBVIEW2_BOOTSTRAPPER_URL = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
-
-# Machine-wide (HKLM) and per-user (HKCU) install locations the Evergreen Runtime's
-# registry entry can point at -- keyed by product name, joined with the registered
-# version below to get the exact folder msedgewebview2.exe should be sitting in.
-_WEBVIEW2_INSTALL_ROOTS = (
-    (winreg.HKEY_LOCAL_MACHINE, os.environ.get("ProgramFiles(x86)")),
-    (winreg.HKEY_LOCAL_MACHINE, os.environ.get("ProgramFiles")),
-    (winreg.HKEY_CURRENT_USER, os.environ.get("LocalAppData")),
-)
-
-
-def _webview2_runtime_present():
-    """Registry-only detection is not enough: a machine (Windows Sandbox's base
-    image included) can carry the `Clients\\{GUID}\\pv` registration -- Windows
-    Update servicing metadata -- without the actual msedgewebview2.exe binary
-    being present, which is exactly the FileNotFoundException pywebview hits at
-    CoreWebView2Environment.CreateAsync(). So: read the registered version, then
-    confirm the real binary exists at the version-specific install path before
-    trusting it."""
-    subkey = rf"SOFTWARE\Microsoft\EdgeUpdate\Clients\{_WEBVIEW2_CLIENT_GUID}"
-    wow_subkey = rf"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{_WEBVIEW2_CLIENT_GUID}"
-    for hive, base_dir in _WEBVIEW2_INSTALL_ROOTS:
-        if not base_dir:
-            continue
-        version = None
-        for key_path in (subkey, wow_subkey):
-            try:
-                with winreg.OpenKey(hive, key_path) as key:
-                    version, _ = winreg.QueryValueEx(key, "pv")
-                    break
-            except OSError:
-                continue
-        if not version:
-            continue
-        exe = Path(base_dir) / "Microsoft" / "EdgeWebView" / "Application" / version / "msedgewebview2.exe"
-        if exe.is_file():
-            return True
-    return False
+# fall back to a browser tab instead of showing that dead window. Detection
+# (registry version plus a binary that really opens, since the Windows Sandbox
+# base image lists a phantom msedgewebview2.exe) and the one-time background
+# install live in server/webview2_runtime.py.
+import webview2_runtime  # noqa: E402
 
 # Same mark used for the Desktop shortcut (install.ps1) and the favicon --
 # passed to webview.start() below so the window/taskbar icon matches too,
@@ -118,17 +79,19 @@ def main():
 
     url = f"http://{HOST}:{PORT}/"
 
-    if not _webview2_runtime_present():
+    if not webview2_runtime.runtime_present():
         # No native window without WebView2 -- same browser-tab model mac/linux
         # already use (see dashboard/README.md), rather than a blank window
         # pywebview would otherwise silently show. Runs serve_forever() on the
         # main thread (no webview event loop to share it with here); "Quit
         # Dashboard" in the page footer (POST /api/shutdown) is what stops it,
-        # same as on mac/linux.
+        # same as on mac/linux. Meanwhile the runtime is installed once in the
+        # background (same lock as install.ps1, no retry for 24 hours after a
+        # failure); the page shows a banner with the progress and a Retry button.
+        verdict = webview2_runtime.maybe_start_install()
         print(
-            f"[arti] WebView2 Runtime not found -- opening {url} in your default browser instead "
-            f"of a native window. Install it from {_WEBVIEW2_BOOTSTRAPPER_URL} for the native "
-            "window next time.",
+            f"[arti] WebView2 Runtime not found ({verdict}) -- opening {url} in your default browser "
+            f"instead of a native window. Manual install: {webview2_runtime.MANUAL_URL}",
             file=sys.stderr,
         )
         webbrowser.open(url)

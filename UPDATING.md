@@ -36,11 +36,12 @@ Close the ARTi window first; `apply` refuses while it answers. Claude Code sessi
 
 A release that changes the runtime (Python, poppler, tesseract), or one that is too old to be applied in place, says so in Settings > About ("needs the full installer"). The very first release that has **Update now** also has to be installed this way once, because older installs do not have the updater yet.
 
-1. Download the latest installer (`ArtiFrameworkSetup-x.y.z.exe`, or the archive on macOS/Linux) from your private download link.
-2. Run it, same as a fresh install (SmartScreen may warn about an unknown publisher: **More info** -> **Run anyway**). Your license is already activated on this machine, so it is not asked for again.
-3. It installs over your existing `~/.arti` in place. You'll see a message like `Updating ARTi Framework v0.1.0 -> v0.2.0` during install.
+1. **Close ARTi** (the dashboard window) and every Claude Code session, terminal or File Explorer window that is open inside the `~/.arti` folder.
+2. Download the latest installer (`ArtiFrameworkSetup-x.y.z.exe`, or the archive on macOS/Linux) from your private download link.
+3. Run it, same as a fresh install (SmartScreen may warn about an unknown publisher: **More info** -> **Run anyway**). Your license is already activated on this machine, so it is not asked for again.
+4. It installs over your existing `~/.arti` in place.
 
-Everything that is not your own content (`tools/`, `skills/`, `dashboard/`, `logo/`, the docs) is replaced with the new version's copy, including removing anything the new version deleted upstream.
+On Windows the installer first moves the old `tools/`, `skills/`, `dashboard/` and `logo/` folders aside, then copies the new ones and deletes the old ones, so anything the new version no longer ships is gone (that is the same replacement "Update now" does). Links in `~/.claude/skills` to skills that no longer exist are removed. If one of those folders is still in use, the installer says so, puts back what it had moved and stops before changing anything: close the programs named in step 1 and run it again. Anything you added or edited yourself inside those four folders is replaced; keep your own content in `memory/`, `voice-profiles/` and the like (the list under "Update inside ARTi"). On macOS/Linux `install.sh` also replaces those folders item by item (it does not remove old skill links).
 
 ## Database changes
 

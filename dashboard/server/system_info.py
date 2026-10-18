@@ -39,7 +39,17 @@ def _search_tool():
                  "tools/arti-search/cli.py is missing. Reinstall or update ARTi.")
 
 
-def system_status():
+def _webview2(native):
+    """Windows only. ok = the runtime binary opens; otherwise the detail is the install progress or the reason it
+    failed (see webview2_runtime.py)."""
+    import webview2_runtime
+    s = webview2_runtime.status(native=native)
+    return _item("WebView2 (native window)", s["present"], s["detail"],
+                 "%s. ARTi installs it by itself once; the sidebar has a Try again button after a failure. "
+                 "Manual install: %s" % (s["detail"], webview2_runtime.MANUAL_URL))
+
+
+def system_status(native=False):
     py = Path(sys.executable)
     vendored = (ARTI_HOME / "python") in py.parents
     browser = find_browser()
@@ -57,6 +67,8 @@ def system_status():
         _skills(),
         _search_tool(),
     ]
+    if sys.platform == "win32":
+        items.insert(5, _webview2(native))
     return {"items": items}
 
 

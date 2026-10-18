@@ -1423,6 +1423,10 @@
   .settings-subhead{ margin:8px 0 0; font-size:14px; font-weight:600; }
   .lic-badge.info{ background:var(--accent-soft); color:var(--accent); }
   .license-card.update-card{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+  /* Browser-tab fallback: the WebView2 Runtime (native window) is missing, installing or failed to install. */
+  .license-card.wv2-card{ cursor:default; }
+  .wv2-card .btn{ margin-top:6px; }
+  #wv2Retry[hidden]{ display:none; }
   .update-box{ display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid var(--accent); background:var(--surface); }
   .update-box[hidden], .update-box [hidden]{ display:none; }
   .update-box-head{ font-weight:600; font-size:14px; }
@@ -1531,6 +1535,10 @@
       <button type="button" class="nav-item" data-view="settings" title="Settings (Ctrl+,)">Settings</button>
     </nav>
     <div class="side-spacer"></div>
+    <div class="license-card warn wv2-card" id="wv2Card" hidden>
+      <div id="wv2Text"></div>
+      <button type="button" class="btn" id="wv2Retry" hidden>Try again</button>
+    </div>
     <button type="button" class="license-card update-card" id="updateCard" hidden></button>
     <button type="button" class="license-card" id="licenseCard" hidden></button>
     <div class="side-version" id="frameworkVersion" style="opacity:0.5; font-size:11px; padding:4px 0;"></div>
@@ -10631,6 +10639,43 @@
     showSettingsCat("about");
   });
 
+  // ---- WebView2 banner (Windows browser-tab fallback only) ----
+  // Shown while the native window is not in use because the WebView2 Runtime is missing: installing (polled),
+  // failed (with the reason and a retry button), or just installed (needs a restart). Never shown in the native window.
+  var wv2Timer = null;
+  function applyWebview2(s){
+    var card = document.getElementById("wv2Card"), text = document.getElementById("wv2Text"), btn = document.getElementById("wv2Retry");
+    clearTimeout(wv2Timer);
+    if (!s.windows || s.native){ card.hidden = true; return; }
+    if (s.present){
+      card.hidden = false; btn.hidden = true;
+      text.textContent = "Native window is ready. Close ARTi and open it again to use it.";
+      return;
+    }
+    card.hidden = false;
+    if (s.status === "installing"){
+      btn.hidden = true;
+      text.textContent = "Native window not active yet: installing the Microsoft WebView2 Runtime (about 150 MB). This can take several minutes.";
+      wv2Timer = setTimeout(loadWebview2, 5000);
+    } else if (s.status === "failed"){
+      btn.hidden = false;
+      text.textContent = "Native window not active: the WebView2 Runtime could not be installed (" + (s.detail || "").replace(/^not installed: /, "") + "). ARTi works in this tab.";
+    } else {
+      btn.hidden = false;
+      text.textContent = "Native window not active: the WebView2 Runtime is not installed. ARTi works in this tab.";
+    }
+  }
+  function loadWebview2(){
+    return apiRaw("/webview2/status").then(applyWebview2).catch(function(){});
+  }
+  document.getElementById("wv2Retry").addEventListener("click", function(){
+    var btn = this;
+    btn.disabled = true;
+    apiRaw("/webview2/retry", { method:"POST", headers:{"Content-Type":"application/json"}, body:"{}" })
+      .then(applyWebview2, function(){})
+      .then(function(){ btn.disabled = false; });
+  });
+
   // ---- Settings categories ----
   var SETTINGS_CAT_KEY = "artiSettingsCategory";
   var currentSettingsCat = "license";
@@ -10873,6 +10918,7 @@
   refreshLicenseStatus().then(function(st){
     if (st.locked){ switchMainView("settings"); showSettingsCat("license"); return; }
     loadUpdateStatus();
+    loadWebview2();
     return loadAll().then(restoreViewState, restoreViewState);
   }, function(){ loadAll().then(restoreViewState, restoreViewState); });
 })();
