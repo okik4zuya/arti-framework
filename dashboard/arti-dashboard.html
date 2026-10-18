@@ -10642,10 +10642,14 @@
   // ---- WebView2 banner (Windows browser-tab fallback only) ----
   // Shown while the native window is not in use because the WebView2 Runtime is missing: installing (polled),
   // failed (with the reason and a retry button), or just installed (needs a restart). Never shown in the native window.
-  var wv2Timer = null;
+  // While installing, polling must survive a failed request and a throttled timer (a hidden or unfocused tab): a failed poll
+  // is retried, and coming back to the window (focus / visible) asks again at once. Seen in the Sandbox 2026-10-18: the card
+  // stayed on "installing" although the server already said "failed" (a reload showed the right state).
+  var wv2Timer = null, wv2Installing = false;
   function applyWebview2(s){
     var card = document.getElementById("wv2Card"), text = document.getElementById("wv2Text"), btn = document.getElementById("wv2Retry");
     clearTimeout(wv2Timer);
+    wv2Installing = false;
     if (!s.windows || s.native){ card.hidden = true; return; }
     if (s.present){
       card.hidden = false; btn.hidden = true;
@@ -10656,6 +10660,7 @@
     if (s.status === "installing"){
       btn.hidden = true;
       text.textContent = "Native window not active yet: installing the Microsoft WebView2 Runtime (about 150 MB). This can take several minutes.";
+      wv2Installing = true;
       wv2Timer = setTimeout(loadWebview2, 5000);
     } else if (s.status === "failed"){
       btn.hidden = false;
@@ -10666,8 +10671,12 @@
     }
   }
   function loadWebview2(){
-    return apiRaw("/webview2/status").then(applyWebview2).catch(function(){});
+    return apiRaw("/webview2/status", { cache:"no-store" }).then(applyWebview2).catch(function(){
+      if (wv2Installing){ clearTimeout(wv2Timer); wv2Timer = setTimeout(loadWebview2, 5000); }
+    });
   }
+  window.addEventListener("focus", function(){ if (!document.getElementById("wv2Card").hidden) loadWebview2(); });
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden && !document.getElementById("wv2Card").hidden) loadWebview2(); });
   document.getElementById("wv2Retry").addEventListener("click", function(){
     var btn = this;
     btn.disabled = true;
